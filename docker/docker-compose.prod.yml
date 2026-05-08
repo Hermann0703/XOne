@@ -1,0 +1,305 @@
+# =============================================================================
+# XOne — 个人/工作一体化管理平台
+# Docker 生产环境 Compose 编排文件
+# =============================================================================
+# 用法:
+#   1. cp .env.example .env.production && vim .env.production
+#   2. bash scripts/deploy.sh
+#   3. bash scripts/deploy.sh --ssl   (如需 Let's Encrypt 证书)
+# =============================================================================
+
+x-common-env: &common-env
+  MODE: production
+  DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-xone}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-xone}}
+  MONGODB_URL: ${MONGODB_URL:-mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD}@mongodb:27017}
+  REDIS_URL: ${REDIS_URL:-redis://:${REDIS_PASSWORD}@redis:6379/0}
+  CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://:${REDIS_PASSWORD}@redis:6379/1}
+  CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://:${REDIS_PASSWORD}@redis:6379/2}
+  MEILISEARCH_URL: ${MEILISEARCH_URL:-http://meilisearch:7700}
+  MEILISEARCH_KEY: ${MEILISEARCH_KEY}
+  QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+  MINIO_URL: ${MINIO_URL:-http://minio:9000}
+  MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+  SECRET_KEY: ${SECRET_KEY}
+
+x-backend-base: &backend-base
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile.backend
+  environment:
+    <<: *common-env
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  networks:
+    - xone
+
+# ---------------------------------------------------------------------------
+# 服务定义
+# ---------------------------------------------------------------------------
+services:
+  # ==========================================================================
+  # Nginx — 反向代理 & SSL 终端
+  # ==========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: xone-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-_}
+    volumes:
+      - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - xone
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # Frontend — Next.js 生产服务器 (standalone)
+  # ==========================================================================
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: /api
+    container_name: xone-frontend
+    expose:
+      - "3000"
+    environment:
+      <<: *common-env
+      NEXT_PUBLIC_API_URL: /api
+    networks:
+      - xone
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ==========================================================================
+  # Backend — FastAPI 生产服务器 (Uvicorn workers)
+  # ==========================================================================
+  backend:
+    <<: *backend-base
+    container_name: xone-backend
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # ==========================================================================
+  # PostgreSQL 16 — 主关系数据库
+  # ==========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: xone-postgres
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-xone}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-xone}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - xone
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-xone} -d ${POSTGRES_DB:-xone}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ==========================================================================
+  # MongoDB 7 — 文档数据库 (灵活数据 / AI 模块)
+  # ==========================================================================
+  mongodb:
+    image: mongo:7
+    container_name: xone-mongodb
+    expose:
+      - "27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-xone}
+    volumes:
+      - mongodata:/data/db
+    networks:
+      - xone
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ==========================================================================
+  # Redis 7 — 缓存 / Celery Broker / 会话 (带密码)
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: xone-redis
+    expose:
+      - "6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - redisdata:/data
+    networks:
+      - xone
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
+  # Meilisearch — 全文搜索引擎
+  # ==========================================================================
+  meilisearch:
+    image: getmeili/meilisearch:v1.8
+    container_name: xone-meilisearch
+    expose:
+      - "7700"
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_KEY}
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_ENV: production
+    volumes:
+      - meilidata:/meili_data
+    networks:
+      - xone
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:7700/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # Qdrant — 向量数据库 (AI / RAG)
+  # ==========================================================================
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: xone-qdrant
+    expose:
+      - "6333"
+    volumes:
+      - qdrantdata:/qdrant/storage
+    networks:
+      - xone
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # MinIO — S3 兼容对象存储 (文件 / 附件)
+  # ==========================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: xone-minio
+    expose:
+      - "9000"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    command: server /data --console-address ":9001"
+    volumes:
+      - miniodata:/data
+    networks:
+      - xone
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # Celery Worker — 异步任务执行
+  # ==========================================================================
+  celery:
+    <<: *backend-base
+    container_name: xone-celery
+    command: celery -A app.tasks worker --loglevel=info
+    expose: []
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Celery Beat — 定时任务调度
+  # ==========================================================================
+  celery-beat:
+    <<: *backend-base
+    container_name: xone-celery-beat
+    command: celery -A app.tasks beat --loglevel=info
+    expose: []
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+# ---------------------------------------------------------------------------
+# 命名卷 — 数据持久化（生产环境使用本地卷 + 定期备份）
+# ---------------------------------------------------------------------------
+volumes:
+  pgdata:
+    driver: local
+  mongodata:
+    driver: local
+  redisdata:
+    driver: local
+  meilidata:
+    driver: local
+  qdrantdata:
+    driver: local
+  miniodata:
+    driver: local
+
+# ---------------------------------------------------------------------------
+# 网络
+# ---------------------------------------------------------------------------
+networks:
+  xone:
+    driver: bridge
+    name: xone

@@ -1,0 +1,13 @@
+'use client';
+
+// /login 页面
+
+import LoginForm from '@/components/auth/LoginForm';
+
+export default function LoginPage() {
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-bg-base p-4">
+      <LoginForm />
+    </main>
+  );
+}

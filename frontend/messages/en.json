@@ -1,0 +1,113 @@
+{
+  "app": {
+    "name": "XOne",
+    "tagline": "Your Digital Hub for Life & Work"
+  },
+  "nav": {
+    "personal": "Personal",
+    "work": "Work",
+    "dashboard": "Dashboard",
+    "health": "Health",
+    "assets": "Assets",
+    "reading": "Reading",
+    "media": "Media",
+    "shopping": "Shopping",
+    "contracts": "Contracts",
+    "archives": "Archives",
+    "reports": "Reports",
+    "knowledge": "Knowledge Base",
+    "projects": "Projects",
+    "settings": "Settings"
+  },
+  "common": {
+    "search": "Search",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "empty": "No data",
+    "error": "Something went wrong",
+    "retry": "Retry"
+  },
+  "mode": {
+    "switchToWork": "Switch to Work Mode",
+    "switchToPersonal": "Switch to Personal Mode"
+  },
+  "assets": {
+    "accounts": "Accounts",
+    "addAccount": "Add Account",
+    "editAccount": "Edit Account",
+    "transactions": "Transactions",
+    "addTransaction": "Add Transaction",
+    "monthlyTrend": "Monthly Income & Expense Trend",
+    "recentTransactions": "Recent Transactions",
+    "kpi": {
+      "netWorth": "Net Worth",
+      "netWorthDesc": "Total balance of all accounts",
+      "monthlyIncome": "Monthly Income",
+      "monthlyExpense": "Monthly Expense",
+      "monthlyBalance": "Monthly Balance",
+      "thisMonth": "This Month"
+    },
+    "account": {
+      "name": "Account Name",
+      "namePlaceholder": "e.g. Chase Checking",
+      "type": "Account Type",
+      "balance": "Balance",
+      "currency": "Currency",
+      "institution": "Institution",
+      "institutionPlaceholder": "e.g. Chase Bank",
+      "icon": "Icon",
+      "iconPlaceholder": "lucide icon name"
+    },
+    "accountType": {
+      "bank": "Bank",
+      "cash": "Cash",
+      "credit": "Credit Card",
+      "investment": "Investment",
+      "other": "Other"
+    },
+    "tx": {
+      "date": "Date",
+      "account": "Account",
+      "type": "Type",
+      "category": "Category",
+      "amount": "Amount",
+      "description": "Description",
+      "descriptionPlaceholder": "e.g. Lunch",
+      "tags": "Tags",
+      "selectAccount": "Select Account",
+      "selectCategory": "Select Category"
+    },
+    "txType": {
+      "income": "Income",
+      "expense": "Expense",
+      "transfer": "Transfer"
+    },
+    "category": {
+      "food": "Food",
+      "transport": "Transport",
+      "shopping": "Shopping",
+      "housing": "Housing",
+      "entertainment": "Entertainment",
+      "medical": "Medical",
+      "education": "Education",
+      "salary": "Salary",
+      "investment": "Investment",
+      "other": "Other"
+    },
+    "filter": {
+      "allTypes": "All Types",
+      "allCategories": "All Categories",
+      "dateFrom": "From",
+      "dateTo": "To"
+    },
+    "pagination": {
+      "total": "{total} records total",
+      "pageInfo": "Page {page} / {total}"
+    }
+  }
+}

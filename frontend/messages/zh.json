@@ -1,0 +1,113 @@
+{
+  "app": {
+    "name": "XOne",
+    "tagline": "生活与工作的数字中枢"
+  },
+  "nav": {
+    "personal": "个人模式",
+    "work": "工作模式",
+    "dashboard": "仪表盘",
+    "health": "健康管理",
+    "assets": "资产管理",
+    "reading": "阅读管理",
+    "media": "观影管理",
+    "shopping": "购物清单",
+    "contracts": "合同管理",
+    "archives": "档案管理",
+    "reports": "数据报送",
+    "knowledge": "知识库",
+    "projects": "项目管理",
+    "settings": "设置"
+  },
+  "common": {
+    "search": "搜索",
+    "add": "新增",
+    "edit": "编辑",
+    "delete": "删除",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "loading": "加载中...",
+    "empty": "暂无数据",
+    "error": "出错了",
+    "retry": "重试"
+  },
+  "mode": {
+    "switchToWork": "切换到工作模式",
+    "switchToPersonal": "切换到个人模式"
+  },
+  "assets": {
+    "accounts": "账户列表",
+    "addAccount": "添加账户",
+    "editAccount": "编辑账户",
+    "transactions": "交易记录",
+    "addTransaction": "新增交易",
+    "monthlyTrend": "月度收支趋势",
+    "recentTransactions": "最近交易",
+    "kpi": {
+      "netWorth": "净资产",
+      "netWorthDesc": "所有账户余额合计",
+      "monthlyIncome": "本月收入",
+      "monthlyExpense": "本月支出",
+      "monthlyBalance": "月结余",
+      "thisMonth": "本月"
+    },
+    "account": {
+      "name": "账户名称",
+      "namePlaceholder": "例如：招商银行卡",
+      "type": "账户类型",
+      "balance": "余额",
+      "currency": "币种",
+      "institution": "机构",
+      "institutionPlaceholder": "例如：招商银行",
+      "icon": "图标",
+      "iconPlaceholder": "lucide 图标名称"
+    },
+    "accountType": {
+      "bank": "银行",
+      "cash": "现金",
+      "credit": "信用卡",
+      "investment": "投资",
+      "other": "其他"
+    },
+    "tx": {
+      "date": "日期",
+      "account": "账户",
+      "type": "类型",
+      "category": "分类",
+      "amount": "金额",
+      "description": "描述",
+      "descriptionPlaceholder": "例如：午餐",
+      "tags": "标签",
+      "selectAccount": "选择账户",
+      "selectCategory": "选择分类"
+    },
+    "txType": {
+      "income": "收入",
+      "expense": "支出",
+      "transfer": "转账"
+    },
+    "category": {
+      "food": "餐饮",
+      "transport": "交通",
+      "shopping": "购物",
+      "housing": "住房",
+      "entertainment": "娱乐",
+      "medical": "医疗",
+      "education": "教育",
+      "salary": "工资",
+      "investment": "投资",
+      "other": "其他"
+    },
+    "filter": {
+      "allTypes": "全部类型",
+      "allCategories": "全部分类",
+      "dateFrom": "开始日期",
+      "dateTo": "结束日期"
+    },
+    "pagination": {
+      "total": "共 {total} 条记录",
+      "pageInfo": "第 {page} / {total} 页"
+    }
+  }
+}

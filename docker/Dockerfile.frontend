@@ -1,0 +1,58 @@
+# =============================================================================
+# XOne — Frontend Dockerfile (生产环境)
+# 多阶段构建：deps → build → runtime (standalone output + 非 root 运行)
+# =============================================================================
+
+# ---- Stage 1: Dependencies ----
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+
+# 利用 Docker 层缓存：先复制依赖定义文件
+COPY frontend/package*.json ./
+RUN npm ci --production && \
+    cp -R node_modules /prod_node_modules && \
+    npm ci
+
+# ---- Stage 2: Build ----
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY frontend/ ./
+
+# 传入构建时环境变量
+ARG NEXT_PUBLIC_API_URL=/api
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
+# Next.js standalone build
+RUN npm run build
+
+# ---- Stage 3: Runtime ----
+FROM node:20-alpine AS runtime
+
+# 创建非 root 用户
+RUN addgroup -g 1001 -S xone && adduser -u 1001 -S xone -G xone
+
+WORKDIR /app
+
+# 仅复制 standalone 输出 + static 文件 + public
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+# 复制生产依赖
+COPY --from=deps /prod_node_modules ./node_modules
+
+# 非 root 用户
+RUN chown -R xone:xone /app
+USER xone
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# 启动 Next.js 生产服务器 (standalone 自带 server.js)
+CMD ["node", "server.js"]

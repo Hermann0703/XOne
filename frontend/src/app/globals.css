@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   XOne 主题系统 — CSS 变量
+   通过 [data-mode] 属性切换主题
+   ======================================== */
+
+/* 默认主题：个人模式 (暖色调) */
+:root,
+[data-mode='personal'] {
+  /* 主色 — 靛紫暖调 */
+  --color-primary: #6366F1;
+  --color-primary-light: #A5B4FC;
+
+  /* 背景 */
+  --color-bg-page: #F9FAFB;
+  --color-bg-card: #FFFFFF;
+  --color-bg-sidebar: #FFFFFF;
+
+  /* 文字 */
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+
+  /* 边框 */
+  --color-border: #E5E7EB;
+
+  /* 语义色 */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+
+  /* 圆角 */
+  --radius-card: 12px;
+  --radius-panel: 8px;
+  --radius-btn: 8px;
+  --radius-input: 8px;
+  --radius-tag: 20px;
+
+  /* ========================================
+     Shadcn/ui 兼容 CSS 变量
+     通过级联自动适配个人/工作模式
+     ======================================== */
+  --background: var(--color-bg-page);
+  --foreground: var(--color-text-primary);
+  --muted: #F3F4F6;
+  --muted-foreground: #6B7280;
+  --secondary: #F3F4F6;
+  --secondary-foreground: #111827;
+  --destructive: var(--color-danger);
+  --destructive-foreground: #FFFFFF;
+  --ring: var(--color-primary);
+}
+
+/* 工作模式 (冷色调) */
+[data-mode='work'] {
+  --color-primary: #3B82F6;
+  --color-primary-light: #93C5FD;
+
+  --color-bg-page: #F1F5F9;
+  --color-bg-card: #FFFFFF;
+  --color-bg-sidebar: #1E293B;
+
+  --color-text-primary: #1E293B;
+  --color-text-secondary: #64748B;
+
+  --color-border: #CBD5E1;
+
+  /* 工作模式下 background/foreground 通过 var() 级联自动适配 */
+}
+
+/* ========================================
+   全局基础样式
+   ======================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+
+/* 链接默认样式 */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
