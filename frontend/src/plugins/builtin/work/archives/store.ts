@@ -252,7 +252,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   },
 
   deleteFile: async (fileId) => {
-    const result = await req<null>(`/files/${fileId}`, { method: 'DELETE' })
+    const result = await req<null>(`/archives/files/${fileId}`, { method: 'DELETE' })
     return result !== null
   },
 
@@ -261,7 +261,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
     set({ loading: true })
     const qs = new URLSearchParams()
     Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '') qs.set(k, String(v)) })
-    const result = await req<Borrow[]>(`/borrows?${qs.toString()}`)
+    const result = await req<Borrow[]>(`/archives/borrows?${qs.toString()}`)
     if (result) {
       set({ borrows: result.data ?? [], paging: result.paging ?? null, loading: false })
     } else {
@@ -270,7 +270,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   },
 
   createBorrow: async (data) => {
-    const result = await req<Borrow>('/borrows', {
+    const result = await req<Borrow>('/archives/borrows', {
       method: 'POST',
       body: JSON.stringify(data),
     })
@@ -278,7 +278,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   },
 
   updateBorrow: async (id, data) => {
-    const result = await req<Borrow>(`/borrows/${id}`, {
+    const result = await req<Borrow>(`/archives/borrows/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     })
@@ -286,7 +286,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   },
 
   returnBorrow: async (id, force = false) => {
-    const result = await req<null>(`/borrows/${id}/return`, {
+    const result = await req<null>(`/archives/borrows/${id}/return`, {
       method: 'POST',
       body: JSON.stringify({ force }),
     })
@@ -294,7 +294,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   },
 
   deleteBorrow: async (id) => {
-    const result = await req<null>(`/borrows/${id}`, { method: 'DELETE' })
+    const result = await req<null>(`/archives/borrows/${id}`, { method: 'DELETE' })
     return result !== null
   },
 
@@ -303,7 +303,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
     set({ loading: true })
     const qs = new URLSearchParams()
     Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '') qs.set(k, String(v)) })
-    const result = await req<Appraisal[]>(`/appraisals?${qs.toString()}`)
+    const result = await req<Appraisal[]>(`/archives/appraisals?${qs.toString()}`)
     if (result) {
       set({ appraisals: result.data ?? [], paging: result.paging ?? null, loading: false })
     } else {
@@ -312,7 +312,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   },
 
   createAppraisal: async (data) => {
-    const result = await req<Appraisal>('/appraisals', {
+    const result = await req<Appraisal>('/archives/appraisals', {
       method: 'POST',
       body: JSON.stringify(data),
     })
@@ -320,7 +320,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   },
 
   updateAppraisal: async (id, data) => {
-    const result = await req<Appraisal>(`/appraisals/${id}`, {
+    const result = await req<Appraisal>(`/archives/appraisals/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     })
@@ -328,7 +328,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   },
 
   deleteAppraisal: async (id) => {
-    const result = await req<null>(`/appraisals/${id}`, { method: 'DELETE' })
+    const result = await req<null>(`/archives/appraisals/${id}`, { method: 'DELETE' })
     return result !== null
   },
 

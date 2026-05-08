@@ -17,3 +17,5 @@ export const readingPlugin: XOnePlugin = {
     },
   ],
 };
+
+export { default as BookList } from './BookList';

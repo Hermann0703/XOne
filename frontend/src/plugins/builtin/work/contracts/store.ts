@@ -158,7 +158,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
   fetchContracts: async (params = {}) => {
     set({ loading: true });
     try {
-      const res = await apiGet<Contract[]>('/work/contracts', params);
+      const res = await apiGet<Contract[]>('/work/contracts/contracts', params);
       if (res.code === 0) {
         set({ contracts: res.data, paging: res.paging || null });
       }
@@ -171,7 +171,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   fetchContract: async (id) => {
     try {
-      const res = await apiGet<Contract>(`/work/contracts/${id}`);
+      const res = await apiGet<Contract>(`/work/contracts/contracts/${id}`);
       if (res.code === 0) {
         set({ selectedContract: res.data });
         return res.data;
@@ -198,7 +198,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   updateContract: async (id, data) => {
     try {
-      const res = await apiPatch<Contract>(`/work/contracts/${id}`, data);
+      const res = await apiPatch<Contract>(`/work/contracts/contracts/${id}`, data);
       if (res.code === 0) {
         const { contracts, selectedContract } = get();
         set({
@@ -215,7 +215,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   deleteContract: async (id) => {
     try {
-      const res = await apiDelete(`/work/contracts/${id}`);
+      const res = await apiDelete(`/work/contracts/contracts/${id}`);
       if (res.code === 0) {
         const { contracts } = get();
         set({ contracts: contracts.filter((c) => c.id !== id) });
@@ -231,14 +231,14 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   fetchFonds: async () => {
     try {
-      const res = await apiGet<Fonds[]>('/work/fonds');
+      const res = await apiGet<Fonds[]>('/work/contracts/fonds');
       if (res.code === 0) set({ fonds: res.data });
     } catch { /* 静默处理 */ }
   },
 
   createFonds: async (data) => {
     try {
-      const res = await apiPost<Fonds>('/work/fonds', data);
+      const res = await apiPost<Fonds>('/work/contracts/fonds', data);
       if (res.code === 0) {
         set({ fonds: [...get().fonds, res.data] });
         return res.data;
@@ -249,7 +249,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   updateFonds: async (id, data) => {
     try {
-      const res = await apiPatch<Fonds>(`/work/fonds/${id}`, data);
+      const res = await apiPatch<Fonds>(`/work/contracts/fonds/${id}`, data);
       if (res.code === 0) {
         set({ fonds: get().fonds.map((f) => (f.id === id ? res.data : f)) });
         return res.data;
@@ -260,7 +260,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   deleteFonds: async (id) => {
     try {
-      const res = await apiDelete(`/work/fonds/${id}`);
+      const res = await apiDelete(`/work/contracts/fonds/${id}`);
       if (res.code === 0) {
         set({ fonds: get().fonds.filter((f) => f.id !== id) });
         return true;
@@ -273,14 +273,14 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   fetchCategories: async () => {
     try {
-      const res = await apiGet<ContractCategory[]>('/work/categories');
+      const res = await apiGet<ContractCategory[]>('/work/contracts/categories');
       if (res.code === 0) set({ categories: res.data });
     } catch { /* 静默处理 */ }
   },
 
   createCategory: async (data) => {
     try {
-      const res = await apiPost<ContractCategory>('/work/categories', data);
+      const res = await apiPost<ContractCategory>('/work/contracts/categories', data);
       if (res.code === 0) {
         set({ categories: [...get().categories, res.data] });
         return res.data;
@@ -291,7 +291,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   updateCategory: async (id, data) => {
     try {
-      const res = await apiPatch<ContractCategory>(`/work/categories/${id}`, data);
+      const res = await apiPatch<ContractCategory>(`/work/contracts/categories/${id}`, data);
       if (res.code === 0) {
         set({ categories: get().categories.map((c) => (c.id === id ? res.data : c)) });
         return res.data;
@@ -302,7 +302,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   deleteCategory: async (id) => {
     try {
-      const res = await apiDelete(`/work/categories/${id}`);
+      const res = await apiDelete(`/work/contracts/categories/${id}`);
       if (res.code === 0) {
         set({ categories: get().categories.filter((c) => c.id !== id) });
         return true;
@@ -315,14 +315,14 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   fetchClassifications: async () => {
     try {
-      const res = await apiGet<Classification[]>('/work/classifications');
+      const res = await apiGet<Classification[]>('/work/contracts/classifications');
       if (res.code === 0) set({ classifications: res.data });
     } catch { /* 静默处理 */ }
   },
 
   createClassification: async (data) => {
     try {
-      const res = await apiPost<Classification>('/work/classifications', data);
+      const res = await apiPost<Classification>('/work/contracts/classifications', data);
       if (res.code === 0) {
         set({ classifications: [...get().classifications, res.data] });
         return res.data;
@@ -333,7 +333,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   updateClassification: async (id, data) => {
     try {
-      const res = await apiPatch<Classification>(`/work/classifications/${id}`, data);
+      const res = await apiPatch<Classification>(`/work/contracts/classifications/${id}`, data);
       if (res.code === 0) {
         set({ classifications: get().classifications.map((c) => (c.id === id ? res.data : c)) });
         return res.data;
@@ -344,7 +344,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   deleteClassification: async (id) => {
     try {
-      const res = await apiDelete(`/work/classifications/${id}`);
+      const res = await apiDelete(`/work/contracts/classifications/${id}`);
       if (res.code === 0) {
         set({ classifications: get().classifications.filter((c) => c.id !== id) });
         return true;
@@ -376,7 +376,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   updateMilestone: async (id, data) => {
     try {
-      const res = await apiPatch<Milestone>(`/work/milestones/${id}`, data);
+      const res = await apiPatch<Milestone>(`/work/contracts/milestones/${id}`, data);
       if (res.code === 0) {
         set({ milestones: get().milestones.map((m) => (m.id === id ? res.data : m)) });
         return res.data;
@@ -387,7 +387,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   deleteMilestone: async (id) => {
     try {
-      const res = await apiDelete(`/work/milestones/${id}`);
+      const res = await apiDelete(`/work/contracts/milestones/${id}`);
       if (res.code === 0) {
         set({ milestones: get().milestones.filter((m) => m.id !== id) });
         return true;

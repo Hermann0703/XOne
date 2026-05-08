@@ -8,6 +8,11 @@ import { archivesPlugin } from './work/archives';
 import { knowledgePlugin } from './work/knowledge';
 import { dispatchPlugin } from './work/dispatch';
 import { projectPlugin } from './work/project';
+import { readingPlugin } from '../personal/reading';
+import { mediaPlugin } from '../personal/media';
+import { healthPlugin } from '../personal/health';
+import { assetsPlugin } from '../personal/assets';
+import { shoppingPlugin } from '../personal/shopping';
 
 /** 设置插件 — 系统设置入口，双模式可用 */
 const settingsPlugin: XOnePlugin = {
@@ -50,7 +55,7 @@ const helpPlugin: XOnePlugin = {
 };
 
 /** 所有内建插件 */
-const builtinPlugins: XOnePlugin[] = [settingsPlugin, helpPlugin, contractsPlugin, archivesPlugin, knowledgePlugin, dispatchPlugin, projectPlugin];
+const builtinPlugins: XOnePlugin[] = [settingsPlugin, helpPlugin, contractsPlugin, archivesPlugin, knowledgePlugin, dispatchPlugin, projectPlugin, readingPlugin, mediaPlugin, healthPlugin, assetsPlugin, shoppingPlugin];
 
 /**
  * 注册所有内建插件到全局注册表

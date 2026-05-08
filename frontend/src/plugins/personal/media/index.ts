@@ -17,3 +17,5 @@ export const mediaPlugin: XOnePlugin = {
     },
   ],
 };
+
+export { default as MovieList } from './MovieList';

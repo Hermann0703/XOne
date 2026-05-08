@@ -38,3 +38,9 @@ export const healthPlugin: XOnePlugin = {
     },
   ],
 };
+
+export { default as Dashboard } from './Dashboard';
+export { default as BodyMetricsDashboard } from './BodyMetricsDashboard';
+export { default as FoodForm } from './FoodForm';
+export { default as ExerciseCalendar } from './ExerciseCalendar';
+export { default as FoodRecord } from './FoodRecord';
