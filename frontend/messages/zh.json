@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "XOne",
-    "tagline": "生活与工作的数字中枢"
+    "tagline": "生活与工作的数字中枢",
+    "settings": "设置"
   },
   "nav": {
     "personal": "个人模式",
@@ -30,11 +31,402 @@
     "loading": "加载中...",
     "empty": "暂无数据",
     "error": "出错了",
-    "retry": "重试"
+    "retry": "重试",
+    "back": "返回",
+    "close": "关闭",
+    "today": "今天",
+    "total": "共 {total}",
+    "days": "{days} 天",
+    "overview": "概览",
+    "viewAll": "查看全部"
   },
   "mode": {
     "switchToWork": "切换到工作模式",
     "switchToPersonal": "切换到个人模式"
+  },
+  "dashboard": {
+    "personal": {
+      "greeting": "晚上好，朋友",
+      "subtitle": "欢迎回来，今天想做些什么？",
+      "quickActions": "快捷入口",
+      "recentActivity": "最近活动",
+      "actionLabels": {
+        "health": "健康记录",
+        "reading": "阅读笔记",
+        "media": "观影记录",
+        "shopping": "购物清单",
+        "assets": "资产管理"
+      }
+    },
+    "work": {
+      "greeting": "工作台",
+      "subtitle": "项目管理与团队协作概览",
+      "projectProgress": "项目进度",
+      "quickActions": "常用功能",
+      "actionLabels": {
+        "project": "创建项目",
+        "archives": "档案管理",
+        "contracts": "合同管理",
+        "dispatch": "数据报送"
+      }
+    },
+    "statCards": {
+      "activeProjects": "活跃项目",
+      "activeProjectsDesc": "进行中项目数",
+      "completedTasks": "完成率",
+      "completedTasksDesc": "本月任务完成率",
+      "teamMembers": "团队成员",
+      "teamMembersDesc": "部门成员数",
+      "documents": "文档数",
+      "documentsDesc": "知识库文档",
+      "thisMonth": "本月新建",
+      "income": "本月收入",
+      "incomeDesc": "月收入合计",
+      "expense": "本月支出",
+      "expenseDesc": "月支出合计",
+      "balance": "月结余",
+      "balanceDesc": "收入减支出",
+      "investments": "理财收益",
+      "investmentsDesc": "本月投资收益",
+      "accounts": "账户数",
+      "accountsDesc": "活跃账户"
+    },
+    "rightPanel": {
+      "title": "今日概览",
+      "chartTitle": "任务分配",
+      "completed": "已完成",
+      "inProgress": "进行中",
+      "pending": "待开始",
+      "todayActivity": "今日活动"
+    }
+  },
+  "shopping": {
+    "title": "购物清单",
+    "addItem": "添加商品",
+    "editItem": "编辑商品",
+    "stats": {
+      "total": "商品总数",
+      "purchased": "已购买",
+      "pending": "待购买",
+      "budget": "本月预算"
+    },
+    "item": {
+      "name": "商品名称",
+      "namePlaceholder": "输入商品名称",
+      "category": "分类",
+      "price": "价格",
+      "quantity": "数量",
+      "note": "备注",
+      "notePlaceholder": "添加备注...",
+      "purchased": "已购买"
+    },
+    "category": {
+      "food": "食品",
+      "daily": "日用品",
+      "electronics": "数码",
+      "clothing": "服饰",
+      "books": "书籍",
+      "other": "其他"
+    },
+    "budget": {
+      "title": "预算管理",
+      "setBudget": "设置预算",
+      "remaining": "剩余",
+      "spent": "已用",
+      "overBudget": "超预算"
+    }
+  },
+  "health": {
+    "title": "健康管理",
+    "tabs": {
+      "overview": "概览",
+      "food": "饮食记录",
+      "exercise": "运动记录",
+      "sleep": "睡眠记录",
+      "bodyMetrics": "身体指标"
+    },
+    "metrics": {
+      "weight": "体重",
+      "weightDesc": "最新记录",
+      "bodyFat": "体脂率",
+      "bodyFatDesc": "最新记录",
+      "calories": "今日摄入",
+      "caloriesDesc": "卡路里",
+      "exercise": "运动时长",
+      "exerciseDesc": "今日运动"
+    },
+    "food": {
+      "addMeal": "添加餐食",
+      "editMeal": "编辑餐食",
+      "mealType": "餐别",
+      "mealName": "食物名称",
+      "mealNamePlaceholder": "例如：鸡肉沙拉",
+      "calories": "卡路里",
+      "protein": "蛋白质(g)",
+      "carbs": "碳水(g)",
+      "fat": "脂肪(g)",
+      "mealTypes": {
+        "breakfast": "早餐",
+        "lunch": "午餐",
+        "dinner": "晚餐",
+        "snack": "加餐"
+      }
+    },
+    "exercise": {
+      "addExercise": "添加运动",
+      "editExercise": "编辑运动",
+      "type": "运动类型",
+      "typePlaceholder": "例如：跑步",
+      "duration": "时长(分钟)",
+      "calories": "消耗卡路里",
+      "intensity": "强度",
+      "intensities": {
+        "light": "轻度",
+        "moderate": "中度",
+        "intense": "高强度"
+      }
+    }
+  },
+  "reading": {
+    "title": "阅读管理",
+    "addBook": "添加书籍",
+    "editBook": "编辑书籍",
+    "stats": {
+      "total": "藏书总数",
+      "reading": "正在读",
+      "completed": "已读完",
+      "wantToRead": "想读"
+    },
+    "book": {
+      "title": "书名",
+      "titlePlaceholder": "输入书名",
+      "author": "作者",
+      "authorPlaceholder": "输入作者",
+      "isbn": "ISBN",
+      "status": "状态",
+      "rating": "评分",
+      "notes": "笔记",
+      "notesPlaceholder": "读书笔记...",
+      "pages": "页数",
+      "currentPage": "当前页",
+      "startDate": "开始日期",
+      "endDate": "完成日期"
+    },
+    "status": {
+      "want_to_read": "想读",
+      "reading": "在读",
+      "completed": "已读",
+      "abandoned": "弃读"
+    }
+  },
+  "media": {
+    "title": "观影管理",
+    "addMedia": "添加影视",
+    "editMedia": "编辑影视",
+    "stats": {
+      "total": "影视总数",
+      "watched": "已观看",
+      "watching": "正在看",
+      "wantToWatch": "想看"
+    },
+    "item": {
+      "title": "标题",
+      "titlePlaceholder": "影视标题",
+      "type": "类型",
+      "year": "年份",
+      "rating": "评分",
+      "status": "状态",
+      "notes": "笔记",
+      "notesPlaceholder": "观后感...",
+      "director": "导演",
+      "genre": "分类"
+    },
+    "type": {
+      "movie": "电影",
+      "tv": "剧集",
+      "anime": "动漫",
+      "documentary": "纪录片"
+    },
+    "status": {
+      "want_to_watch": "想看",
+      "watching": "在看",
+      "watched": "已看"
+    }
+  },
+  "project": {
+    "title": "项目管理",
+    "addProject": "新建项目",
+    "editProject": "编辑项目",
+    "stats": {
+      "total": "项目总数",
+      "inProgress": "进行中",
+      "completed": "已完成",
+      "overdue": "已逾期"
+    },
+    "detail": {
+      "name": "项目名称",
+      "namePlaceholder": "输入项目名称",
+      "description": "描述",
+      "descriptionPlaceholder": "项目描述...",
+      "status": "状态",
+      "startDate": "开始日期",
+      "endDate": "截止日期",
+      "members": "成员",
+      "progress": "进度"
+    },
+    "status": {
+      "planning": "规划中",
+      "in_progress": "进行中",
+      "completed": "已完成",
+      "on_hold": "暂停",
+      "cancelled": "已取消"
+    },
+    "board": {
+      "todo": "待办",
+      "inProgress": "进行中",
+      "done": "已完成"
+    },
+    "milestone": {
+      "add": "添加里程碑",
+      "title": "里程碑",
+      "dueDate": "截止日期"
+    }
+  },
+  "archives": {
+    "title": "档案管理",
+    "stats": {
+      "total": "档案总数",
+      "fonds": "全宗数",
+      "categories": "分类数",
+      "borrowed": "借出中"
+    },
+    "filter": {
+      "fonds": "全宗筛选",
+      "category": "分类筛选",
+      "status": "状态筛选",
+      "allFonds": "全部全宗",
+      "allCategories": "全部分类",
+      "allStatus": "全部状态"
+    },
+    "status": {
+      "active": "在库",
+      "borrowed": "借出",
+      "archived": "归档",
+      "destroyed": "销毁"
+    }
+  },
+  "contracts": {
+    "title": "合同管理",
+    "addContract": "新增合同",
+    "detail": "合同详情",
+    "stats": {
+      "total": "合同总数",
+      "active": "生效中",
+      "expiring": "即将到期",
+      "expired": "已到期"
+    },
+    "field": {
+      "contractNo": "合同编号",
+      "name": "合同名称",
+      "party": "签约方",
+      "amount": "金额",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "status": "状态",
+      "type": "类型"
+    },
+    "status": {
+      "draft": "草稿",
+      "active": "生效",
+      "expired": "到期",
+      "terminated": "终止"
+    }
+  },
+  "dispatch": {
+    "title": "数据报送"
+  },
+  "knowledge": {
+    "title": "知识库",
+    "addDocument": "新建文档",
+    "stats": {
+      "total": "文档总数",
+      "categories": "分类数",
+      "recentUpdate": "最近更新"
+    },
+    "field": {
+      "title": "标题",
+      "category": "分类",
+      "tags": "标签",
+      "author": "作者",
+      "updatedAt": "更新时间"
+    }
+  },
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "username": "用户名",
+    "usernamePlaceholder": "请输入用户名",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "confirmPassword": "确认密码",
+    "confirmPasswordPlaceholder": "请再次输入密码",
+    "email": "邮箱",
+    "emailPlaceholder": "请输入邮箱",
+    "name": "姓名",
+    "namePlaceholder": "请输入姓名",
+    "loginButton": "登录",
+    "registerButton": "注册",
+    "noAccount": "还没有账号？",
+    "hasAccount": "已有账号？",
+    "goRegister": "立即注册",
+    "goLogin": "立即登录",
+    "loginFailed": "登录失败，请检查用户名和密码",
+    "registerFailed": "注册失败，请稍后重试",
+    "loginDescription": "欢迎回到 XOne，请输入您的账号",
+    "registerDescription": "创建一个 XOne 账号开始使用",
+    "loggingIn": "登录中...",
+    "registering": "注册中...",
+    "displayName": "显示名称",
+    "displayNamePlaceholder": "您的显示名称",
+    "optional": "(可选)",
+    "minChars3": "至少 3 个字符",
+    "minChars6": "至少 6 个字符"
+  },
+  "pageHeader": {
+    "back": "返回"
+  },
+  "greeting": {
+    "night": "夜深了",
+    "morning": "早上好",
+    "forenoon": "上午好",
+    "noon": "中午好",
+    "afternoon": "下午好",
+    "evening": "晚上好"
+  },
+  "statCard": {
+    "unitWan": "万",
+    "flat": "持平"
+  },
+  "calendar": {
+    "weekDays_short": ["一", "二", "三", "四", "五", "六", "日"],
+    "monthNames": ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
+  },
+  "error": {
+    "title": "出错了",
+    "description": "页面加载出现问题",
+    "retry": "重新加载",
+    "notFound": "页面未找到",
+    "notFoundDesc": "您访问的页面不存在或已被移除",
+    "goHome": "返回首页"
+  },
+  "errors": {
+    "unexpected": "页面出现了意外错误",
+    "retry": "重试",
+    "goHome": "返回首页",
+    "notFound": {
+      "title": "页面未找到",
+      "description": "您访问的页面不存在或已被移除"
+    }
   },
   "assets": {
     "accounts": "账户列表",

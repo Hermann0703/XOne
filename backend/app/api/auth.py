@@ -1,4 +1,6 @@
-"""认证 API — 注册 / 登录 / 当前用户"""
+"""认证 API — 注册、登录、令牌刷新"""
+
+from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, field_validator

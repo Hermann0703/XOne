@@ -106,6 +106,26 @@ python -m pytest tests/ -v --cov=app --cov-report=html
 
 Tests use in-memory SQLite (aiosqlite) — no external database needed.
 
+### Frontend E2E Tests
+
+```bash
+cd frontend
+
+# Install Playwright browsers (first time only)
+npx playwright install chromium
+
+# Run all E2E tests (auto-starts dev server)
+npm test
+
+# Interactive UI mode
+npm run test:ui
+
+# View last test report
+npm run test:report
+```
+
+Tests use Playwright with Chromium — 19 test cases covering all pages.
+
 ## Production Deployment
 
 ```bash

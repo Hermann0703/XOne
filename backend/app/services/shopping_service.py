@@ -2,6 +2,7 @@
 
 from datetime import date, datetime
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import select, func, and_, extract
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +13,7 @@ from app.models.shopping import Budget, ShoppingItem
 
 # ── 预算 ──────────────────────────────────────────────────────────────
 
-async def list_budgets(db: AsyncSession, user_id: int) -> list[Budget]:
+async def list_budgets(db: AsyncSession, user_id: UUID) -> list[Budget]:
     """获取用户所有预算"""
     stmt = (
         select(Budget)
@@ -23,7 +24,7 @@ async def list_budgets(db: AsyncSession, user_id: int) -> list[Budget]:
     return list(result.scalars().all())
 
 
-async def get_budget(db: AsyncSession, budget_id: int, user_id: int) -> Optional[Budget]:
+async def get_budget(db: AsyncSession, budget_id: int, user_id: UUID) -> Optional[Budget]:
     """获取单个预算"""
     stmt = select(Budget).where(
         Budget.id == budget_id, Budget.user_id == user_id
@@ -32,7 +33,7 @@ async def get_budget(db: AsyncSession, budget_id: int, user_id: int) -> Optional
     return result.scalar_one_or_none()
 
 
-async def create_budget(db: AsyncSession, user_id: int, data: dict) -> Budget:
+async def create_budget(db: AsyncSession, user_id: UUID, data: dict) -> Budget:
     """创建预算"""
     budget = Budget(
         user_id=user_id,
@@ -52,7 +53,7 @@ async def create_budget(db: AsyncSession, user_id: int, data: dict) -> Budget:
 
 
 async def update_budget(
-    db: AsyncSession, budget_id: int, user_id: int, data: dict
+    db: AsyncSession, budget_id: int, user_id: UUID, data: dict
 ) -> Optional[Budget]:
     """更新预算"""
     stmt = select(Budget).where(
@@ -73,7 +74,7 @@ async def update_budget(
 
 
 async def delete_budget(
-    db: AsyncSession, budget_id: int, user_id: int
+    db: AsyncSession, budget_id: int, user_id: UUID
 ) -> bool:
     """删除预算（关联购物项的 budget_id 置空）"""
     stmt = select(Budget).where(
@@ -93,7 +94,7 @@ async def delete_budget(
 
 async def list_items(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     status: Optional[str] = None,
     category: Optional[str] = None,
     priority: Optional[str] = None,
@@ -121,7 +122,7 @@ async def list_items(
     return list(result.scalars().all())
 
 
-async def get_item(db: AsyncSession, item_id: int, user_id: int) -> Optional[ShoppingItem]:
+async def get_item(db: AsyncSession, item_id: int, user_id: UUID) -> Optional[ShoppingItem]:
     """获取单个购物项"""
     stmt = (
         select(ShoppingItem)
@@ -132,7 +133,7 @@ async def get_item(db: AsyncSession, item_id: int, user_id: int) -> Optional[Sho
     return result.scalar_one_or_none()
 
 
-async def create_item(db: AsyncSession, user_id: int, data: dict) -> ShoppingItem:
+async def create_item(db: AsyncSession, user_id: UUID, data: dict) -> ShoppingItem:
     """创建购物项"""
     item = ShoppingItem(
         user_id=user_id,
@@ -161,7 +162,7 @@ async def create_item(db: AsyncSession, user_id: int, data: dict) -> ShoppingIte
 
 
 async def update_item(
-    db: AsyncSession, item_id: int, user_id: int, data: dict
+    db: AsyncSession, item_id: int, user_id: UUID, data: dict
 ) -> Optional[ShoppingItem]:
     """更新购物项"""
     stmt = (
@@ -190,7 +191,7 @@ async def update_item(
 
 
 async def delete_item(
-    db: AsyncSession, item_id: int, user_id: int
+    db: AsyncSession, item_id: int, user_id: UUID
 ) -> bool:
     """删除购物项"""
     stmt = select(ShoppingItem).where(
@@ -208,7 +209,7 @@ async def delete_item(
 
 # ── 仪表盘 ────────────────────────────────────────────────────────────
 
-async def get_dashboard(db: AsyncSession, user_id: int) -> dict:
+async def get_dashboard(db: AsyncSession, user_id: UUID) -> dict:
     """聚合仪表盘数据：总预算、本月支出、剩余预算、状态分布、最近购买"""
     today = date.today()
     current_month = today.month

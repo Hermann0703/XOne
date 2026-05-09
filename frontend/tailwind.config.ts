@@ -39,6 +39,20 @@ const config: Config = {
           foreground: 'var(--destructive-foreground)',
         },
         ring: 'var(--ring)',
+        /* Shadcn/ui v4 compatibility tokens */
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)',
+        },
+        popover: {
+          DEFAULT: 'var(--popover)',
+          foreground: 'var(--popover-foreground)',
+        },
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
+        },
+        input: 'var(--input)',
       },
       borderRadius: {
         card: 'var(--radius-card, 12px)',

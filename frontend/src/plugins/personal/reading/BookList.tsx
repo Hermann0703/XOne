@@ -231,7 +231,7 @@ export default function BookList() {
                       </div>
                       <div className="h-1.5 bg-bg-secondary rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-primary rounded-full transition-all"
+                          className="h-full bg-primary rounded-full transition-[width] duration-200"
                           style={{ width: `${progress}%` }}
                         />
                       </div>

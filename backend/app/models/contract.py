@@ -2,8 +2,9 @@
 
 from datetime import date
 from typing import Optional
+from uuid import UUID
 
-from sqlalchemy import Float, ForeignKey, Integer, String, Date, Text, Index
+from sqlalchemy import Float, ForeignKey, Integer, String, Date, Text, Index, UUID as SAUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -85,7 +86,7 @@ class Contract(TimestampMixin, Base):
     __tablename__ = "contracts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True, comment="用户ID")
+    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True, comment="用户ID")
     contract_no: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, comment="合同编号")
     title: Mapped[str] = mapped_column(String(256), nullable=False, comment="合同标题")
     fonds_id: Mapped[int] = mapped_column(

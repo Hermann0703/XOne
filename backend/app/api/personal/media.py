@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
 
 from app.core.database import get_db
+from app.core.security import get_current_user
+from app.models.user import User
 from app.services import media_service
 
 router = APIRouter(prefix="/media", tags=["个人-观影"])
@@ -56,7 +58,7 @@ class MovieUpdate(BaseModel):
 
 @router.get("/movies", summary="获取影视列表")
 async def list_movies(
-    user_id: int = Query(..., description="用户ID"),
+    current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1, description="页码"),
     size: int = Query(20, ge=1, le=100, description="每页数量"),
     status: Optional[str] = Query(None, description="按状态筛选"),
@@ -66,7 +68,7 @@ async def list_movies(
 ):
     """分页查询用户的影视列表"""
     result = await media_service.list_movies(
-        db=db, user_id=user_id, page=page, size=size,
+        db=db, user_id=current_user.id, page=page, size=size,
         status=status, genre=genre, search=search,
     )
     return {"message": "查询成功", "data": result}
@@ -74,13 +76,13 @@ async def list_movies(
 
 @router.post("/movies", summary="添加影视", status_code=201)
 async def create_movie(
-    user_id: int = Query(..., description="用户ID"),
+    current_user: User = Depends(get_current_user),
     data: MovieCreate = ...,
     db: AsyncSession = Depends(get_db),
 ):
     """创建新的影视记录"""
     movie = await media_service.create_movie(
-        db=db, user_id=user_id, data=data.model_dump(exclude_none=True),
+        db=db, user_id=current_user.id, data=data.model_dump(exclude_none=True),
     )
     return {"message": "添加成功", "data": movie}
 
@@ -88,7 +90,7 @@ async def create_movie(
 @router.get("/movies/{movie_id}", summary="获取影视详情")
 async def get_movie(
     movie_id: int,
-    user_id: int = Query(..., description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取单部影视的详细信息"""
@@ -97,7 +99,7 @@ async def get_movie(
     result = await db.execute(
         select(Movie).where(
             Movie.id == movie_id,
-            Movie.user_id == user_id,
+            Movie.user_id == current_user.id,
         )
     )
     movie = result.scalar_one_or_none()
@@ -109,13 +111,13 @@ async def get_movie(
 @router.patch("/movies/{movie_id}", summary="更新影视")
 async def update_movie(
     movie_id: int,
-    user_id: int = Query(..., description="用户ID"),
+    current_user: User = Depends(get_current_user),
     data: MovieUpdate = ...,
     db: AsyncSession = Depends(get_db),
 ):
     """更新影视信息，仅允许更新自己的影视记录"""
     movie = await media_service.update_movie(
-        db=db, movie_id=movie_id, user_id=user_id,
+        db=db, movie_id=movie_id, user_id=current_user.id,
         data=data.model_dump(exclude_none=True),
     )
     if not movie:
@@ -126,12 +128,12 @@ async def update_movie(
 @router.delete("/movies/{movie_id}", summary="删除影视")
 async def delete_movie(
     movie_id: int,
-    user_id: int = Query(..., description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """删除影视记录，仅允许删除自己的影视记录"""
     deleted = await media_service.delete_movie(
-        db=db, movie_id=movie_id, user_id=user_id,
+        db=db, movie_id=movie_id, user_id=current_user.id,
     )
     if not deleted:
         raise HTTPException(status_code=404, detail="影视记录不存在或无权操作")

@@ -8,15 +8,18 @@ import { useSidebarStore } from '@/lib/store/sidebar-store'
  * XOne 主内容区
  *
  * - margin-left 随侧边栏展开/折叠同步过渡
+ * - 移动端 marginLeft: 0（无左侧偏移）
  * - 顶部为标签栏高度 (40px) 留出空间
  * - 根据 activeTabId 渲染对应内容
  */
 export function MainContent({
   children,
   className,
+  isMobile = false,
 }: {
   children?: React.ReactNode
   className?: string
+  isMobile?: boolean
 }) {
   const activeTabId = useTabStore((s) => s.activeTabId)
   const tabs = useTabStore((s) => s.tabs)
@@ -31,16 +34,14 @@ export function MainContent({
         'transition-[margin-left] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]',
         className
       )}
-      style={{ marginLeft: isCollapsed ? 64 : 240 }}
+      style={{ marginLeft: isMobile ? 0 : isCollapsed ? 64 : 240 }}
     >
       {children ?? (
         <div className="text-muted-foreground text-sm">
           {activeTab ? (
-            <p>
-              当前标签页：{activeTab.labelKey} ({activeTab.path})
-            </p>
+            <p>Active tab: {activeTab.labelKey} ({activeTab.path})</p>
           ) : (
-            <p>无活跃标签页</p>
+            <p>No active tab</p>
           )}
         </div>
       )}

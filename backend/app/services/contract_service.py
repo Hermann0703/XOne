@@ -2,6 +2,7 @@
 
 from datetime import date, datetime
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import select, func, and_, or_, extract
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -226,7 +227,7 @@ async def delete_classification(db: AsyncSession, classification_id: int) -> boo
 
 async def list_contracts(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     fonds_id: Optional[int] = None,
     category_id: Optional[int] = None,
     status: Optional[str] = None,
@@ -284,7 +285,7 @@ async def list_contracts(
     return items, total
 
 
-async def get_contract(db: AsyncSession, contract_id: int, user_id: int) -> Optional[Contract]:
+async def get_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> Optional[Contract]:
     """获取单个合同"""
     stmt = (
         select(Contract)
@@ -300,7 +301,7 @@ async def get_contract(db: AsyncSession, contract_id: int, user_id: int) -> Opti
     return result.scalar_one_or_none()
 
 
-async def create_contract(db: AsyncSession, user_id: int, data: dict) -> Contract:
+async def create_contract(db: AsyncSession, user_id: UUID, data: dict) -> Contract:
     """创建合同"""
     contract = Contract(
         user_id=user_id,
@@ -329,7 +330,7 @@ async def create_contract(db: AsyncSession, user_id: int, data: dict) -> Contrac
 
 
 async def update_contract(
-    db: AsyncSession, contract_id: int, user_id: int, data: dict
+    db: AsyncSession, contract_id: int, user_id: UUID, data: dict
 ) -> Optional[Contract]:
     """更新合同"""
     stmt = (
@@ -360,7 +361,7 @@ async def update_contract(
     return contract
 
 
-async def delete_contract(db: AsyncSession, contract_id: int, user_id: int) -> bool:
+async def delete_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> bool:
     """删除合同（级联删除里程碑）"""
     stmt = select(Contract).where(
         Contract.id == contract_id, Contract.user_id == user_id
@@ -380,7 +381,7 @@ async def delete_contract(db: AsyncSession, contract_id: int, user_id: int) -> b
 # ══════════════════════════════════════════════════════════════════════
 
 async def list_milestones(
-    db: AsyncSession, contract_id: int, user_id: int
+    db: AsyncSession, contract_id: int, user_id: UUID
 ) -> list[Milestone]:
     """获取合同的所有里程碑"""
     # 先验证合同属于该用户
@@ -398,7 +399,7 @@ async def list_milestones(
 
 
 async def create_milestone(
-    db: AsyncSession, contract_id: int, user_id: int, data: dict
+    db: AsyncSession, contract_id: int, user_id: UUID, data: dict
 ) -> Optional[Milestone]:
     """为合同创建里程碑"""
     # 验证合同属于该用户
@@ -423,7 +424,7 @@ async def create_milestone(
 
 
 async def update_milestone(
-    db: AsyncSession, milestone_id: int, user_id: int, data: dict
+    db: AsyncSession, milestone_id: int, user_id: UUID, data: dict
 ) -> Optional[Milestone]:
     """更新里程碑"""
     # 通过合同验证用户权限
@@ -446,7 +447,7 @@ async def update_milestone(
     return milestone
 
 
-async def delete_milestone(db: AsyncSession, milestone_id: int, user_id: int) -> bool:
+async def delete_milestone(db: AsyncSession, milestone_id: int, user_id: UUID) -> bool:
     """删除里程碑"""
     stmt = (
         select(Milestone)
@@ -467,7 +468,7 @@ async def delete_milestone(db: AsyncSession, milestone_id: int, user_id: int) ->
 #  合同仪表盘
 # ══════════════════════════════════════════════════════════════════════
 
-async def get_contract_dashboard(db: AsyncSession, user_id: int) -> dict:
+async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
     """合同仪表盘聚合数据"""
     today = date.today()
 

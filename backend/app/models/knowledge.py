@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import uuid
 from typing import Optional
+from uuid import UUID
 
-from sqlalchemy import String, Text, DateTime, Integer, Index, func
-from sqlalchemy.dialects.postgresql import UUID, JSON
+from sqlalchemy import String, Text, DateTime, Integer, Index, func, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID as SAUUID, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -19,7 +20,7 @@ class KnowledgeDocument(TimestampMixin, Base):
     __tablename__ = "knowledge_documents"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, comment="文档ID"
+        SAUUID(as_uuid=True), primary_key=True, default=uuid.uuid4, comment="文档ID"
     )
     title: Mapped[str] = mapped_column(String(512), nullable=False, comment="文档标题")
     file_type: Mapped[str] = mapped_column(
@@ -42,8 +43,8 @@ class KnowledgeDocument(TimestampMixin, Base):
     chunk_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, comment="分块数量"
     )
-    user_id: Mapped[str] = mapped_column(
-        String(128), nullable=False, default="default", index=True, comment="用户ID"
+    user_id: Mapped[UUID] = mapped_column(
+        SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True, comment="用户ID"
     )
     tags: Mapped[Optional[str]] = mapped_column(
         String(1024), nullable=True, comment="标签（JSON数组字符串）"
@@ -68,14 +69,14 @@ class KnowledgeConversation(TimestampMixin, Base):
     __tablename__ = "knowledge_conversations"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, comment="对话ID"
+        SAUUID(as_uuid=True), primary_key=True, default=uuid.uuid4, comment="对话ID"
     )
     title: Mapped[str] = mapped_column(String(512), nullable=False, comment="对话标题")
     messages: Mapped[dict] = mapped_column(
         JSON, nullable=False, default=list, comment="完整对话记录（JSON）"
     )
-    user_id: Mapped[str] = mapped_column(
-        String(128), nullable=False, default="default", index=True, comment="用户ID"
+    user_id: Mapped[UUID] = mapped_column(
+        SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True, comment="用户ID"
     )
 
     __table_args__ = (

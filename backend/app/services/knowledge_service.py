@@ -8,6 +8,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -182,9 +183,9 @@ async def upload_document(
     file_content: bytes,
     filename: str,
     title: str,
+    user_id: UUID,
     content_type: Optional[str] = None,
     tags: Optional[str] = None,
-    user_id: str = "default",
     source_url: Optional[str] = None,
 ) -> KnowledgeDocument:
     """上传文档：保存文件，解析文本，创建数据库记录（状态=processing）"""
@@ -370,11 +371,11 @@ async def search_documents(
 
 async def list_documents(
     db: AsyncSession,
+    user_id: UUID,
     page: int = 1,
     page_size: int = 20,
     status: Optional[str] = None,
     tags: Optional[str] = None,
-    user_id: str = "default",
 ) -> dict:
     """PostgreSQL 分页查询文档列表"""
     conditions = [KnowledgeDocument.user_id == user_id]
@@ -559,9 +560,9 @@ async def reindex_document(db: AsyncSession, doc_id: uuid.UUID) -> Optional[Know
 
 async def list_conversations(
     db: AsyncSession,
+    user_id: UUID,
     page: int = 1,
     page_size: int = 20,
-    user_id: str = "default",
 ) -> dict:
     """分页查询对话历史列表"""
     base_filter = KnowledgeConversation.user_id == user_id
@@ -588,7 +589,7 @@ async def create_conversation(
     db: AsyncSession,
     title: str,
     messages: list[dict],
-    user_id: str = "default",
+    user_id: UUID,
 ) -> KnowledgeConversation:
     """创建/保存对话"""
     conv = KnowledgeConversation(
@@ -642,7 +643,7 @@ async def get_conversation(
 # ═══════════════════════════════════════════════════════════════════
 
 
-async def get_stats(db: AsyncSession, user_id: str = "default") -> dict:
+async def get_stats(db: AsyncSession, user_id: UUID) -> dict:
     """获取知识库统计信息"""
     base_filter = KnowledgeDocument.user_id == user_id
 

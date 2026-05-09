@@ -112,11 +112,11 @@ def _dashboard_txns(txns) -> list:
 
 @router.get("/accounts", summary="获取账户列表")
 async def get_accounts(
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取当前用户的所有资产账户"""
-    accounts = await asset_service.list_accounts(db, user_id)
+    accounts = await asset_service.list_accounts(db, current_user.id)
     return {
         "code": 0,
         "message": "查询成功",
@@ -127,11 +127,11 @@ async def get_accounts(
 @router.post("/accounts", summary="创建账户")
 async def create_account(
     body: AccountCreate,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """创建新的资产账户"""
-    account = await asset_service.create_account(db, user_id, body.model_dump(exclude_none=True))
+    account = await asset_service.create_account(db, current_user.id, body.model_dump(exclude_none=True))
     return {
         "code": 0,
         "message": "账户创建成功",
@@ -142,11 +142,11 @@ async def create_account(
 @router.get("/accounts/{account_id}", summary="获取账户详情")
 async def get_account(
     account_id: int,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取单个账户详情"""
-    accounts = await asset_service.list_accounts(db, user_id)
+    accounts = await asset_service.list_accounts(db, current_user.id)
     account = next((a for a in accounts if a.id == account_id), None)
     if not account:
         raise HTTPException(status_code=404, detail="账户不存在")
@@ -161,12 +161,12 @@ async def get_account(
 async def update_account(
     account_id: int,
     body: AccountUpdate,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """更新账户信息"""
     account = await asset_service.update_account(
-        db, account_id, user_id, body.model_dump(exclude_none=True)
+        db, account_id, current_user.id, body.model_dump(exclude_none=True)
     )
     if not account:
         raise HTTPException(status_code=404, detail="账户不存在")
@@ -180,11 +180,11 @@ async def update_account(
 @router.delete("/accounts/{account_id}", summary="删除账户")
 async def delete_account(
     account_id: int,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """删除账户（同时删除关联交易）"""
-    success = await asset_service.delete_account(db, account_id, user_id)
+    success = await asset_service.delete_account(db, account_id, current_user.id)
     if not success:
         raise HTTPException(status_code=404, detail="账户不存在")
     return {
@@ -199,7 +199,7 @@ async def delete_account(
 
 @router.get("/transactions", summary="获取交易列表")
 async def get_transactions(
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     page: int = Query(default=1, ge=1, description="页码"),
     size: int = Query(default=20, ge=1, le=100, description="每页条数"),
     account_id: Optional[int] = Query(default=None, description="筛选账户ID"),
@@ -212,7 +212,7 @@ async def get_transactions(
     """分页查询交易记录，支持多条件筛选"""
     result = await asset_service.list_transactions(
         db,
-        user_id=user_id,
+        user_id=current_user.id,
         page=page,
         size=size,
         account_id=account_id,
@@ -236,13 +236,13 @@ async def get_transactions(
 @router.post("/transactions", summary="创建交易")
 async def create_transaction(
     body: TransactionCreate,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """创建交易记录并自动更新账户余额"""
     try:
         txn = await asset_service.create_transaction(
-            db, user_id, body.model_dump(exclude_none=True)
+            db, current_user.id, body.model_dump(exclude_none=True)
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -259,11 +259,11 @@ async def create_transaction(
 
 @router.get("/dashboard", summary="仪表盘")
 async def dashboard(
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取资产仪表盘聚合数据"""
-    data = await asset_service.get_dashboard(db, user_id)
+    data = await asset_service.get_dashboard(db, current_user.id)
     # 替换 recent_transactions 为可序列化格式
     data["recent_transactions"] = _dashboard_txns(data["recent_transactions"])
     return {
@@ -275,13 +275,13 @@ async def dashboard(
 
 @router.get("/stats", summary="月度统计")
 async def stats(
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     year: int = Query(..., description="年份"),
     month: int = Query(..., ge=1, le=12, description="月份"),
     db: AsyncSession = Depends(get_db),
 ):
     """获取指定月份的收支分类统计"""
-    data = await asset_service.get_stats(db, user_id, year, month)
+    data = await asset_service.get_stats(db, current_user.id, year, month)
     return {
         "code": 0,
         "message": "查询成功",

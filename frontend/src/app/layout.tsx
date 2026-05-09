@@ -9,7 +9,20 @@ export const metadata: Metadata = { title: 'XOne', description: '生活与工作
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN" data-mode="personal" className={`${inter.variable} ${notoSansSC.variable} font-sans`}>
+    <html lang="zh-CN" data-mode="personal" data-theme="light" className={`${inter.variable} ${notoSansSC.variable} font-sans`}>
+      <head>
+        {/* 立即应用保存的主题，防止页面闪烁 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){try{
+                var t=localStorage.getItem('xone-theme');
+                if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);
+              }catch(e){}})()
+            `,
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

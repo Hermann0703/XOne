@@ -2,6 +2,7 @@
 
 from datetime import date, datetime
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import select, func, or_, case
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +16,7 @@ from app.models.archive import Archive, BorrowRecord, AppraisalRecord, ArchiveFi
 
 async def list_archives(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     page: int = 1,
     size: int = 20,
     search: Optional[str] = None,
@@ -64,7 +65,7 @@ async def list_archives(
     return {"items": items, "total": total}
 
 
-async def create_archive(db: AsyncSession, user_id: int, data: dict) -> Archive:
+async def create_archive(db: AsyncSession, user_id: UUID, data: dict) -> Archive:
     """创建新档案。"""
     archive = Archive(user_id=user_id, **data)
     db.add(archive)
@@ -73,7 +74,7 @@ async def create_archive(db: AsyncSession, user_id: int, data: dict) -> Archive:
     return archive
 
 
-async def get_archive(db: AsyncSession, archive_id: int, user_id: int) -> Optional[Archive]:
+async def get_archive(db: AsyncSession, archive_id: int, user_id: UUID) -> Optional[Archive]:
     """获取单个档案详情。"""
     result = await db.execute(
         select(Archive).where(Archive.id == archive_id, Archive.user_id == user_id)
@@ -82,7 +83,7 @@ async def get_archive(db: AsyncSession, archive_id: int, user_id: int) -> Option
 
 
 async def update_archive(
-    db: AsyncSession, archive_id: int, user_id: int, data: dict
+    db: AsyncSession, archive_id: int, user_id: UUID, data: dict
 ) -> Optional[Archive]:
     """更新档案信息。"""
     result = await db.execute(
@@ -101,7 +102,7 @@ async def update_archive(
     return archive
 
 
-async def delete_archive(db: AsyncSession, archive_id: int, user_id: int) -> bool:
+async def delete_archive(db: AsyncSession, archive_id: int, user_id: UUID) -> bool:
     """删除档案（级联删除借阅记录、鉴定记录、档案文件）。"""
     result = await db.execute(
         select(Archive).where(Archive.id == archive_id, Archive.user_id == user_id)
@@ -121,7 +122,7 @@ async def delete_archive(db: AsyncSession, archive_id: int, user_id: int) -> boo
 
 async def list_borrows(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     page: int = 1,
     size: int = 20,
     archive_id: Optional[int] = None,
@@ -158,7 +159,7 @@ async def list_borrows(
     return {"items": items, "total": total}
 
 
-async def create_borrow(db: AsyncSession, user_id: int, data: dict) -> Optional[BorrowRecord]:
+async def create_borrow(db: AsyncSession, user_id: UUID, data: dict) -> Optional[BorrowRecord]:
     """创建借阅记录，并将对应档案状态改为已借出(2)。"""
     # 先验证档案属于该用户
     archive_result = await db.execute(
@@ -184,7 +185,7 @@ async def create_borrow(db: AsyncSession, user_id: int, data: dict) -> Optional[
 
 
 async def update_borrow(
-    db: AsyncSession, borrow_id: int, user_id: int, data: dict
+    db: AsyncSession, borrow_id: int, user_id: UUID, data: dict
 ) -> Optional[BorrowRecord]:
     """更新借阅记录。"""
     result = await db.execute(
@@ -205,7 +206,7 @@ async def update_borrow(
     return borrow
 
 
-async def return_borrow(db: AsyncSession, borrow_id: int, user_id: int) -> Optional[dict]:
+async def return_borrow(db: AsyncSession, borrow_id: int, user_id: UUID) -> Optional[dict]:
     """归还档案：更新借阅记录状态为 returned，设置实际归还日期，恢复档案状态为已归档(1)。"""
     result = await db.execute(
         select(BorrowRecord)
@@ -240,7 +241,7 @@ async def return_borrow(db: AsyncSession, borrow_id: int, user_id: int) -> Optio
 
 async def list_appraisals(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     page: int = 1,
     size: int = 20,
     archive_id: Optional[int] = None,
@@ -272,7 +273,7 @@ async def list_appraisals(
     return {"items": items, "total": total}
 
 
-async def create_appraisal(db: AsyncSession, user_id: int, data: dict) -> Optional[AppraisalRecord]:
+async def create_appraisal(db: AsyncSession, user_id: UUID, data: dict) -> Optional[AppraisalRecord]:
     """创建鉴定记录。"""
     archive_result = await db.execute(
         select(Archive).where(Archive.id == data["archive_id"], Archive.user_id == user_id)
@@ -289,7 +290,7 @@ async def create_appraisal(db: AsyncSession, user_id: int, data: dict) -> Option
 
 
 async def update_appraisal(
-    db: AsyncSession, appraisal_id: int, user_id: int, data: dict
+    db: AsyncSession, appraisal_id: int, user_id: UUID, data: dict
 ) -> Optional[AppraisalRecord]:
     """更新鉴定记录。"""
     result = await db.execute(
@@ -310,7 +311,7 @@ async def update_appraisal(
     return appraisal
 
 
-async def delete_appraisal(db: AsyncSession, appraisal_id: int, user_id: int) -> bool:
+async def delete_appraisal(db: AsyncSession, appraisal_id: int, user_id: UUID) -> bool:
     """删除鉴定记录。"""
     result = await db.execute(
         select(AppraisalRecord)
@@ -332,7 +333,7 @@ async def delete_appraisal(db: AsyncSession, appraisal_id: int, user_id: int) ->
 
 async def list_archive_files(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     archive_id: int,
 ) -> list:
     """获取某个档案的所有文件。"""
@@ -352,7 +353,7 @@ async def list_archive_files(
 
 
 async def create_archive_file(
-    db: AsyncSession, user_id: int, data: dict
+    db: AsyncSession, user_id: UUID, data: dict
 ) -> Optional[ArchiveFile]:
     """为档案添加文件。"""
     archive_result = await db.execute(
@@ -368,7 +369,7 @@ async def create_archive_file(
     return archive_file
 
 
-async def delete_archive_file(db: AsyncSession, file_id: int, user_id: int) -> bool:
+async def delete_archive_file(db: AsyncSession, file_id: int, user_id: UUID) -> bool:
     """删除档案文件。"""
     result = await db.execute(
         select(ArchiveFile)
@@ -388,7 +389,7 @@ async def delete_archive_file(db: AsyncSession, file_id: int, user_id: int) -> b
 # 仪表盘
 # ═══════════════════════════════════════════════════════════════════
 
-async def get_dashboard(db: AsyncSession, user_id: int) -> dict:
+async def get_dashboard(db: AsyncSession, user_id: UUID) -> dict:
     """档案仪表盘：总数、按状态/密级分布、本月借阅数、逾期未还数、最近操作。"""
     # 档案总数
     total_result = await db.execute(

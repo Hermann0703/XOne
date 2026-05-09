@@ -2,6 +2,7 @@
 
 from datetime import date, datetime, timedelta
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +16,7 @@ from app.models.health import FoodRecord, ExerciseRecord, BodyMetrics
 
 async def list_foods(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     page: int = 1,
     size: int = 20,
     meal_type: Optional[str] = None,
@@ -53,7 +54,7 @@ async def list_foods(
     }
 
 
-async def create_food(db: AsyncSession, user_id: int, data: dict) -> FoodRecord:
+async def create_food(db: AsyncSession, user_id: UUID, data: dict) -> FoodRecord:
     """创建一条饮食记录"""
     record = FoodRecord(
         user_id=user_id,
@@ -73,13 +74,44 @@ async def create_food(db: AsyncSession, user_id: int, data: dict) -> FoodRecord:
     return record
 
 
+async def update_food(db: AsyncSession, food_id: int, user_id: UUID, data: dict) -> FoodRecord:
+    """更新一条饮食记录 — 仅允许记录所有者操作"""
+    result = await db.execute(
+        select(FoodRecord).where(FoodRecord.id == food_id, FoodRecord.user_id == user_id)
+    )
+    record = result.scalar_one_or_none()
+    if record is None:
+        return None
+
+    for key, value in data.items():
+        if hasattr(record, key) and key not in ("id", "user_id", "created_at"):
+            setattr(record, key, value)
+
+    await db.flush()
+    await db.refresh(record)
+    return record
+
+
+async def delete_food(db: AsyncSession, food_id: int, user_id: UUID) -> bool:
+    """删除一条饮食记录 — 仅允许记录所有者操作"""
+    result = await db.execute(
+        select(FoodRecord).where(FoodRecord.id == food_id, FoodRecord.user_id == user_id)
+    )
+    record = result.scalar_one_or_none()
+    if record is None:
+        return False
+    await db.delete(record)
+    await db.flush()
+    return True
+
+
 # ──────────────────────────────────────────────
 #  运动记录 (ExerciseRecord)
 # ──────────────────────────────────────────────
 
 async def list_exercises(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     page: int = 1,
     size: int = 20,
     exercise_type: Optional[str] = None,
@@ -115,7 +147,7 @@ async def list_exercises(
     }
 
 
-async def create_exercise(db: AsyncSession, user_id: int, data: dict) -> ExerciseRecord:
+async def create_exercise(db: AsyncSession, user_id: UUID, data: dict) -> ExerciseRecord:
     """创建一条运动记录"""
     record = ExerciseRecord(
         user_id=user_id,
@@ -133,13 +165,44 @@ async def create_exercise(db: AsyncSession, user_id: int, data: dict) -> Exercis
     return record
 
 
+async def update_exercise(db: AsyncSession, exercise_id: int, user_id: UUID, data: dict) -> ExerciseRecord:
+    """更新一条运动记录 — 仅允许记录所有者操作"""
+    result = await db.execute(
+        select(ExerciseRecord).where(ExerciseRecord.id == exercise_id, ExerciseRecord.user_id == user_id)
+    )
+    record = result.scalar_one_or_none()
+    if record is None:
+        return None
+
+    for key, value in data.items():
+        if hasattr(record, key) and key not in ("id", "user_id", "created_at"):
+            setattr(record, key, value)
+
+    await db.flush()
+    await db.refresh(record)
+    return record
+
+
+async def delete_exercise(db: AsyncSession, exercise_id: int, user_id: UUID) -> bool:
+    """删除一条运动记录 — 仅允许记录所有者操作"""
+    result = await db.execute(
+        select(ExerciseRecord).where(ExerciseRecord.id == exercise_id, ExerciseRecord.user_id == user_id)
+    )
+    record = result.scalar_one_or_none()
+    if record is None:
+        return False
+    await db.delete(record)
+    await db.flush()
+    return True
+
+
 # ──────────────────────────────────────────────
 #  身体指标 (BodyMetrics)
 # ──────────────────────────────────────────────
 
 async def list_metrics(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     page: int = 1,
     size: int = 20,
     date_from: Optional[date] = None,
@@ -172,7 +235,7 @@ async def list_metrics(
     }
 
 
-async def create_metric(db: AsyncSession, user_id: int, data: dict) -> BodyMetrics:
+async def create_metric(db: AsyncSession, user_id: UUID, data: dict) -> BodyMetrics:
     """创建一条身体指标记录"""
     record = BodyMetrics(
         user_id=user_id,
@@ -190,11 +253,42 @@ async def create_metric(db: AsyncSession, user_id: int, data: dict) -> BodyMetri
     return record
 
 
+async def update_metric(db: AsyncSession, metric_id: int, user_id: UUID, data: dict) -> BodyMetrics:
+    """更新一条身体指标记录 — 仅允许记录所有者操作"""
+    result = await db.execute(
+        select(BodyMetrics).where(BodyMetrics.id == metric_id, BodyMetrics.user_id == user_id)
+    )
+    record = result.scalar_one_or_none()
+    if record is None:
+        return None
+
+    for key, value in data.items():
+        if hasattr(record, key) and key not in ("id", "user_id", "created_at"):
+            setattr(record, key, value)
+
+    await db.flush()
+    await db.refresh(record)
+    return record
+
+
+async def delete_metric(db: AsyncSession, metric_id: int, user_id: UUID) -> bool:
+    """删除一条身体指标记录 — 仅允许记录所有者操作"""
+    result = await db.execute(
+        select(BodyMetrics).where(BodyMetrics.id == metric_id, BodyMetrics.user_id == user_id)
+    )
+    record = result.scalar_one_or_none()
+    if record is None:
+        return False
+    await db.delete(record)
+    await db.flush()
+    return True
+
+
 # ──────────────────────────────────────────────
 #  仪表盘聚合
 # ──────────────────────────────────────────────
 
-async def get_dashboard(db: AsyncSession, user_id: int) -> dict:
+async def get_dashboard(db: AsyncSession, user_id: UUID) -> dict:
     """健康仪表盘聚合数据"""
     today = date.today()
     week_ago = today - timedelta(days=6)

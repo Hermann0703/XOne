@@ -441,14 +441,8 @@ export default function DocumentList() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* 页面标题 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">知识库</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            管理知识文档与 RAG 智能问答
-          </p>
-        </div>
+      {/* 操作区 */}
+      <div className="flex items-center justify-end">
         <Button onClick={() => setUploadOpen(true)}>
           <Upload className="size-4 mr-2" />
           上传文档

@@ -1,6 +1,9 @@
 """认证服务 — 密码哈希、JWT 令牌、注册/登录"""
 
+from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
+from typing import Union
 from uuid import UUID
 
 from jose import JWTError, jwt
@@ -34,7 +37,7 @@ class AuthService:
     # ── JWT ──────────────────────────────────────────
 
     @staticmethod
-    def create_access_token(user_id: str | UUID, username: str) -> str:
+    def create_access_token(user_id: Union[str, UUID], username: str) -> str:
         """创建 JWT access token（HS256，24小时过期）"""
         expire = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
         payload = {

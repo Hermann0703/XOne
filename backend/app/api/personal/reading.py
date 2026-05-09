@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
 
 from app.core.database import get_db
+from app.core.security import get_current_user
+from app.models.user import User
 from app.services import reading_service
 
 router = APIRouter(prefix="/reading", tags=["个人-阅读"])
@@ -56,7 +58,7 @@ class BookUpdate(BaseModel):
 
 @router.get("/books", summary="获取书籍列表")
 async def list_books(
-    user_id: int = Query(..., description="用户ID"),
+    current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1, description="页码"),
     size: int = Query(20, ge=1, le=100, description="每页数量"),
     status: Optional[str] = Query(None, description="按状态筛选"),
@@ -66,7 +68,7 @@ async def list_books(
 ):
     """分页查询用户的书籍列表"""
     result = await reading_service.list_books(
-        db=db, user_id=user_id, page=page, size=size,
+        db=db, user_id=current_user.id, page=page, size=size,
         status=status, tag=tag, search=search,
     )
     return {"message": "查询成功", "data": result}
@@ -74,13 +76,13 @@ async def list_books(
 
 @router.post("/books", summary="添加书籍", status_code=201)
 async def create_book(
-    user_id: int = Query(..., description="用户ID"),
+    current_user: User = Depends(get_current_user),
     data: BookCreate = ...,
     db: AsyncSession = Depends(get_db),
 ):
     """创建新的书籍记录"""
     book = await reading_service.create_book(
-        db=db, user_id=user_id, data=data.model_dump(exclude_none=True),
+        db=db, user_id=current_user.id, data=data.model_dump(exclude_none=True),
     )
     return {"message": "添加成功", "data": book}
 
@@ -88,7 +90,7 @@ async def create_book(
 @router.get("/books/{book_id}", summary="获取书籍详情")
 async def get_book(
     book_id: int,
-    user_id: int = Query(..., description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取单本书籍的详细信息"""
@@ -96,7 +98,7 @@ async def get_book(
     result = await db.execute(
         select(reading_service.Book).where(
             reading_service.Book.id == book_id,
-            reading_service.Book.user_id == user_id,
+            reading_service.Book.user_id == current_user.id,
         )
     )
     book = result.scalar_one_or_none()
@@ -108,13 +110,13 @@ async def get_book(
 @router.patch("/books/{book_id}", summary="更新书籍")
 async def update_book(
     book_id: int,
-    user_id: int = Query(..., description="用户ID"),
+    current_user: User = Depends(get_current_user),
     data: BookUpdate = ...,
     db: AsyncSession = Depends(get_db),
 ):
     """更新书籍信息，仅允许更新自己的书籍"""
     book = await reading_service.update_book(
-        db=db, book_id=book_id, user_id=user_id,
+        db=db, book_id=book_id, user_id=current_user.id,
         data=data.model_dump(exclude_none=True),
     )
     if not book:
@@ -125,12 +127,12 @@ async def update_book(
 @router.delete("/books/{book_id}", summary="删除书籍")
 async def delete_book(
     book_id: int,
-    user_id: int = Query(..., description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """删除书籍记录，仅允许删除自己的书籍"""
     deleted = await reading_service.delete_book(
-        db=db, book_id=book_id, user_id=user_id,
+        db=db, book_id=book_id, user_id=current_user.id,
     )
     if not deleted:
         raise HTTPException(status_code=404, detail="书籍不存在或无权操作")

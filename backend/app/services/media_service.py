@@ -1,6 +1,7 @@
 """观影模块服务层 — 影视CRUD业务逻辑"""
 
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +11,7 @@ from app.models.media import Movie
 
 async def list_movies(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     page: int = 1,
     size: int = 20,
     status: Optional[str] = None,
@@ -56,7 +57,7 @@ async def list_movies(
 
 async def create_movie(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     data: dict,
 ) -> Movie:
     """创建新影视记录"""
@@ -70,7 +71,7 @@ async def create_movie(
 async def update_movie(
     db: AsyncSession,
     movie_id: int,
-    user_id: int,
+    user_id: UUID,
     data: dict,
 ) -> Optional[Movie]:
     """更新影视记录，仅允许更新自己的影视"""
@@ -93,7 +94,7 @@ async def update_movie(
 async def delete_movie(
     db: AsyncSession,
     movie_id: int,
-    user_id: int,
+    user_id: UUID,
 ) -> bool:
     """删除影视记录，仅允许删除自己的影视"""
     result = await db.execute(

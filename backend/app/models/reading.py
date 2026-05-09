@@ -2,8 +2,9 @@
 
 from datetime import date, datetime
 from typing import Optional
+from uuid import UUID
 
-from sqlalchemy import String, Integer, Date, Text
+from sqlalchemy import String, Integer, Date, Text, ForeignKey, UUID as SAUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -16,7 +17,7 @@ class Book(Base, TimestampMixin):
     __tablename__ = "books"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     isbn: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)

@@ -44,7 +44,7 @@ function TabsTrigger({ className, value, ...props }: React.ButtonHTMLAttributes<
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         isActive ? "bg-bg-card text-text-primary shadow-sm" : "hover:text-text-primary",
         className

@@ -153,9 +153,8 @@ export default function ContractList() {
 
   return (
     <div className="space-y-6 p-6">
-      {/* 页面标题 */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">合同管理</h1>
+      {/* 操作区 */}
+      <div className="flex items-center justify-end">
         <Button onClick={() => router.push("/work/contracts/new")}>
           <Plus className="size-4 mr-1" />
           新建合同

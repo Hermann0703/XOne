@@ -5,8 +5,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
-
 from app.core.database import get_db
+from app.core.security import get_current_user
+from app.models.user import User
 from app.services import storage_service
 
 router = APIRouter(prefix="/storage", tags=["工作-存储"])
@@ -62,6 +63,7 @@ class BoxUpdate(BaseModel):
 
 @router.get("/cabinets", summary="获取档案柜列表")
 async def list_cabinets(
+    current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1, description="页码"),
     size: int = Query(20, ge=1, le=100, description="每页数量"),
     search: Optional[str] = Query(None, description="按名称搜索"),
@@ -77,6 +79,7 @@ async def list_cabinets(
 
 @router.post("/cabinets", summary="创建档案柜", status_code=201)
 async def create_cabinet(
+    current_user: User = Depends(get_current_user),
     data: CabinetCreate = ...,
     db: AsyncSession = Depends(get_db),
 ):
@@ -90,6 +93,7 @@ async def create_cabinet(
 @router.get("/cabinets/{cabinet_id}", summary="获取档案柜详情")
 async def get_cabinet(
     cabinet_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取单个档案柜的详细信息"""
@@ -102,6 +106,7 @@ async def get_cabinet(
 @router.patch("/cabinets/{cabinet_id}", summary="更新档案柜")
 async def update_cabinet(
     cabinet_id: int,
+    current_user: User = Depends(get_current_user),
     data: CabinetUpdate = ...,
     db: AsyncSession = Depends(get_db),
 ):
@@ -117,6 +122,7 @@ async def update_cabinet(
 @router.delete("/cabinets/{cabinet_id}", summary="删除档案柜")
 async def delete_cabinet(
     cabinet_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """删除档案柜（级联删除所有档案盒）"""
@@ -129,6 +135,7 @@ async def delete_cabinet(
 @router.get("/cabinets/{cabinet_id}/boxes", summary="获取档案柜内所有档案盒")
 async def get_cabinet_boxes(
     cabinet_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取某个档案柜内的所有档案盒"""
@@ -143,6 +150,7 @@ async def get_cabinet_boxes(
 
 @router.get("/boxes", summary="获取档案盒列表")
 async def list_boxes(
+    current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1, description="页码"),
     size: int = Query(20, ge=1, le=100, description="每页数量"),
     cabinet_id: Optional[int] = Query(None, description="按档案柜ID筛选"),
@@ -160,6 +168,7 @@ async def list_boxes(
 
 @router.post("/boxes", summary="创建档案盒", status_code=201)
 async def create_box(
+    current_user: User = Depends(get_current_user),
     data: BoxCreate = ...,
     db: AsyncSession = Depends(get_db),
 ):
@@ -175,6 +184,7 @@ async def create_box(
 @router.get("/boxes/{box_id}", summary="获取档案盒详情")
 async def get_box(
     box_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取单个档案盒的详细信息"""
@@ -187,6 +197,7 @@ async def get_box(
 @router.patch("/boxes/{box_id}", summary="更新档案盒")
 async def update_box(
     box_id: int,
+    current_user: User = Depends(get_current_user),
     data: BoxUpdate = ...,
     db: AsyncSession = Depends(get_db),
 ):
@@ -202,6 +213,7 @@ async def update_box(
 @router.delete("/boxes/{box_id}", summary="删除档案盒")
 async def delete_box(
     box_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """删除档案盒"""
@@ -214,6 +226,7 @@ async def delete_box(
 @router.get("/boxes/{box_id}/archives", summary="获取档案盒内所有档案")
 async def get_box_archives(
     box_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取某个档案盒内的所有档案"""

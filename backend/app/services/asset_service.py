@@ -2,6 +2,7 @@
 
 from datetime import date, datetime
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import select, func, and_, case, extract
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +13,7 @@ from app.models.assets import Account, Transaction
 
 # ── 账户 ──────────────────────────────────────────────────────────────
 
-async def list_accounts(db: AsyncSession, user_id: int) -> list[Account]:
+async def list_accounts(db: AsyncSession, user_id: UUID) -> list[Account]:
     """获取用户所有账户"""
     stmt = (
         select(Account)
@@ -23,7 +24,7 @@ async def list_accounts(db: AsyncSession, user_id: int) -> list[Account]:
     return list(result.scalars().all())
 
 
-async def create_account(db: AsyncSession, user_id: int, data: dict) -> Account:
+async def create_account(db: AsyncSession, user_id: UUID, data: dict) -> Account:
     """创建账户"""
     account = Account(
         user_id=user_id,
@@ -43,7 +44,7 @@ async def create_account(db: AsyncSession, user_id: int, data: dict) -> Account:
 
 
 async def update_account(
-    db: AsyncSession, account_id: int, user_id: int, data: dict
+    db: AsyncSession, account_id: int, user_id: UUID, data: dict
 ) -> Optional[Account]:
     """更新账户（仅允许修改 name/type/institution/icon/color/is_active/balance）"""
     stmt = select(Account).where(
@@ -64,7 +65,7 @@ async def update_account(
 
 
 async def delete_account(
-    db: AsyncSession, account_id: int, user_id: int
+    db: AsyncSession, account_id: int, user_id: UUID
 ) -> bool:
     """删除账户（同时级联删除关联交易）"""
     stmt = select(Account).where(
@@ -84,7 +85,7 @@ async def delete_account(
 
 async def list_transactions(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     page: int = 1,
     size: int = 20,
     account_id: Optional[int] = None,
@@ -129,7 +130,7 @@ async def list_transactions(
 
 
 async def create_transaction(
-    db: AsyncSession, user_id: int, data: dict
+    db: AsyncSession, user_id: UUID, data: dict
 ) -> Transaction:
     """创建交易，并自动更新账户余额"""
     txn = Transaction(
@@ -177,7 +178,7 @@ async def create_transaction(
 
 # ── 仪表盘 ────────────────────────────────────────────────────────────
 
-async def get_dashboard(db: AsyncSession, user_id: int) -> dict:
+async def get_dashboard(db: AsyncSession, user_id: UUID) -> dict:
     """聚合仪表盘数据"""
     today = date.today()
     current_month = today.month
@@ -263,7 +264,7 @@ async def get_dashboard(db: AsyncSession, user_id: int) -> dict:
     }
 
 
-async def _monthly_trend(db: AsyncSession, user_id: int) -> list[dict]:
+async def _monthly_trend(db: AsyncSession, user_id: UUID) -> list[dict]:
     """计算最近 6 个月的收入/支出/结余趋势"""
     today = date.today()
     months = []
@@ -290,7 +291,7 @@ async def _monthly_trend(db: AsyncSession, user_id: int) -> list[dict]:
 
 
 async def _month_sum(
-    db: AsyncSession, user_id: int, year: int, month: int, txn_type: str
+    db: AsyncSession, user_id: UUID, year: int, month: int, txn_type: str
 ) -> float:
     stmt = select(func.coalesce(func.sum(Transaction.amount), 0.0)).where(
         Transaction.user_id == user_id,
@@ -304,7 +305,7 @@ async def _month_sum(
 # ── 统计 ──────────────────────────────────────────────────────────────
 
 async def get_stats(
-    db: AsyncSession, user_id: int, year: int, month: int
+    db: AsyncSession, user_id: UUID, year: int, month: int
 ) -> dict:
     """月度分类统计"""
     # 收入分类
@@ -364,7 +365,7 @@ async def get_stats(
 
 
 async def _count_transactions(
-    db: AsyncSession, user_id: int, year: int, month: int
+    db: AsyncSession, user_id: UUID, year: int, month: int
 ) -> int:
     stmt = select(func.count()).select_from(Transaction).where(
         Transaction.user_id == user_id,

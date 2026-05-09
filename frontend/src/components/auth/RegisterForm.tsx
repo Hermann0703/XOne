@@ -4,6 +4,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { useAuthStore } from '@/stores/authStore';
 
 export default function RegisterForm() {
   const router = useRouter();
+  const t = useTranslations();
   const register = useAuthStore((s) => s.register);
 
   const [username, setUsername] = useState('');
@@ -30,7 +32,7 @@ export default function RegisterForm() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        '注册失败，请稍后重试';
+        t('auth.registerFailed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -40,19 +42,19 @@ export default function RegisterForm() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>注册</CardTitle>
-        <CardDescription>创建一个 XOne 账号开始使用</CardDescription>
+        <CardTitle>{t('auth.register')}</CardTitle>
+        <CardDescription>{t('auth.registerDescription')}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="username" className="text-sm font-medium">
-              用户名
+              {t('auth.username')}
             </label>
             <Input
               id="username"
               type="text"
-              placeholder="至少 3 个字符"
+              placeholder={t('auth.minChars3')}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -62,7 +64,7 @@ export default function RegisterForm() {
           </div>
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
-              邮箱
+              {t('auth.email')}
             </label>
             <Input
               id="email"
@@ -75,12 +77,12 @@ export default function RegisterForm() {
           </div>
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
-              密码
+              {t('auth.password')}
             </label>
             <Input
               id="password"
               type="password"
-              placeholder="至少 6 个字符"
+              placeholder={t('auth.minChars6')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -89,12 +91,12 @@ export default function RegisterForm() {
           </div>
           <div className="space-y-2">
             <label htmlFor="displayName" className="text-sm font-medium">
-              显示名称 <span className="text-text-secondary">(可选)</span>
+              {t('auth.displayName')} <span className="text-text-secondary">{t('auth.optional')}</span>
             </label>
             <Input
               id="displayName"
               type="text"
-              placeholder="您的显示名称"
+              placeholder={t('auth.displayNamePlaceholder')}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
@@ -105,12 +107,12 @@ export default function RegisterForm() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? '注册中...' : '注册'}
+            {loading ? t('auth.registering') : t('auth.register')}
           </Button>
           <p className="text-sm text-text-secondary">
-            已有账号？{' '}
+            {t('auth.hasAccount')}{' '}
             <a href="/login" className="text-primary hover:underline">
-              立即登录
+              {t('auth.goLogin')}
             </a>
           </p>
         </CardFooter>

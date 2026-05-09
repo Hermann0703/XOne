@@ -1,5 +1,7 @@
 """安全依赖 — JWT 认证、当前用户提取"""
 
+from __future__ import annotations
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession

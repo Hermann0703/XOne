@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "XOne",
-    "tagline": "Your Digital Hub for Life & Work"
+    "tagline": "Your Digital Hub for Life & Work",
+    "settings": "Settings"
   },
   "nav": {
     "personal": "Personal",
@@ -30,11 +31,393 @@
     "loading": "Loading...",
     "empty": "No data",
     "error": "Something went wrong",
-    "retry": "Retry"
+    "retry": "Retry",
+    "back": "Back",
+    "close": "Close",
+    "today": "Today",
+    "total": "{total} total",
+    "days": "{days} days",
+    "overview": "Overview",
+    "viewAll": "View All"
   },
   "mode": {
     "switchToWork": "Switch to Work Mode",
     "switchToPersonal": "Switch to Personal Mode"
+  },
+  "dashboard": {
+    "personal": {
+      "greeting": "Good Evening, Friend",
+      "subtitle": "Welcome back, what would you like to do today?",
+      "quickActions": "Quick Actions",
+      "recentActivity": "Recent Activity",
+      "actionLabels": {
+        "health": "Health Log",
+        "reading": "Reading Notes",
+        "media": "Watch History",
+        "shopping": "Shopping List",
+        "assets": "Asset Mgmt"
+      }
+    },
+    "work": {
+      "greeting": "Workspace",
+      "subtitle": "Project Management & Team Collaboration Overview",
+      "projectProgress": "Project Progress",
+      "quickActions": "Quick Access",
+      "actionLabels": {
+        "project": "New Project",
+        "archives": "Archives",
+        "contracts": "Contracts",
+        "dispatch": "Reports"
+      }
+    },
+    "statCards": {
+      "activeProjects": "Active Projects",
+      "activeProjectsDesc": "Projects in progress",
+      "completedTasks": "Completion Rate",
+      "completedTasksDesc": "Monthly task completion",
+      "teamMembers": "Team Members",
+      "teamMembersDesc": "Department members",
+      "documents": "Documents",
+      "documentsDesc": "Knowledge base docs",
+      "thisMonth": "New this month",
+      "income": "Monthly Income",
+      "incomeDesc": "Total monthly income",
+      "expense": "Monthly Expense",
+      "expenseDesc": "Total monthly expense",
+      "balance": "Monthly Balance",
+      "balanceDesc": "Income minus expense",
+      "investments": "Investment Return",
+      "investmentsDesc": "Monthly return",
+      "accounts": "Accounts",
+      "accountsDesc": "Active accounts"
+    },
+    "rightPanel": {
+      "title": "Today's Overview",
+      "chartTitle": "Task Distribution",
+      "completed": "Completed",
+      "inProgress": "In Progress",
+      "pending": "Pending",
+      "todayActivity": "Today's Activity"
+    }
+  },
+  "shopping": {
+    "title": "Shopping List",
+    "addItem": "Add Item",
+    "editItem": "Edit Item",
+    "stats": {
+      "total": "Total Items",
+      "purchased": "Purchased",
+      "pending": "Pending",
+      "budget": "Monthly Budget"
+    },
+    "item": {
+      "name": "Item Name",
+      "namePlaceholder": "Enter item name",
+      "category": "Category",
+      "price": "Price",
+      "quantity": "Quantity",
+      "note": "Note",
+      "notePlaceholder": "Add a note...",
+      "purchased": "Purchased"
+    },
+    "category": {
+      "food": "Food",
+      "daily": "Daily Goods",
+      "electronics": "Electronics",
+      "clothing": "Clothing",
+      "books": "Books",
+      "other": "Other"
+    },
+    "budget": {
+      "title": "Budget",
+      "setBudget": "Set Budget",
+      "remaining": "Remaining",
+      "spent": "Spent",
+      "overBudget": "Over Budget"
+    }
+  },
+  "health": {
+    "title": "Health",
+    "tabs": {
+      "overview": "Overview",
+      "food": "Diet Log",
+      "exercise": "Exercise Log",
+      "sleep": "Sleep Log",
+      "bodyMetrics": "Body Metrics"
+    },
+    "metrics": {
+      "weight": "Weight",
+      "weightDesc": "Latest record",
+      "bodyFat": "Body Fat",
+      "bodyFatDesc": "Latest record",
+      "calories": "Today's Intake",
+      "caloriesDesc": "Calories",
+      "exercise": "Exercise",
+      "exerciseDesc": "Today's exercise"
+    },
+    "food": {
+      "addMeal": "Add Meal",
+      "editMeal": "Edit Meal",
+      "mealType": "Meal Type",
+      "mealName": "Food Name",
+      "mealNamePlaceholder": "e.g. Chicken Salad",
+      "calories": "Calories",
+      "protein": "Protein (g)",
+      "carbs": "Carbs (g)",
+      "fat": "Fat (g)",
+      "mealTypes": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snack": "Snack"
+      }
+    },
+    "exercise": {
+      "addExercise": "Add Exercise",
+      "editExercise": "Edit Exercise",
+      "type": "Exercise Type",
+      "typePlaceholder": "e.g. Running",
+      "duration": "Duration (min)",
+      "calories": "Calories Burned",
+      "intensity": "Intensity",
+      "intensities": {
+        "light": "Light",
+        "moderate": "Moderate",
+        "intense": "Intense"
+      }
+    }
+  },
+  "reading": {
+    "title": "Reading",
+    "addBook": "Add Book",
+    "editBook": "Edit Book",
+    "stats": {
+      "total": "Total Books",
+      "reading": "Reading",
+      "completed": "Completed",
+      "wantToRead": "Want to Read"
+    },
+    "book": {
+      "title": "Title",
+      "titlePlaceholder": "Enter book title",
+      "author": "Author",
+      "authorPlaceholder": "Enter author name",
+      "isbn": "ISBN",
+      "status": "Status",
+      "rating": "Rating",
+      "notes": "Notes",
+      "notesPlaceholder": "Reading notes...",
+      "pages": "Pages",
+      "currentPage": "Current Page",
+      "startDate": "Start Date",
+      "endDate": "End Date"
+    },
+    "status": {
+      "want_to_read": "Want to Read",
+      "reading": "Reading",
+      "completed": "Completed",
+      "abandoned": "Abandoned"
+    }
+  },
+  "media": {
+    "title": "Media",
+    "addMedia": "Add Media",
+    "editMedia": "Edit Media",
+    "stats": {
+      "total": "Total Media",
+      "watched": "Watched",
+      "watching": "Watching",
+      "wantToWatch": "Want to Watch"
+    },
+    "item": {
+      "title": "Title",
+      "titlePlaceholder": "Media title",
+      "type": "Type",
+      "year": "Year",
+      "rating": "Rating",
+      "status": "Status",
+      "notes": "Notes",
+      "notesPlaceholder": "Review notes...",
+      "director": "Director",
+      "genre": "Genre"
+    },
+    "type": {
+      "movie": "Movie",
+      "tv": "TV Series",
+      "anime": "Anime",
+      "documentary": "Documentary"
+    },
+    "status": {
+      "want_to_watch": "Want to Watch",
+      "watching": "Watching",
+      "watched": "Watched"
+    }
+  },
+  "project": {
+    "title": "Projects",
+    "addProject": "New Project",
+    "editProject": "Edit Project",
+    "stats": {
+      "total": "Total Projects",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "overdue": "Overdue"
+    },
+    "detail": {
+      "name": "Project Name",
+      "namePlaceholder": "Enter project name",
+      "description": "Description",
+      "descriptionPlaceholder": "Project description...",
+      "status": "Status",
+      "startDate": "Start Date",
+      "endDate": "Deadline",
+      "members": "Members",
+      "progress": "Progress"
+    },
+    "status": {
+      "planning": "Planning",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "on_hold": "On Hold",
+      "cancelled": "Cancelled"
+    },
+    "board": {
+      "todo": "To Do",
+      "inProgress": "In Progress",
+      "done": "Done"
+    },
+    "milestone": {
+      "add": "Add Milestone",
+      "title": "Milestones",
+      "dueDate": "Due Date"
+    }
+  },
+  "archives": {
+    "title": "Archives",
+    "stats": {
+      "total": "Total Archives",
+      "fonds": "Fonds",
+      "categories": "Categories",
+      "borrowed": "Borrowed"
+    },
+    "filter": {
+      "fonds": "Fonds Filter",
+      "category": "Category Filter",
+      "status": "Status Filter",
+      "allFonds": "All Fonds",
+      "allCategories": "All Categories",
+      "allStatus": "All Statuses"
+    },
+    "status": {
+      "active": "Active",
+      "borrowed": "Borrowed",
+      "archived": "Archived",
+      "destroyed": "Destroyed"
+    }
+  },
+  "contracts": {
+    "title": "Contracts",
+    "addContract": "New Contract",
+    "detail": "Contract Details",
+    "stats": {
+      "total": "Total Contracts",
+      "active": "Active",
+      "expiring": "Expiring Soon",
+      "expired": "Expired"
+    },
+    "field": {
+      "contractNo": "Contract No.",
+      "name": "Contract Name",
+      "party": "Counterparty",
+      "amount": "Amount",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "status": "Status",
+      "type": "Type"
+    },
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "expired": "Expired",
+      "terminated": "Terminated"
+    }
+  },
+  "dispatch": {
+    "title": "Data Dispatch"
+  },
+  "knowledge": {
+    "title": "Knowledge Base",
+    "addDocument": "New Document",
+    "stats": {
+      "total": "Total Documents",
+      "categories": "Categories",
+      "recentUpdate": "Last Updated"
+    },
+    "field": {
+      "title": "Title",
+      "category": "Category",
+      "tags": "Tags",
+      "author": "Author",
+      "updatedAt": "Updated"
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "username": "Username",
+    "usernamePlaceholder": "Enter your username",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Re-enter your password",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "name": "Name",
+    "namePlaceholder": "Enter your name",
+    "loginButton": "Sign In",
+    "registerButton": "Sign Up",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "goRegister": "Sign up now",
+    "goLogin": "Back to login",
+    "loginFailed": "Login failed, please check your credentials",
+    "registerFailed": "Registration failed, please try again"
+  },
+  "pageHeader": {
+    "back": "Back"
+  },
+  "greeting": {
+    "night": "Good Night",
+    "morning": "Good Morning",
+    "forenoon": "Good Morning",
+    "noon": "Good Afternoon",
+    "afternoon": "Good Afternoon",
+    "evening": "Good Evening"
+  },
+  "statCard": {
+    "unitWan": "万",
+    "flat": "Flat"
+  },
+  "calendar": {
+    "weekDays_short": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "monthNames": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  },
+  "error": {
+    "title": "Something Went Wrong",
+    "description": "The page failed to load",
+    "retry": "Reload",
+    "notFound": "Page Not Found",
+    "notFoundDesc": "The page you're looking for doesn't exist",
+    "goHome": "Go Home"
+  },
+  "errors": {
+    "unexpected": "An unexpected error occurred",
+    "retry": "Retry",
+    "goHome": "Go Home",
+    "notFound": {
+      "title": "Page Not Found",
+      "description": "The page you're looking for doesn't exist or has been moved"
+    }
   },
   "assets": {
     "accounts": "Accounts",

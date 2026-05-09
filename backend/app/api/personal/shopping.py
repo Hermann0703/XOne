@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.security import get_current_user
+from app.models.user import User
 from app.services import shopping_service
 
 router = APIRouter(prefix="/shopping", tags=["个人-购物"])
@@ -119,11 +121,11 @@ def _item_to_dict(item) -> dict:
 
 @router.get("/budgets", summary="获取预算列表")
 async def get_budgets(
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取当前用户的所有预算"""
-    budgets = await shopping_service.list_budgets(db, user_id)
+    budgets = await shopping_service.list_budgets(db, current_user.id)
     return {
         "code": 0,
         "message": "查询成功",
@@ -134,11 +136,11 @@ async def get_budgets(
 @router.post("/budgets", summary="创建预算")
 async def create_budget(
     body: BudgetCreate,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """创建新的预算"""
-    budget = await shopping_service.create_budget(db, user_id, body.model_dump())
+    budget = await shopping_service.create_budget(db, current_user.id, body.model_dump())
     return {
         "code": 0,
         "message": "预算创建成功",
@@ -149,11 +151,11 @@ async def create_budget(
 @router.get("/budgets/{budget_id}", summary="获取预算详情")
 async def get_budget(
     budget_id: int,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取单个预算详情"""
-    budget = await shopping_service.get_budget(db, budget_id, user_id)
+    budget = await shopping_service.get_budget(db, budget_id, current_user.id)
     if not budget:
         raise HTTPException(status_code=404, detail="预算不存在")
     return {
@@ -167,12 +169,12 @@ async def get_budget(
 async def update_budget(
     budget_id: int,
     body: BudgetUpdate,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """更新预算信息"""
     budget = await shopping_service.update_budget(
-        db, budget_id, user_id, body.model_dump(exclude_none=True)
+        db, budget_id, current_user.id, body.model_dump(exclude_none=True)
     )
     if not budget:
         raise HTTPException(status_code=404, detail="预算不存在")
@@ -186,11 +188,11 @@ async def update_budget(
 @router.delete("/budgets/{budget_id}", summary="删除预算")
 async def delete_budget(
     budget_id: int,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """删除预算（关联购物项的 budget_id 将置空）"""
-    success = await shopping_service.delete_budget(db, budget_id, user_id)
+    success = await shopping_service.delete_budget(db, budget_id, current_user.id)
     if not success:
         raise HTTPException(status_code=404, detail="预算不存在")
     return {
@@ -205,7 +207,7 @@ async def delete_budget(
 
 @router.get("/items", summary="获取购物清单")
 async def get_items(
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     status: Optional[str] = Query(default=None, description="筛选状态: pending/purchased/cancelled"),
     category: Optional[str] = Query(default=None, description="筛选分类"),
     priority: Optional[str] = Query(default=None, description="筛选优先级: low/medium/high"),
@@ -214,7 +216,7 @@ async def get_items(
 ):
     """获取购物清单，支持按状态、分类、优先级、预算筛选"""
     items = await shopping_service.list_items(
-        db, user_id, status=status, category=category,
+        db, current_user.id, status=status, category=category,
         priority=priority, budget_id=budget_id,
     )
     return {
@@ -227,11 +229,11 @@ async def get_items(
 @router.post("/items", summary="创建购物项")
 async def create_item(
     body: ItemCreate,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """添加新的购物项"""
-    item = await shopping_service.create_item(db, user_id, body.model_dump())
+    item = await shopping_service.create_item(db, current_user.id, body.model_dump())
     return {
         "code": 0,
         "message": "购物项添加成功",
@@ -242,11 +244,11 @@ async def create_item(
 @router.get("/items/{item_id}", summary="获取购物项详情")
 async def get_item(
     item_id: int,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取单个购物项详情"""
-    item = await shopping_service.get_item(db, item_id, user_id)
+    item = await shopping_service.get_item(db, item_id, current_user.id)
     if not item:
         raise HTTPException(status_code=404, detail="购物项不存在")
     return {
@@ -260,12 +262,12 @@ async def get_item(
 async def update_item(
     item_id: int,
     body: ItemUpdate,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """更新购物项信息"""
     item = await shopping_service.update_item(
-        db, item_id, user_id, body.model_dump(exclude_none=True)
+        db, item_id, current_user.id, body.model_dump(exclude_none=True)
     )
     if not item:
         raise HTTPException(status_code=404, detail="购物项不存在")
@@ -279,11 +281,11 @@ async def update_item(
 @router.delete("/items/{item_id}", summary="删除购物项")
 async def delete_item(
     item_id: int,
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """删除购物项"""
-    success = await shopping_service.delete_item(db, item_id, user_id)
+    success = await shopping_service.delete_item(db, item_id, current_user.id)
     if not success:
         raise HTTPException(status_code=404, detail="购物项不存在")
     return {
@@ -298,11 +300,11 @@ async def delete_item(
 
 @router.get("/dashboard", summary="购物仪表盘")
 async def dashboard(
-    user_id: int = Query(..., gt=0, description="用户ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取购物仪表盘聚合数据"""
-    data = await shopping_service.get_dashboard(db, user_id)
+    data = await shopping_service.get_dashboard(db, current_user.id)
     # 替换 recent_purchases 为可序列化格式
     data["recent_purchases"] = [
         _item_to_dict(item) for item in data["recent_purchases"]

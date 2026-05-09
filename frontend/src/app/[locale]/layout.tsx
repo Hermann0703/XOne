@@ -1,8 +1,14 @@
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages } from 'next-intl/server'
+import { AppShell } from '@/components/layout/AppShell'
 
-export default async function LocaleLayout({ children }: { children: React.ReactNode }) {
-  const messages = await getMessages();
+export default async function LocaleLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ locale: string }>
+}) {
+  const [messages, { locale }] = await Promise.all([getMessages(), params])
 
-  return <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>;
+  return <AppShell locale={locale} messages={messages}>{children}</AppShell>
 }

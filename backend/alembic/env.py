@@ -12,6 +12,9 @@ from alembic import context
 from app.core.config import settings
 from app.core.database import Base
 
+# 确保所有模型被导入，以便 autogenerate 能检测到表
+import app.models  # noqa: F401
+
 # Alembic Config 对象
 config = context.config
 

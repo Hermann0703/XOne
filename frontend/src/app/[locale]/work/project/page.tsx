@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import KanbanBoard from '@/plugins/builtin/work/project/KanbanBoard';
 import { useProjectStore } from '@/plugins/builtin/work/project/store';
+import { PageHeader } from '@/components/shared';
 
 export default function ProjectPage() {
+  const t = useTranslations();
   const projects = useProjectStore((s) => s.projects);
   const [projectId, setProjectId] = useState<string | null>(null);
 
@@ -14,14 +17,16 @@ export default function ProjectPage() {
     }
   }, [projects]);
 
-  if (!projectId) {
-    return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">项目管理</h1>
-        <p className="text-muted-foreground">暂无项目，请先创建项目。</p>
-      </div>
-    );
-  }
-
-  return <KanbanBoard projectId={projectId} />;
+  return (
+    <>
+      <PageHeader title={t('project.title')} description="管理项目任务与进度" />
+      {!projectId ? (
+        <div>
+          <p className="text-muted-foreground">暂无项目，请先创建项目。</p>
+        </div>
+      ) : (
+        <KanbanBoard projectId={projectId} />
+      )}
+    </>
+  );
 }

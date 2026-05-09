@@ -2,8 +2,9 @@
 
 from datetime import date, datetime
 from typing import Optional
+from uuid import UUID
 
-from sqlalchemy import Float, ForeignKey, Integer, String, Date, Boolean, Text
+from sqlalchemy import Float, ForeignKey, Integer, String, Date, Boolean, Text, UUID as SAUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -16,7 +17,7 @@ class Account(TimestampMixin, Base):
     __tablename__ = "accounts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     type: Mapped[str] = mapped_column(
         String(32), nullable=False, comment="bank/cash/credit/investment/other"
@@ -46,7 +47,7 @@ class Transaction(TimestampMixin, Base):
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     account_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, index=True
     )

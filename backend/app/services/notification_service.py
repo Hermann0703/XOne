@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from typing import Optional
+from uuid import UUID
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -42,7 +43,7 @@ class NotificationManager:
 
     async def create(
         self,
-        user_id: str,
+        user_id: UUID,
         title: str,
         message: str,
         type: str = "info",
@@ -80,7 +81,7 @@ class NotificationManager:
 
     async def list(
         self,
-        user_id: str,
+        user_id: UUID,
         limit: int = 50,
         skip: int = 0,
     ) -> dict:
@@ -117,7 +118,7 @@ class NotificationManager:
 
     # ── 标记已读 ─────────────────────────────────────────────────
 
-    async def mark_read(self, user_id: str, notification_id: str) -> bool:
+    async def mark_read(self, user_id: UUID, notification_id: str) -> bool:
         """标记指定通知为已读。
 
         Args:
@@ -152,7 +153,7 @@ class NotificationManager:
 
     # ── 未读计数 ─────────────────────────────────────────────────
 
-    async def get_unread_count(self, user_id: str) -> int:
+    async def get_unread_count(self, user_id: UUID) -> int:
         """获取用户未读通知数量。
 
         Args:

@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.security import get_current_user
+from app.models.user import User
 from app.services import dispatch_service
 
 router = APIRouter(tags=["工作-数据报送"])
@@ -24,7 +26,6 @@ class DataSourceCreate(BaseModel):
     source_type: str = Field(..., description="数据源类型: database/api/file/manual")
     connection_config: Optional[dict] = Field(default_factory=dict, description="连接配置(JSON)")
     status: str = Field("active", description="状态: active/inactive/error")
-    user_id: str = Field("default", description="用户ID")
 
 
 class DataSourceUpdate(BaseModel):
@@ -45,7 +46,6 @@ class TaskCreate(BaseModel):
     endpoint_url: Optional[str] = Field(None, description="API端点(API类型)")
     params: Optional[dict] = Field(None, description="请求参数(JSON)")
     status: str = Field("pending", description="状态: pending/running/success/failed")
-    user_id: str = Field("default", description="用户ID")
 
 
 class TaskUpdate(BaseModel):
@@ -64,6 +64,7 @@ class TaskUpdate(BaseModel):
 
 @router.get("/dispatch/sources", summary="获取数据源列表")
 async def list_data_sources(
+    current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1, description="页码"),
     size: int = Query(20, ge=1, le=100, description="每页数量"),
     search: Optional[str] = Query(None, description="按名称搜索"),
@@ -81,6 +82,7 @@ async def list_data_sources(
 
 @router.post("/dispatch/sources", summary="创建数据源", status_code=201)
 async def create_data_source(
+    current_user: User = Depends(get_current_user),
     data: DataSourceCreate = ...,
     db: AsyncSession = Depends(get_db),
 ):
@@ -94,6 +96,7 @@ async def create_data_source(
 @router.get("/dispatch/sources/{source_id}", summary="获取数据源详情")
 async def get_data_source(
     source_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取单个数据源的详细信息"""
@@ -110,6 +113,7 @@ async def get_data_source(
 @router.put("/dispatch/sources/{source_id}", summary="更新数据源")
 async def update_data_source(
     source_id: str,
+    current_user: User = Depends(get_current_user),
     data: DataSourceUpdate = ...,
     db: AsyncSession = Depends(get_db),
 ):
@@ -129,6 +133,7 @@ async def update_data_source(
 @router.delete("/dispatch/sources/{source_id}", summary="删除数据源")
 async def delete_data_source(
     source_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """删除数据源（级联删除所有关联任务）"""
@@ -147,6 +152,7 @@ async def delete_data_source(
 
 @router.get("/dispatch/tasks", summary="获取任务列表")
 async def list_tasks(
+    current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1, description="页码"),
     size: int = Query(20, ge=1, le=100, description="每页数量"),
     search: Optional[str] = Query(None, description="按名称搜索"),
@@ -171,6 +177,7 @@ async def list_tasks(
 
 @router.post("/dispatch/tasks", summary="创建任务", status_code=201)
 async def create_task(
+    current_user: User = Depends(get_current_user),
     data: TaskCreate = ...,
     db: AsyncSession = Depends(get_db),
 ):
@@ -190,6 +197,7 @@ async def create_task(
 @router.get("/dispatch/tasks/{task_id}", summary="获取任务详情")
 async def get_task(
     task_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取单个任务的详细信息"""
@@ -206,6 +214,7 @@ async def get_task(
 @router.put("/dispatch/tasks/{task_id}", summary="更新任务")
 async def update_task(
     task_id: str,
+    current_user: User = Depends(get_current_user),
     data: TaskUpdate = ...,
     db: AsyncSession = Depends(get_db),
 ):
@@ -225,6 +234,7 @@ async def update_task(
 @router.delete("/dispatch/tasks/{task_id}", summary="删除任务")
 async def delete_task(
     task_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """删除任务"""
@@ -241,6 +251,7 @@ async def delete_task(
 @router.post("/dispatch/tasks/{task_id}/execute", summary="手动触发执行")
 async def execute_task(
     task_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """手动触发某个报送任务的执行"""
@@ -262,6 +273,7 @@ async def execute_task(
 
 @router.get("/dispatch/logs", summary="获取执行日志")
 async def list_logs(
+    current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1, description="页码"),
     size: int = Query(20, ge=1, le=100, description="每页数量"),
     task_id: Optional[str] = Query(None, description="按任务ID筛选"),
@@ -286,6 +298,7 @@ async def list_logs(
 
 @router.get("/dispatch/monitoring", summary="监控面板数据")
 async def get_monitoring(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取近7天执行统计数据"""
@@ -295,6 +308,7 @@ async def get_monitoring(
 
 @router.get("/dispatch/overview", summary="仪表盘概览")
 async def get_overview(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取仪表盘概览数据（活跃数据源数+活跃任务数+今日执行数+今日成功率）"""

@@ -131,8 +131,8 @@ export default function BodyMetricsDashboard() {
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Legend />
-                <Line yAxisId="left" type="monotone" dataKey="weight" name={t("health.metrics.weight")} stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 2 }} />
-                <Line yAxisId="right" type="monotone" dataKey="body_fat" name={t("health.metrics.bodyFat")} stroke="hsl(var(--warning))" strokeWidth={2} dot={{ r: 2 }} />
+                <Line yAxisId="left" type="monotone" dataKey="weight" name={t("health.metrics.weight")} stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 2 }} />
+                <Line yAxisId="right" type="monotone" dataKey="body_fat" name={t("health.metrics.bodyFat")} stroke="var(--color-warning)" strokeWidth={2} dot={{ r: 2 }} />
               </LineChart>
             </ResponsiveContainer>
           ) : (

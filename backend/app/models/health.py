@@ -2,8 +2,9 @@
 
 from datetime import date
 from typing import Optional
+from uuid import UUID
 
-from sqlalchemy import String, Float, Integer, Date, Text
+from sqlalchemy import String, Float, Integer, Date, Text, ForeignKey, UUID as SAUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -16,7 +17,7 @@ class FoodRecord(Base, TimestampMixin):
     __tablename__ = "food_records"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     food_name: Mapped[str] = mapped_column(String(128), nullable=False, comment="食物名称")
     calories: Mapped[float] = mapped_column(Float, nullable=False, comment="热量(千卡)")
     protein: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, comment="蛋白质(克)")
@@ -43,7 +44,7 @@ class ExerciseRecord(Base, TimestampMixin):
     __tablename__ = "exercise_records"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     exercise_name: Mapped[str] = mapped_column(String(128), nullable=False, comment="运动名称")
     duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False, comment="时长(分钟)")
     calories_burned: Mapped[float] = mapped_column(Float, nullable=False, comment="消耗热量(千卡)")
@@ -68,7 +69,7 @@ class BodyMetrics(Base, TimestampMixin):
     __tablename__ = "body_metrics"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     weight: Mapped[Optional[float]] = mapped_column(Float, nullable=True, comment="体重(kg)")
     height: Mapped[Optional[float]] = mapped_column(Float, nullable=True, comment="身高(cm)")
     bmi: Mapped[Optional[float]] = mapped_column(Float, nullable=True, comment="BMI")

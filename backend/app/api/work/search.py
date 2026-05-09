@@ -16,6 +16,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.security import get_current_user
+from app.models.user import User
 from app.services.search_service import (
     get_search_client,
     MeilisearchClient,
@@ -53,7 +55,7 @@ class ReindexResponse(BaseModel):
 # ── API 端点 ──────────────────────────────────────────────────────
 
 @router.post("/global", response_model=GlobalSearchResponse, summary="全局搜索")
-async def global_search(req: GlobalSearchRequest):
+async def global_search(req: GlobalSearchRequest, current_user: User = Depends(get_current_user)):
     """跨 contracts / archives / knowledge / dispatch 四个索引进行全文搜索。
 
     搜索字段: title / content / summary
@@ -69,7 +71,7 @@ async def global_search(req: GlobalSearchRequest):
 
 
 @router.post("/reindex", response_model=ReindexResponse, summary="重建全部索引")
-async def rebuild_indices(db: AsyncSession = Depends(get_db)):
+async def rebuild_indices(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """管理员功能: 从 PostgreSQL 读取全量数据重建 Meilisearch 索引。
 
     会清空现有索引后重新导入:

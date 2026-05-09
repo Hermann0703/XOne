@@ -1,15 +1,17 @@
-'use client';
+'use client'
 
-import { useTranslations } from 'next-intl';
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
+/**
+ * 首页 — 自动重定向到个人仪表盘
+ */
 export default function HomePage() {
-  const t = useTranslations();
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-foreground">{t('app.name')}</h1>
-        <p className="text-xl text-muted-foreground">{t('app.tagline')}</p>
-      </div>
-    </main>
-  );
+  const router = useRouter()
+
+  useEffect(() => {
+    router.replace('/personal/dashboard')
+  }, [router])
+
+  return null
 }

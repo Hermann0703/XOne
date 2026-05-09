@@ -2,8 +2,9 @@
 
 from datetime import date
 from typing import Optional
+from uuid import UUID
 
-from sqlalchemy import Float, ForeignKey, Integer, String, Date, Boolean, Text
+from sqlalchemy import Float, ForeignKey, Integer, String, Date, Boolean, Text, UUID as SAUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -16,7 +17,7 @@ class Budget(TimestampMixin, Base):
     __tablename__ = "budgets"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(128), nullable=False, comment="预算名称")
     amount: Mapped[float] = mapped_column(Float, nullable=False, comment="预算金额")
     category: Mapped[str] = mapped_column(
@@ -48,7 +49,7 @@ class ShoppingItem(TimestampMixin, Base):
     __tablename__ = "shopping_items"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(256), nullable=False, comment="物品名称")
     category: Mapped[str] = mapped_column(
         String(64), nullable=False, comment="物品分类"

@@ -1,6 +1,7 @@
 """阅读模块服务层 — 书籍CRUD业务逻辑"""
 
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +11,7 @@ from app.models.reading import Book
 
 async def list_books(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     page: int = 1,
     size: int = 20,
     status: Optional[str] = None,
@@ -55,7 +56,7 @@ async def list_books(
 
 async def create_book(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID,
     data: dict,
 ) -> Book:
     """创建新书籍记录"""
@@ -69,7 +70,7 @@ async def create_book(
 async def update_book(
     db: AsyncSession,
     book_id: int,
-    user_id: int,
+    user_id: UUID,
     data: dict,
 ) -> Optional[Book]:
     """更新书籍记录，仅允许更新自己的书籍"""
@@ -92,7 +93,7 @@ async def update_book(
 async def delete_book(
     db: AsyncSession,
     book_id: int,
-    user_id: int,
+    user_id: UUID,
 ) -> bool:
     """删除书籍记录，仅允许删除自己的书籍"""
     result = await db.execute(

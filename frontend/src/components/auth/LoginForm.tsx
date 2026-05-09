@@ -4,6 +4,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { useAuthStore } from '@/stores/authStore';
 
 export default function LoginForm() {
   const router = useRouter();
+  const t = useTranslations();
   const login = useAuthStore((s) => s.login);
 
   const [username, setUsername] = useState('');
@@ -29,7 +31,7 @@ export default function LoginForm() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        '登录失败，请检查用户名和密码';
+        t('auth.loginFailed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -39,19 +41,19 @@ export default function LoginForm() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>登录</CardTitle>
-        <CardDescription>欢迎回到 XOne，请输入您的账号</CardDescription>
+        <CardTitle>{t('auth.login')}</CardTitle>
+        <CardDescription>{t('auth.loginDescription')}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="username" className="text-sm font-medium">
-              用户名
+              {t('auth.username')}
             </label>
             <Input
               id="username"
               type="text"
-              placeholder="请输入用户名"
+              placeholder={t('auth.usernamePlaceholder')}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -60,12 +62,12 @@ export default function LoginForm() {
           </div>
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
-              密码
+              {t('auth.password')}
             </label>
             <Input
               id="password"
               type="password"
-              placeholder="请输入密码"
+              placeholder={t('auth.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -80,12 +82,12 @@ export default function LoginForm() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? '登录中...' : '登录'}
+            {loading ? t('auth.loggingIn') : t('auth.login')}
           </Button>
           <p className="text-sm text-text-secondary">
-            还没有账号？{' '}
+            {t('auth.noAccount')}{' '}
             <a href="/register" className="text-primary hover:underline">
-              立即注册
+              {t('auth.goRegister')}
             </a>
           </p>
         </CardFooter>

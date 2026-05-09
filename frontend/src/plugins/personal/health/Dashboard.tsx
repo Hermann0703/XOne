@@ -121,7 +121,7 @@ export default function HealthDashboard() {
                   <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                   <YAxis domain={["auto", "auto"]} tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="weight" stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (

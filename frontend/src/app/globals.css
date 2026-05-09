@@ -37,6 +37,7 @@
   --radius-panel: 8px;
   --radius-btn: 8px;
   --radius-input: 8px;
+  --radius-md: 6px;
   --radius-tag: 20px;
 
   /* ========================================
@@ -52,6 +53,24 @@
   --destructive: var(--color-danger);
   --destructive-foreground: #FFFFFF;
   --ring: var(--color-primary);
+
+  /* 主色（shadcn 兼容） */
+  --primary: var(--color-primary);
+  --primary-foreground: #FFFFFF;
+
+  /* Card */
+  --card: var(--color-bg-card);
+  --card-foreground: var(--color-text-primary);
+
+  /* Popover */
+  --popover: var(--color-bg-card);
+  --popover-foreground: var(--color-text-primary);
+
+  /* Input & accent */
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --accent: var(--muted);
+  --accent-foreground: var(--color-text-primary);
 }
 
 /* 工作模式 (冷色调) */
@@ -61,7 +80,6 @@
 
   --color-bg-page: #F1F5F9;
   --color-bg-card: #FFFFFF;
-  --color-bg-sidebar: #1E293B;
 
   --color-text-primary: #1E293B;
   --color-text-secondary: #64748B;
@@ -69,6 +87,24 @@
   --color-border: #CBD5E1;
 
   /* 工作模式下 background/foreground 通过 var() 级联自动适配 */
+}
+
+/* 深色主题 — 覆盖浅色变量 */
+[data-theme='dark'] {
+  --color-bg-page: #0F172A;
+  --color-bg-card: #1E293B;
+  --color-bg-sidebar: #0F172A;
+
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #94A3B8;
+
+  --color-border: #334155;
+
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --secondary: #1E293B;
+  --secondary-foreground: #F1F5F9;
+  --destructive-foreground: #F1F5F9;
 }
 
 /* ========================================
@@ -122,4 +158,26 @@ a:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary);
+}
+
+/* ========================================
+   无障碍 — 偏好减少动画
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========================================
+   触摸设备 — 防止 hover 误触发
+   ======================================== */
+@media (hover: none) and (pointer: coarse) {
+  .hover\:bg-muted:hover {
+    background-color: unset;
+  }
 }

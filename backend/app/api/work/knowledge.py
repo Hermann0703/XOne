@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.security import get_current_user
+from app.models.user import User
 from app.services import knowledge_service
 from app.services import rag_service
 
@@ -81,6 +83,7 @@ def _conv_to_dict(conv) -> dict:
 
 @router.get("/documents", summary="获取文档列表")
 async def get_documents(
+    current_user: User = Depends(get_current_user),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
     search: Optional[str] = Query(default=None, description="搜索关键词"),
@@ -108,6 +111,7 @@ async def get_documents(
 
 @router.post("/documents", summary="上传文档")
 async def upload_document(
+    current_user: User = Depends(get_current_user),
     file: UploadFile = File(..., description="上传文件"),
     title: str = Form(..., description="文档标题"),
     tags: Optional[str] = Form(default=None, description="标签（JSON数组字符串，如 [\"合同\",\"技术\"]）"),
@@ -133,6 +137,7 @@ async def upload_document(
         file_content=file_content,
         filename=file.filename,
         title=title,
+        user_id=current_user.id,
         content_type=file.content_type,
         tags=tags,
         source_url=source_url,
@@ -151,6 +156,7 @@ async def upload_document(
 @router.get("/documents/{doc_id}", summary="获取文档详情")
 async def get_document(
     doc_id: str,
+    current_user: User = Depends(get_current_user),
     include_chunks: bool = Query(default=False, description="是否包含分块列表"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -178,6 +184,7 @@ async def get_document(
 @router.delete("/documents/{doc_id}", summary="删除文档")
 async def delete_document(
     doc_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """删除文档及其关联的向量索引、全文索引和本地文件"""
@@ -200,6 +207,7 @@ async def delete_document(
 @router.post("/documents/batch-delete", summary="批量删除文档")
 async def batch_delete_documents(
     body: BatchDeleteRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """批量删除文档"""
@@ -219,6 +227,7 @@ async def batch_delete_documents(
 @router.post("/documents/{doc_id}/reindex", summary="重新索引文档")
 async def reindex_document(
     doc_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """重新索引文档：清除旧索引后重新分块和向量化"""
@@ -246,6 +255,7 @@ async def reindex_document(
 @router.post("/chat", summary="RAG 知识库问答")
 async def chat(
     body: ChatRequest,
+    current_user: User = Depends(get_current_user),
 ):
     """
     RAG 检索增强问答：
@@ -274,12 +284,13 @@ async def chat(
 
 @router.get("/conversations", summary="获取对话历史列表")
 async def get_conversations(
+    current_user: User = Depends(get_current_user),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
     db: AsyncSession = Depends(get_db),
 ):
     """获取知识库对话历史列表"""
-    result = await knowledge_service.list_conversations(db, page, page_size)
+    result = await knowledge_service.list_conversations(db, user_id=current_user.id, page=page, page_size=page_size)
 
     return {
         "code": 0,
@@ -296,6 +307,7 @@ async def get_conversations(
 @router.post("/conversations", summary="创建/保存对话")
 async def create_conversation(
     body: ConversationCreate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """创建新的知识库对话记录"""
@@ -303,6 +315,7 @@ async def create_conversation(
         db=db,
         title=body.title,
         messages=body.messages,
+        user_id=current_user.id,
     )
 
     return {
@@ -315,6 +328,7 @@ async def create_conversation(
 @router.get("/conversations/{conv_id}", summary="获取对话详情")
 async def get_conversation(
     conv_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取单个对话详情"""
@@ -338,6 +352,7 @@ async def get_conversation(
 async def update_conversation(
     conv_id: str,
     body: ConversationUpdate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """更新对话标题或消息"""
@@ -369,10 +384,11 @@ async def update_conversation(
 
 @router.get("/stats", summary="知识库统计")
 async def get_stats(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """获取知识库统计信息：文档总数、总chunk数、最后更新时间"""
-    stats = await knowledge_service.get_stats(db)
+    stats = await knowledge_service.get_stats(db, user_id=current_user.id)
 
     return {
         "code": 0,
