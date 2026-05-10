@@ -1,0 +1,266 @@
+# =============================================================================
+# XOne CI/CD Pipeline
+# =============================================================================
+# Triggers:
+#   - push to main          (build + test + push Docker images)
+#   - pull_request to main  (build + test only, no Docker push)
+#
+# Jobs:
+#   1. backend-lint-test    Python lint + pytest (PostgreSQL service container)
+#   2. frontend-build-e2e   TypeScript check + Next.js build + Playwright E2E
+#   3. docker-build         Verify Dockerfiles compile (push only on main)
+# =============================================================================
+
+name: XOne CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# ── Cancel in-progress runs on the same PR ─────────────────────────
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+
+# ═════════════════════════════════════════════════════════════════════
+# Jobs
+# ═════════════════════════════════════════════════════════════════════
+
+jobs:
+
+  # ───────────────────────────────────────────────────────────────────
+  # 1. Backend: Lint + Test
+  # ───────────────────────────────────────────────────────────────────
+  backend-lint-test:
+    name: Backend — Lint & Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: xone
+          POSTGRES_PASSWORD: xone_test
+          POSTGRES_DB: xone_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov aiosqlite ruff
+
+      - name: Lint with ruff
+        run: |
+          ruff check . --output-format=github
+
+      - name: Lint with flake8 (fallback)
+        if: always()
+        run: |
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
+
+      - name: Run pytest
+        env:
+          DATABASE_URL: postgresql+asyncpg://xone:xone_test@localhost:5432/xone_test
+        run: |
+          pytest tests/ -v --tb=short --cov=. --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to artifact
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-py${{ matrix.python-version }}
+          path: backend/coverage.xml
+          retention-days: 7
+
+  # ───────────────────────────────────────────────────────────────────
+  # 2. Frontend: TypeScript Check + Build + Playwright E2E
+  # ───────────────────────────────────────────────────────────────────
+  frontend-build-e2e:
+    name: Frontend — Build & E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: Lint with ESLint
+        run: npm run lint
+
+      - name: Build Next.js
+        env:
+          NEXT_PUBLIC_API_URL: /api
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Next.js server
+        run: |
+          npx next start -p 3456 &
+          # Wait for server to be ready
+          npx wait-on http://localhost:3456 --timeout 60000
+        env:
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Run Playwright E2E tests
+        env:
+          CI: true
+          E2E_BASE_URL: http://localhost:3456
+        run: npm run test
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7
+
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: frontend/test-results/
+          retention-days: 7
+
+  # ───────────────────────────────────────────────────────────────────
+  # 3. Docker: Build images (push only on main)
+  # ───────────────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker — Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [backend-lint-test, frontend-build-e2e]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      # ── Login to container registry (needed for push) ──────────
+      - name: Login to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Extract metadata for tagging ───────────────────────────
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      # ── Build Backend ──────────────────────────────────────────
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.backend
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}-backend
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      # ── Build Frontend ─────────────────────────────────────────
+      - name: Build frontend Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.frontend
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}-frontend
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      # ── Rotate buildx cache ────────────────────────────────────
+      - name: Update Docker layer cache
+        if: always()
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true

@@ -49,7 +49,7 @@ function renderTrend(change: number | undefined, changeLabel?: string) {
   }
   if (change > 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-xs font-medium text-green-600">
+      <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-green-700">
         <TrendingUp className="h-3 w-3" />+{change}
         {changeLabel && <span className="ml-0.5 text-text-secondary/50">{changeLabel}</span>}
       </span>
@@ -57,7 +57,7 @@ function renderTrend(change: number | undefined, changeLabel?: string) {
   }
   if (change < 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-xs font-medium text-red-500">
+      <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-red-600">
         <TrendingDown className="h-3 w-3" />
         {change}
         {changeLabel && <span className="ml-0.5 text-text-secondary/50">{changeLabel}</span>}

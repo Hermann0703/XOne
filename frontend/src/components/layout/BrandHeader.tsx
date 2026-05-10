@@ -12,7 +12,7 @@ export function BrandHeader({ collapsed }: BrandHeaderProps) {
   const toggle = useSidebarStore((s) => s.toggle)
 
   return (
-    <div
+    <header
       className={cn(
         'flex items-center h-14 border-b border-border overflow-hidden',
         collapsed ? 'justify-center px-0' : 'justify-start px-4'
@@ -49,6 +49,6 @@ export function BrandHeader({ collapsed }: BrandHeaderProps) {
           </button>
         </>
       )}
-    </div>
+    </header>
   )
 }

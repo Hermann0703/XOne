@@ -54,7 +54,7 @@ export function SidebarMenuItem({
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
     collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-3 py-2',
     active
-      ? 'text-primary'
+      ? 'text-foreground font-semibold'
       : 'text-muted-foreground hover:text-foreground hover:bg-muted'
   )
 

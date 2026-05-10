@@ -385,10 +385,10 @@ export default function PersonalDashboardPage() {
         {/* ── 最近活动摘要 ── */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <h2 className="tracking-tight flex items-center gap-2 text-base font-semibold">
               <Clock className="h-4 w-4 text-text-secondary" />
               {t('dashboard.personal.recentActivity')}
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-3">
             {recentActivities.length > 0 ? (

@@ -18,6 +18,11 @@ env/
 .env
 .env.local
 .env.*.local
+.env.dev
+
+# Test artifacts
+frontend/test-results/
+frontend/playwright-report/data/
 
 # IDE
 .idea/

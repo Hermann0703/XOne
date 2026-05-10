@@ -59,16 +59,25 @@ export function ModeSwitch() {
     </button>
   );
 
+  // 包裹在 region landmark 中，确保文本内容在辅助技术中可被发现
+  const wrapped = (
+    <div role="region" aria-label="模式切换">
+      {buttonContent}
+    </div>
+  );
+
   if (isCollapsed) {
     return (
-      <Tooltip delayDuration={300}>
-        <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
-        <TooltipContent side="right" sideOffset={12}>
-          {label}
-        </TooltipContent>
-      </Tooltip>
+      <div role="region" aria-label="模式切换">
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
+          <TooltipContent side="right" sideOffset={12}>
+            {label}
+          </TooltipContent>
+        </Tooltip>
+      </div>
     );
   }
 
-  return buttonContent;
+  return wrapped;
 }

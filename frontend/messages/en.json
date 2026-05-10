@@ -29,6 +29,8 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "loading": "Loading...",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
     "empty": "No data",
     "error": "Something went wrong",
     "retry": "Retry",
@@ -290,7 +292,10 @@
       "add": "Add Milestone",
       "title": "Milestones",
       "dueDate": "Due Date"
-    }
+    },
+    "createProject": "Create Project",
+    "noProjects": "No Projects",
+    "selectProject": "Select Project"
   },
   "archives": {
     "title": "Archives",
@@ -345,9 +350,50 @@
   "dispatch": {
     "title": "Data Dispatch"
   },
+  "search": {
+    "title": "Global Search",
+    "description": "Search across contracts, archives, knowledge base, and dispatch data",
+    "placeholder": "Enter keywords to search...",
+    "search": "Search",
+    "reindex": "Rebuild Index",
+    "reindexDialogTitle": "Confirm Rebuild Index",
+    "reindexDialogDesc": "Rebuilding the index may take a few minutes. The search service will be temporarily unavailable. Are you sure you want to continue?",
+    "reindexing": "Rebuilding...",
+    "noResults": "No results found",
+    "initialPrompt": "Enter keywords to search contracts, archives, knowledge base & dispatch data",
+    "resultCount": "Found {count} results",
+    "total": "total",
+    "tabs": {
+      "all": "All",
+      "contract": "Contracts",
+      "archive": "Archives",
+      "knowledge": "Knowledge",
+      "dispatch": "Dispatch"
+    },
+    "types": {
+      "contract": "Contract",
+      "archive": "Archive",
+      "knowledge": "Knowledge",
+      "dispatch": "Dispatch"
+    }
+  },
   "knowledge": {
     "title": "Knowledge Base",
+    "description": "Manage documents & AI-powered Q&A",
+    "documents": "Documents",
+    "chat": "AI Chat",
     "addDocument": "New Document",
+    "chatPlaceholder": "Ask a question, AI will answer based on your knowledge base...",
+    "chatEmpty": "Ask your knowledge base",
+    "chatEmptyHint": "Type your question and AI will answer using your uploaded documents",
+    "chatHint": "Enter to send, Shift+Enter for new line",
+    "newConversation": "New Conversation",
+    "newConversationDesc": "Start a new chat session",
+    "conversationTitle": "Conversation Title",
+    "conversationTitlePlaceholder": "Enter conversation title...",
+    "toggleSidebar": "Toggle sidebar",
+    "conversations": "Conversation History",
+    "noConversations": "No conversations yet",
     "stats": {
       "total": "Total Documents",
       "categories": "Categories",
@@ -492,5 +538,70 @@
       "total": "{total} records total",
       "pageInfo": "Page {page} / {total}"
     }
+  },
+  "storage": {
+    "title": "Storage Management",
+    "stats": {
+      "totalCabinets": "Total Cabinets",
+      "totalBoxes": "Total Boxes",
+      "emptyBoxes": "Empty Boxes",
+      "partialBoxes": "Partial Boxes",
+      "fullBoxes": "Full Boxes"
+    },
+    "cabinets": {
+      "title": "Cabinet Management",
+      "add": "Add Cabinet",
+      "edit": "Edit Cabinet",
+      "searchPlaceholder": "Search cabinets...",
+      "name": "Name",
+      "code": "Code",
+      "location": "Location",
+      "boxCount": "Boxes",
+      "actions": "Actions",
+      "namePlaceholder": "Enter cabinet name",
+      "codePlaceholder": "Enter cabinet code",
+      "locationPlaceholder": "Enter location",
+      "floor": "Floor",
+      "floorPlaceholder": "e.g. 3F",
+      "room": "Room",
+      "roomPlaceholder": "e.g. 301",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter description...",
+      "deleteTitle": "Confirm Delete",
+      "deleteConfirm": "Are you sure you want to delete cabinet \"{name}\"? This action cannot be undone and all boxes inside will also be deleted."
+    },
+    "boxes": {
+      "title": "Boxes",
+      "add": "Add Box",
+      "boxNo": "Box No.",
+      "row": "Row",
+      "col": "Column",
+      "layer": "Layer",
+      "barcode": "Barcode",
+      "status": "Status",
+      "actions": "Actions",
+      "boxNoPlaceholder": "Enter box number",
+      "rowPlaceholder": "e.g. A",
+      "colPlaceholder": "e.g. 1",
+      "layerPlaceholder": "e.g. 1",
+      "barcodePlaceholder": "Enter barcode",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter description...",
+      "deleteTitle": "Confirm Delete",
+      "deleteConfirm": "Are you sure you want to delete box \"{boxNo}\"? This action cannot be undone."
+    },
+    "boxStatus": {
+      "empty": "Empty",
+      "partial": "Partial",
+      "full": "Full"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "all": "All",
+    "unread": "Unread",
+    "markAllRead": "Mark All Read",
+    "empty": "No notifications",
+    "markRead": "Read"
   }
 }

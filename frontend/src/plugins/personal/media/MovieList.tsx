@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
 import { useTranslations } from "next-intl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -211,7 +212,7 @@ export default function MovieList() {
                 {/* Poster placeholder */}
                 <div className="h-64 bg-gray-300 flex items-center justify-center relative">
                   {movie.poster_url ? (
-                    <img src={movie.poster_url} alt={movie.title} className="w-full h-full object-cover" />
+                    <Image src={movie.poster_url} alt={movie.title} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
                   ) : (
                     <Film className="size-16 text-gray-400" />
                   )}

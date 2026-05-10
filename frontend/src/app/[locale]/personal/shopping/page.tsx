@@ -1,13 +1,35 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ShoppingCart, Wallet } from "lucide-react";
+import { ShoppingCart, Wallet, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import Dashboard from "@/plugins/builtin/personal/shopping/Dashboard";
-import ShoppingList from "@/plugins/builtin/personal/shopping/ShoppingList";
-import BudgetList from "@/plugins/builtin/personal/shopping/BudgetList";
+
+const Dashboard = dynamic(() => import("@/plugins/builtin/personal/shopping/Dashboard"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="size-6 animate-spin text-text-secondary" />
+    </div>
+  ),
+});
+
+const ShoppingList = dynamic(() => import("@/plugins/builtin/personal/shopping/ShoppingList"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="size-6 animate-spin text-text-secondary" />
+    </div>
+  ),
+});
+
+const BudgetList = dynamic(() => import("@/plugins/builtin/personal/shopping/BudgetList"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="size-6 animate-spin text-text-secondary" />
+    </div>
+  ),
+});
 
 export default function ShoppingPage() {
   const t = useTranslations();

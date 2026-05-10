@@ -133,22 +133,67 @@ set -a
 source "$ENV_FILE" 2>/dev/null || true
 set +a
 
-# ---- 2. 检查必要变量 ----
-if [ -z "${SECRET_KEY:-}" ] || [ "$SECRET_KEY" = "change-me-to-a-random-secret-key" ]; then
+# ---- 2. 验证必要环境变量 ----
+log_step "验证 .env.production 配置"
+
+VALIDATION_ERRORS=0
+
+# SECRET_KEY
+if [ -z "${SECRET_KEY:-}" ] || [[ "$SECRET_KEY" =~ ^change-me ]]; then
     log_error "SECRET_KEY 未设置或仍为默认值，请在 .env.production 中修改！"
     log_info "生成随机密钥: openssl rand -hex 32"
-    exit 1
+    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
 fi
 
-if [ -z "${POSTGRES_PASSWORD:-}" ] || [ "$POSTGRES_PASSWORD" = "change-me-postgres-password" ]; then
+# DOMAIN
+if [ -z "${DOMAIN:-}" ] || [ "$DOMAIN" = "example.com" ]; then
+    log_error "DOMAIN 未设置或仍为 example.com，请在 .env.production 中设置真实域名！"
+    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+fi
+
+# POSTGRES_PASSWORD
+if [ -z "${POSTGRES_PASSWORD:-}" ] || [[ "$POSTGRES_PASSWORD" =~ ^change-me ]]; then
     log_error "POSTGRES_PASSWORD 未设置或仍为默认值，请在 .env.production 中修改！"
+    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+fi
+
+# MONGO_PASSWORD
+if [ -z "${MONGO_PASSWORD:-}" ] || [[ "$MONGO_PASSWORD" =~ ^change-me ]]; then
+    log_error "MONGO_PASSWORD 未设置或仍为默认值，请在 .env.production 中修改！"
+    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+fi
+
+# REDIS_PASSWORD
+if [ -z "${REDIS_PASSWORD:-}" ] || [[ "$REDIS_PASSWORD" =~ ^change-me ]]; then
+    log_error "REDIS_PASSWORD 未设置或仍为默认值，请在 .env.production 中修改！"
+    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+fi
+
+# MEILISEARCH_KEY
+if [ -z "${MEILISEARCH_KEY:-}" ] || [[ "$MEILISEARCH_KEY" =~ ^change-me ]]; then
+    log_error "MEILISEARCH_KEY 未设置或仍为默认值，请在 .env.production 中修改！"
+    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+fi
+
+# MINIO credentials
+if [ -z "${MINIO_ACCESS_KEY:-}" ] || [[ "$MINIO_ACCESS_KEY" =~ ^change-me ]]; then
+    log_error "MINIO_ACCESS_KEY 未设置或仍为默认值，请在 .env.production 中修改！"
+    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+fi
+
+if [ -z "${MINIO_SECRET_KEY:-}" ] || [[ "$MINIO_SECRET_KEY" =~ ^change-me ]]; then
+    log_error "MINIO_SECRET_KEY 未设置或仍为默认值，请在 .env.production 中修改！"
+    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+fi
+
+if [ $VALIDATION_ERRORS -gt 0 ]; then
+    echo ""
+    log_error "共发现 ${VALIDATION_ERRORS} 个配置问题，请修改 .env.production 后重试。"
+    log_info "文件路径: $ENV_FILE"
     exit 1
 fi
 
-if [ -z "${REDIS_PASSWORD:-}" ] || [ "$REDIS_PASSWORD" = "change-me-redis-password" ]; then
-    log_error "REDIS_PASSWORD 未设置或仍为默认值，请在 .env.production 中修改！"
-    exit 1
-fi
+log_info "环境变量验证通过 ✓"
 
 # ---- 3. 检查 Docker 环境 ----
 log_info "检查 Docker 环境 ..."
@@ -195,8 +240,46 @@ else
     log_info "MongoDB 未运行，跳过备份"
 fi
 
-# ---- 5. 创建 SSL 目录 ----
+# ---- 5. SSL 证书检查 ----
 mkdir -p "$DOCKER_DIR/ssl" "$DOCKER_DIR/certbot/www"
+
+log_info "检查 SSL 证书 ..."
+SSL_READY=false
+
+if [ -f "$DOCKER_DIR/ssl/fullchain.pem" ] && [ -f "$DOCKER_DIR/ssl/privkey.pem" ]; then
+    # 验证证书是否匹配当前域名
+    CERT_DOMAIN=$(openssl x509 -in "$DOCKER_DIR/ssl/fullchain.pem" -noout -subject 2>/dev/null | sed -n 's/.*CN *= *\([^ /]*\).*/\1/p' || echo "")
+    if [ -n "$CERT_DOMAIN" ] && { [ "$CERT_DOMAIN" = "$DOMAIN" ] || [[ "$CERT_DOMAIN" == *."$DOMAIN" ]]; }; then
+        # 检查证书是否过期 (30 天内过期则警告)
+        if openssl x509 -in "$DOCKER_DIR/ssl/fullchain.pem" -noout -checkend 2592000 2>/dev/null; then
+            log_info "SSL 证书有效 (域名: ${CERT_DOMAIN})"
+            SSL_READY=true
+        else
+            log_warn "SSL 证书将在 30 天内过期，建议使用 --ssl 重新申请"
+        fi
+    else
+        log_warn "SSL 证书域名 (${CERT_DOMAIN:-未知}) 与配置的 DOMAIN (${DOMAIN}) 不匹配"
+    fi
+fi
+
+if ! $SSL_READY; then
+    if $SSL_FLAG; then
+        log_info "尝试申请 Let's Encrypt SSL 证书 ..."
+        if [ -f "$SCRIPT_DIR/setup-ssl.sh" ]; then
+            bash "$SCRIPT_DIR/setup-ssl.sh"
+            if [ -f "$DOCKER_DIR/ssl/fullchain.pem" ] && [ -f "$DOCKER_DIR/ssl/privkey.pem" ]; then
+                SSL_READY=true
+                log_info "SSL 证书申请成功"
+            else
+                log_warn "SSL 证书申请可能失败，将仅启用 HTTP"
+            fi
+        else
+            log_warn "setup-ssl.sh 不存在，跳过 SSL 证书申请"
+        fi
+    else
+        log_warn "未找到有效的 SSL 证书，将仅启用 HTTP (使用 --ssl 自动申请 Let's Encrypt 证书)"
+    fi
+fi
 
 # ---- 6. 准备 Nginx 配置 ----
 log_info "准备 Nginx 配置 ..."
@@ -266,19 +349,7 @@ if [ $ELAPSED -ge $MAX_WAIT ]; then
     docker compose -f "$COMPOSE_FILE" ps
 fi
 
-# ---- 10. SSL 证书 ----
-if $SSL_FLAG; then
-    log_step "申请 Let's Encrypt SSL 证书"
-    
-    if [ "${DOMAIN:-}" = "example.com" ] || [ -z "${DOMAIN:-}" ]; then
-        log_error "请在 .env.production 中设置正确的 DOMAIN 变量"
-        log_info "示例: DOMAIN=myapp.example.com"
-    else
-        bash "$SCRIPT_DIR/setup-ssl.sh"
-    fi
-fi
-
-# ---- 11. 部署结果 ----
+# ---- 10. 部署结果 ----
 log_step "部署完成！"
 
 echo ""
@@ -294,10 +365,23 @@ docker compose -f "$COMPOSE_FILE" ps
 
 echo ""
 echo -e "${BLUE}访问地址:${NC}"
-if [ -n "${DOMAIN:-}" ] && [ "$DOMAIN" != "example.com" ]; then
+if $SSL_READY; then
     echo "  https://${DOMAIN}"
+elif [ -n "${DOMAIN:-}" ] && [ "$DOMAIN" != "example.com" ]; then
+    echo "  http://${DOMAIN}  (SSL 未配置，使用 --ssl 申请证书)"
 else
     echo "  http://localhost  (请配置 DOMAIN 并申请 SSL 证书)"
+fi
+
+echo ""
+echo -e "${BLUE}SSL 证书状态:${NC}"
+if $SSL_READY; then
+    EXPIRY=$(openssl x509 -in "$DOCKER_DIR/ssl/fullchain.pem" -noout -enddate 2>/dev/null | cut -d= -f2 || echo "未知")
+    echo -e "  ${GREEN}✓ 已配置${NC}  (过期时间: ${EXPIRY})"
+elif [ -f "$DOCKER_DIR/ssl/fullchain.pem" ]; then
+    echo -e "  ${YELLOW}⚠ 证书存在但未通过验证，请检查${NC}"
+else
+    echo -e "  ${YELLOW}⚠ 未配置${NC}  (运行: bash scripts/deploy.sh --ssl)"
 fi
 
 echo ""
@@ -305,5 +389,6 @@ echo -e "${BLUE}常用命令:${NC}"
 echo "  查看日志:   bash scripts/deploy.sh --logs"
 echo "  重启服务:   bash scripts/deploy.sh --restart"
 echo "  备份数据:   bash scripts/deploy.sh --backup"
+echo "  申请 SSL:   bash scripts/deploy.sh --ssl"
 echo "  停止服务:   docker compose -f $COMPOSE_FILE down"
 echo ""

@@ -54,7 +54,7 @@ class ReindexResponse(BaseModel):
 
 # ── API 端点 ──────────────────────────────────────────────────────
 
-@router.post("/global", response_model=GlobalSearchResponse, summary="全局搜索")
+@router.post("/global", summary="全局搜索")
 async def global_search(req: GlobalSearchRequest, current_user: User = Depends(get_current_user)):
     """跨 contracts / archives / knowledge / dispatch 四个索引进行全文搜索。
 
@@ -64,13 +64,20 @@ async def global_search(req: GlobalSearchRequest, current_user: User = Depends(g
     client = get_search_client()
     try:
         result = client.search_global(query=req.query, limit=req.limit)
-        return GlobalSearchResponse(**result)
+        return {
+            "code": 0,
+            "message": "搜索完成",
+            "data": {
+                "results": result["results"],
+                "total": result["total"],
+            },
+        }
     except Exception as e:
         logger.exception("全局搜索失败: query=%s", req.query)
         raise HTTPException(status_code=500, detail=f"搜索失败: {str(e)}")
 
 
-@router.post("/reindex", response_model=ReindexResponse, summary="重建全部索引")
+@router.post("/reindex", summary="重建全部索引")
 async def rebuild_indices(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """管理员功能: 从 PostgreSQL 读取全量数据重建 Meilisearch 索引。
 
@@ -97,10 +104,14 @@ async def rebuild_indices(current_user: User = Depends(get_current_user), db: As
         await _reindex_dispatch(client, db, stats)
 
         logger.info("全量索引重建完成: %s", stats)
-        return ReindexResponse(
-            message="全量索引重建完成",
-            stats=stats,
-        )
+        return {
+            "code": 0,
+            "message": "全量索引重建完成",
+            "data": {
+                "message": "全量索引重建完成",
+                "stats": stats,
+            },
+        }
 
     except Exception as e:
         logger.exception("全量索引重建失败")

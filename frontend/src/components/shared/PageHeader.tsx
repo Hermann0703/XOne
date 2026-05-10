@@ -37,15 +37,9 @@ export function PageHeader({
     >
       {/* 左侧：标题 + 描述 */}
       <div className="space-y-0.5 min-w-0">
-        {typeof title === 'string' ? (
-          <h1 className="truncate text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
-            {title}
-          </h1>
-        ) : (
-          <div className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
-            {title}
-          </div>
-        )}
+        <h1 className="truncate text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
+          {title}
+        </h1>
         {description && (
           <p className="text-sm text-text-secondary">{description}</p>
         )}

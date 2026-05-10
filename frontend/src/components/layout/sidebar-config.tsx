@@ -15,6 +15,9 @@ import {
   Package,
   Settings2,
   User,
+  HardDrive,
+  Search,
+  Bell,
 } from 'lucide-react'
 import type { SidebarGroupProps } from './SidebarGroup'
 import type { SidebarMenuItemProps } from './SidebarMenuItem'
@@ -81,6 +84,12 @@ const personalGroups: SidebarGroupConfig[] = [
         label: '资产管理',
         path: '/personal/assets',
       },
+      {
+        id: 'personal.notifications',
+        icon: Bell,
+        label: '通知中心',
+        path: '/personal/notifications',
+      },
     ],
   },
 ]
@@ -134,6 +143,18 @@ const workGroups: SidebarGroupConfig[] = [
         icon: Activity,
         label: '调度中心',
         path: '/work/dispatch',
+      },
+      {
+        id: 'work.storage',
+        icon: HardDrive,
+        label: '存储管理',
+        path: '/work/storage',
+      },
+      {
+        id: 'work.search',
+        icon: Search,
+        label: '全局搜索',
+        path: '/work/search',
       },
     ],
   },

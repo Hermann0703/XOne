@@ -49,6 +49,11 @@ export async function apiPatch<T = unknown>(url: string, data?: unknown): Promis
   return axiosClient.patch(url, data) as unknown as Promise<{ code: number; message: string; data: T }>;
 }
 
+/** 通用 PUT 请求 */
+export async function apiPut<T = unknown>(url: string, data?: unknown): Promise<{ code: number; message: string; data: T }> {
+  return axiosClient.put(url, data) as unknown as Promise<{ code: number; message: string; data: T }>;
+}
+
 /** 通用 DELETE 请求 */
 export async function apiDelete<T = unknown>(url: string): Promise<{ code: number; message: string; data: T }> {
   return axiosClient.delete(url) as unknown as Promise<{ code: number; message: string; data: T }>;

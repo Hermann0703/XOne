@@ -151,7 +151,7 @@ export function CalendarSection({ days }: { days: CalendarDay[] }) {
             key={idx}
             className={cn(
               'flex h-7 items-center justify-center rounded text-xs',
-              d.isToday && 'bg-primary text-primary-foreground font-bold',
+              d.isToday && 'bg-indigo-600 text-white font-bold',
               !d.isToday && d.hasActivity && 'bg-primary/10 text-primary',
               !d.isToday && !d.hasActivity && 'text-text-secondary',
               d.day === 0 && 'invisible',

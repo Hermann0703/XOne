@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Noto_Sans_SC } from 'next/font/google';
 import './globals.css';
 
@@ -7,10 +7,22 @@ const notoSansSC = Noto_Sans_SC({ subsets: ['latin'], weight: ['400', '500', '70
 
 export const metadata: Metadata = { title: 'XOne', description: '生活与工作的数字中枢' };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+  ],
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN" data-mode="personal" data-theme="light" className={`${inter.variable} ${notoSansSC.variable} font-sans`}>
       <head>
+        {/* Preconnect to Google Fonts for faster font loading */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* 立即应用保存的主题，防止页面闪烁 */}
         <script
           dangerouslySetInnerHTML={{

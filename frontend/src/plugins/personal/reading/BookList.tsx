@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
 import { useTranslations } from "next-intl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -203,9 +204,9 @@ export default function BookList() {
             return (
               <Card key={book.id} className="overflow-hidden hover:shadow-md transition-shadow">
                 {/* Cover placeholder */}
-                <div className="h-48 bg-gray-200 flex items-center justify-center">
+                <div className="h-48 bg-gray-200 flex items-center justify-center relative">
                   {book.cover_url ? (
-                    <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                    <Image src={book.cover_url} alt={book.title} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
                   ) : (
                     <Book className="size-12 text-gray-400" />
                   )}

@@ -29,6 +29,8 @@
     "cancel": "取消",
     "confirm": "确认",
     "loading": "加载中...",
+    "saving": "保存中...",
+    "deleting": "删除中...",
     "empty": "暂无数据",
     "error": "出错了",
     "retry": "重试",
@@ -290,7 +292,10 @@
       "add": "添加里程碑",
       "title": "里程碑",
       "dueDate": "截止日期"
-    }
+    },
+    "createProject": "创建项目",
+    "noProjects": "暂无项目",
+    "selectProject": "选择项目"
   },
   "archives": {
     "title": "档案管理",
@@ -345,9 +350,50 @@
   "dispatch": {
     "title": "数据报送"
   },
+  "search": {
+    "title": "全局搜索",
+    "description": "跨模块搜索合同、档案、知识库与调度数据",
+    "placeholder": "输入关键词搜索...",
+    "search": "搜索",
+    "reindex": "重建索引",
+    "reindexDialogTitle": "确认重建索引",
+    "reindexDialogDesc": "重建索引可能需要几分钟时间，期间搜索服务暂时不可用。确定要继续吗？",
+    "reindexing": "重建中...",
+    "noResults": "未找到匹配结果",
+    "initialPrompt": "输入关键词，搜索合同、档案、知识库与调度数据",
+    "resultCount": "找到 {count} 条结果",
+    "total": "共",
+    "tabs": {
+      "all": "全部",
+      "contract": "合同",
+      "archive": "档案",
+      "knowledge": "知识库",
+      "dispatch": "调度"
+    },
+    "types": {
+      "contract": "合同",
+      "archive": "档案",
+      "knowledge": "知识",
+      "dispatch": "调度"
+    }
+  },
   "knowledge": {
     "title": "知识库",
+    "description": "管理文档与AI知识库问答",
+    "documents": "文档管理",
+    "chat": "智能问答",
     "addDocument": "新建文档",
+    "chatPlaceholder": "输入问题，AI 将基于知识库回答...",
+    "chatEmpty": "向知识库提问",
+    "chatEmptyHint": "输入您的问题，AI 将基于已上传的文档为您解答",
+    "chatHint": "Enter 发送，Shift+Enter 换行",
+    "newConversation": "新建对话",
+    "newConversationDesc": "创建一个新的对话会话",
+    "conversationTitle": "对话标题",
+    "conversationTitlePlaceholder": "输入对话标题...",
+    "toggleSidebar": "切换侧边栏",
+    "conversations": "对话历史",
+    "noConversations": "暂无对话",
     "stats": {
       "total": "文档总数",
       "categories": "分类数",
@@ -501,5 +547,70 @@
       "total": "共 {total} 条记录",
       "pageInfo": "第 {page} / {total} 页"
     }
+  },
+  "storage": {
+    "title": "存储管理",
+    "stats": {
+      "totalCabinets": "档案柜总数",
+      "totalBoxes": "档案盒总数",
+      "emptyBoxes": "空闲盒",
+      "partialBoxes": "部分盒",
+      "fullBoxes": "满载盒"
+    },
+    "cabinets": {
+      "title": "档案柜管理",
+      "add": "新增档案柜",
+      "edit": "编辑档案柜",
+      "searchPlaceholder": "搜索档案柜...",
+      "name": "名称",
+      "code": "编号",
+      "location": "位置",
+      "boxCount": "档案盒数",
+      "actions": "操作",
+      "namePlaceholder": "输入档案柜名称",
+      "codePlaceholder": "输入档案柜编号",
+      "locationPlaceholder": "输入位置",
+      "floor": "楼层",
+      "floorPlaceholder": "如：3F",
+      "room": "房间",
+      "roomPlaceholder": "如：301",
+      "description": "描述",
+      "descriptionPlaceholder": "输入描述...",
+      "deleteTitle": "确认删除",
+      "deleteConfirm": "确定要删除档案柜「{name}」吗？此操作不可撤销，柜内所有档案盒也将被删除。"
+    },
+    "boxes": {
+      "title": "档案盒列表",
+      "add": "新增档案盒",
+      "boxNo": "盒号",
+      "row": "排",
+      "col": "列",
+      "layer": "层",
+      "barcode": "条码",
+      "status": "状态",
+      "actions": "操作",
+      "boxNoPlaceholder": "输入档案盒编号",
+      "rowPlaceholder": "如：A",
+      "colPlaceholder": "如：1",
+      "layerPlaceholder": "如：1",
+      "barcodePlaceholder": "输入条码",
+      "description": "描述",
+      "descriptionPlaceholder": "输入描述...",
+      "deleteTitle": "确认删除",
+      "deleteConfirm": "确定要删除档案盒「{boxNo}」吗？此操作不可撤销。"
+    },
+    "boxStatus": {
+      "empty": "空闲",
+      "partial": "部分",
+      "full": "已满"
+    }
+  },
+  "notifications": {
+    "title": "通知中心",
+    "all": "全部",
+    "unread": "未读",
+    "markAllRead": "全部已读",
+    "empty": "暂无通知",
+    "markRead": "已读"
   }
 }

@@ -63,7 +63,7 @@ export function TabBar({ onMenuClick, isMobile = false }: TabBarProps) {
         )}
 
         {/* 面包屑：仅展开或折叠时显示页面标题 */}
-        <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap select-none">
+        <nav aria-label="面包屑导航" className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap select-none">
           {!isCollapsed && (
             <>
               <span className="font-medium">{modeLabel}</span>
@@ -71,56 +71,58 @@ export function TabBar({ onMenuClick, isMobile = false }: TabBarProps) {
             </>
           )}
           <span className="text-foreground font-medium">{pageTitle}</span>
-        </div>
+        </nav>
       </div>
 
       {/* 分隔线 */}
       <Separator orientation="vertical" className="h-5 self-center" />
 
-      {/* 标签列表 - 用内层 div 实现可滚动 */}
-      <div className="flex h-full items-end">
+      {/* 标签列表 — 包裹在导航性地标中 */}
+      <nav aria-label="标签页" className="flex h-full items-end">
         {tabs.map((tab, idx) => {
           const isActive = tab.id === activeTabId
           return (
-            <div key={tab.id} className="flex h-full items-end">
+            <div key={tab.id} className="group flex h-full items-end">
               {idx > 0 && (
                 <Separator orientation="vertical" className="h-5 self-center" />
               )}
-              <div
-                role="tab"
-                aria-selected={isActive}
-                className={cn(
-                  'group relative flex h-full items-center gap-1 px-3 text-sm font-medium cursor-pointer select-none whitespace-nowrap transition-colors',
-                  isActive
-                    ? 'bg-background border-b-2 border-primary text-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <span>{t(tab.labelKey)}</span>
-
-                {/* 关闭按钮 */}
+              <div role="tablist" className="flex h-full items-end">
                 <button
-                  type="button"
-                  aria-label={`Close ${t(tab.labelKey)}`}
+                  role="tab"
+                  aria-selected={isActive}
                   className={cn(
-                    'ml-0.5 flex h-4 w-4 items-center justify-center rounded-sm',
-                    'opacity-0 group-hover:opacity-100 transition-opacity',
-                    'hover:bg-destructive/10 hover:text-destructive',
-                    isActive && 'opacity-100'
+                    'relative flex h-full items-center px-3 text-sm font-medium cursor-pointer select-none whitespace-nowrap transition-colors',
+                    isActive
+                      ? 'bg-background border-b-2 border-primary text-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    closeTab(tab.id)
-                  }}
+                  onClick={() => setActiveTab(tab.id)}
                 >
-                  <X className="h-3 w-3" />
+                  <span>{t(tab.labelKey)}</span>
                 </button>
               </div>
+
+              {/* 关闭按钮 — 与 tablist 同级，不在 role="tablist" 内部 */}
+              <button
+                type="button"
+                aria-label={`Close ${t(tab.labelKey)}`}
+                className={cn(
+                  'ml-0.5 flex h-4 w-4 items-center justify-center rounded-sm',
+                  'opacity-0 group-hover:opacity-100 transition-opacity',
+                  'hover:bg-destructive/10 hover:text-destructive',
+                  isActive && 'opacity-100'
+                )}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  closeTab(tab.id)
+                }}
+              >
+                <X className="h-3 w-3" />
+              </button>
             </div>
           )
         })}
-      </div>
+      </nav>
     </div>
   )
 }

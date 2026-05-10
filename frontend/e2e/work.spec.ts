@@ -39,4 +39,22 @@ test.describe('工作模式 — 页面渲染（未登录状态）', () => {
     await expect(page).not.toHaveTitle(/500|Error/);
   });
 
+  test('档案 /work/archives — 页面可加载', async ({ page }) => {
+    await page.goto('/work/archives');
+    await page.waitForLoadState('networkidle');
+    await expect(page).not.toHaveTitle(/500|Error/);
+  });
+
+  test('存储 /work/storage — 页面可加载', async ({ page }) => {
+    await page.goto('/work/storage');
+    await page.waitForLoadState('networkidle');
+    await expect(page).not.toHaveTitle(/500|Error/);
+  });
+
+  test('搜索 /work/search — 页面可加载', async ({ page }) => {
+    await page.goto('/work/search');
+    await page.waitForLoadState('networkidle');
+    await expect(page).not.toHaveTitle(/500|Error/);
+  });
+
 });
