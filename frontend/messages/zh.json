@@ -155,7 +155,11 @@
       "calories": "今日摄入",
       "caloriesDesc": "卡路里",
       "exercise": "运动时长",
-      "exerciseDesc": "今日运动"
+      "exerciseDesc": "今日运动",
+      "height": "身高",
+      "record": "记录",
+      "trend": "趋势",
+      "waist": "腰围"
     },
     "food": {
       "addMeal": "添加餐食",
@@ -167,6 +171,12 @@
       "protein": "蛋白质(g)",
       "carbs": "碳水(g)",
       "fat": "脂肪(g)",
+      "date": "日期",
+      "meal": "餐别",
+      "name": "名称",
+      "note": "备注",
+      "serving": "份量",
+      "servingPlaceholder": "例如：1碗",
       "mealTypes": {
         "breakfast": "早餐",
         "lunch": "午餐",
@@ -187,12 +197,42 @@
         "moderate": "中度",
         "intense": "高强度"
       }
-    }
+    },
+    "addFood": "添加饮食",
+    "bodyMetrics": "身体指标",
+    "exerciseCalendar": "运动日历",
+    "exerciseRecords": "运动记录",
+    "filter": {
+      "allMeals": "全部餐别"
+    },
+    "foodRecords": "饮食记录",
+    "kpi": {
+      "caloriesIn": "摄入热量",
+      "caloriesOut": "消耗热量",
+      "exerciseMinutes": "运动时长"
+    },
+    "meal": {
+      "breakfast": "早餐",
+      "lunch": "午餐",
+      "dinner": "晚餐",
+      "snack": "加餐"
+    },
+    "recentFoods": "最近饮食",
+    "unit": {
+      "kcal": "千卡",
+      "minutes": "分钟"
+    },
+    "weightTrend": "体重趋势"
   },
   "reading": {
     "title": "阅读管理",
     "addBook": "添加书籍",
     "editBook": "编辑书籍",
+    "searchPlaceholder": "搜索书籍...",
+    "progress": "阅读进度",
+    "rating": {
+      "none": "未评分"
+    },
     "stats": {
       "total": "藏书总数",
       "reading": "正在读",
@@ -212,7 +252,11 @@
       "pages": "页数",
       "currentPage": "当前页",
       "startDate": "开始日期",
-      "endDate": "完成日期"
+      "endDate": "完成日期",
+      "pubYear": "出版年份",
+      "publisher": "出版社",
+      "publisherPlaceholder": "输入出版社",
+      "totalPages": "总页数"
     },
     "status": {
       "want_to_read": "想读",
@@ -225,6 +269,28 @@
     "title": "观影管理",
     "addMedia": "添加影视",
     "editMedia": "编辑影视",
+    "addMovie": "添加影视",
+    "doubanLink": "豆瓣链接",
+    "movie": {
+      "country": "国家/地区",
+      "countryPlaceholder": "例如：中国大陆",
+      "director": "导演",
+      "directorPlaceholder": "输入导演姓名",
+      "doubanUrl": "豆瓣链接",
+      "genre": "类型",
+      "genrePlaceholder": "例如：剧情",
+      "rating": "评分",
+      "status": "状态",
+      "title": "标题",
+      "titleEn": "英文标题",
+      "titleEnPlaceholder": "输入英文标题",
+      "titlePlaceholder": "输入影视标题",
+      "year": "年份"
+    },
+    "rating": {
+      "none": "未评分"
+    },
+    "searchPlaceholder": "搜索影视...",
     "stats": {
       "total": "影视总数",
       "watched": "已观看",

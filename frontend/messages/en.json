@@ -155,7 +155,11 @@
       "calories": "Today's Intake",
       "caloriesDesc": "Calories",
       "exercise": "Exercise",
-      "exerciseDesc": "Today's exercise"
+      "exerciseDesc": "Today's exercise",
+      "height": "Height",
+      "record": "Record",
+      "trend": "Trend",
+      "waist": "Waist"
     },
     "food": {
       "addMeal": "Add Meal",
@@ -167,6 +171,12 @@
       "protein": "Protein (g)",
       "carbs": "Carbs (g)",
       "fat": "Fat (g)",
+      "date": "Date",
+      "meal": "Meal",
+      "name": "Name",
+      "note": "Note",
+      "serving": "Serving",
+      "servingPlaceholder": "e.g. 1 bowl",
       "mealTypes": {
         "breakfast": "Breakfast",
         "lunch": "Lunch",
@@ -187,12 +197,42 @@
         "moderate": "Moderate",
         "intense": "Intense"
       }
-    }
+    },
+    "addFood": "Add Food",
+    "bodyMetrics": "Body Metrics",
+    "exerciseCalendar": "Exercise Calendar",
+    "exerciseRecords": "Exercise Records",
+    "filter": {
+      "allMeals": "All Meals"
+    },
+    "foodRecords": "Food Records",
+    "kpi": {
+      "caloriesIn": "Calories In",
+      "caloriesOut": "Calories Out",
+      "exerciseMinutes": "Exercise Minutes"
+    },
+    "meal": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack"
+    },
+    "recentFoods": "Recent Foods",
+    "unit": {
+      "kcal": "kcal",
+      "minutes": "min"
+    },
+    "weightTrend": "Weight Trend"
   },
   "reading": {
     "title": "Reading",
     "addBook": "Add Book",
     "editBook": "Edit Book",
+    "searchPlaceholder": "Search books...",
+    "progress": "Reading Progress",
+    "rating": {
+      "none": "Not Rated"
+    },
     "stats": {
       "total": "Total Books",
       "reading": "Reading",
@@ -212,7 +252,11 @@
       "pages": "Pages",
       "currentPage": "Current Page",
       "startDate": "Start Date",
-      "endDate": "End Date"
+      "endDate": "End Date",
+      "pubYear": "Publication Year",
+      "publisher": "Publisher",
+      "publisherPlaceholder": "Enter publisher",
+      "totalPages": "Total Pages"
     },
     "status": {
       "want_to_read": "Want to Read",
@@ -225,6 +269,28 @@
     "title": "Media",
     "addMedia": "Add Media",
     "editMedia": "Edit Media",
+    "addMovie": "Add Movie",
+    "doubanLink": "Douban Link",
+    "movie": {
+      "country": "Country",
+      "countryPlaceholder": "e.g. United States",
+      "director": "Director",
+      "directorPlaceholder": "Enter director name",
+      "doubanUrl": "Douban URL",
+      "genre": "Genre",
+      "genrePlaceholder": "e.g. Drama",
+      "rating": "Rating",
+      "status": "Status",
+      "title": "Title",
+      "titleEn": "English Title",
+      "titleEnPlaceholder": "Enter English title",
+      "titlePlaceholder": "Enter movie title",
+      "year": "Year"
+    },
+    "rating": {
+      "none": "Not Rated"
+    },
+    "searchPlaceholder": "Search media...",
     "stats": {
       "total": "Total Media",
       "watched": "Watched",
