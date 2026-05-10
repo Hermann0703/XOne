@@ -260,6 +260,7 @@ export default function StorageManager() {
                               size="icon-xs"
                               onClick={(e) => { e.stopPropagation(); openEditCabinet(cab) }}
                               title="编辑"
+                              aria-label="编辑档案柜"
                             >
                               <Pencil className="size-3" />
                             </Button>
@@ -268,6 +269,7 @@ export default function StorageManager() {
                               size="icon-xs"
                               onClick={(e) => { e.stopPropagation(); handleDeleteCabinet(cab.id, cab.name) }}
                               title="删除"
+                              aria-label="删除档案柜"
                             >
                               <Trash2 className="size-3 text-red-500" />
                             </Button>
@@ -346,6 +348,7 @@ export default function StorageManager() {
                             size="icon-xs"
                             onClick={(e) => { e.stopPropagation(); openEditBox(box) }}
                             title="编辑"
+                            aria-label="编辑档案盒"
                           >
                             <Pencil className="size-3" />
                           </Button>
@@ -354,6 +357,7 @@ export default function StorageManager() {
                             size="icon-xs"
                             onClick={(e) => { e.stopPropagation(); handleDeleteBox(box.id, box.box_no) }}
                             title="删除"
+                            aria-label="删除档案盒"
                           >
                             <Trash2 className="size-3 text-red-500" />
                           </Button>

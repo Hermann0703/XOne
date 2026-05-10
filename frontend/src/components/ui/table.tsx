@@ -31,9 +31,9 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
 )
 TableRow.displayName = "TableRow"
 
-const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<HTMLTableCellElement>>(
-  ({ className, ...props }, ref) => (
-    <th ref={ref} className={cn("h-12 px-4 text-left align-middle font-medium text-text-secondary [&:has([role=checkbox])]:pr-0", className)} {...props} />
+const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<HTMLTableCellElement> & { scope?: "col" | "row" | "colgroup" | "rowgroup" }>(
+  ({ className, scope = "col", ...props }, ref) => (
+    <th ref={ref} scope={scope} className={cn("h-12 px-4 text-left align-middle font-medium text-text-secondary [&:has([role=checkbox])]:pr-0", className)} {...props} />
   )
 )
 TableHead.displayName = "TableHead"

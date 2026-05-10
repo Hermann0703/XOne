@@ -232,10 +232,12 @@ export default function DataSourceList() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon-xs" title="编辑"
+                            aria-label="编辑数据源"
                             onClick={() => openEdit(s)}>
                             <Pencil className="size-3.5" />
                           </Button>
                           <Button variant="ghost" size="icon-xs" title="删除"
+                            aria-label="删除数据源"
                             onClick={() => setDeleteTarget(s)}>
                             <Trash2 className="size-3.5 text-destructive" />
                           </Button>

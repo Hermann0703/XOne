@@ -35,6 +35,7 @@ export function LocaleSwitcher({ locale, collapsed = false }: LocaleSwitcherProp
       type="button"
       onClick={switchLocale}
       title={`切换到 ${LOCALE_LABELS[NEXT_LOCALE[locale]] || 'English'}`}
+      aria-label={`切换到 ${LOCALE_LABELS[NEXT_LOCALE[locale]] || 'English'}`}
       className={cn(
         'flex items-center rounded-btn transition-colors duration-150',
         'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',

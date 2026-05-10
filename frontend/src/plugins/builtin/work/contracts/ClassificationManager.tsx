@@ -235,6 +235,7 @@ export default function ClassificationManager() {
                             <Button
                               variant="ghost"
                               size="icon-xs"
+                              aria-label="编辑分类项"
                               onClick={() => openEdit(c)}
                             >
                               <Pencil className="size-3.5" />
@@ -242,6 +243,7 @@ export default function ClassificationManager() {
                             <Button
                               variant="ghost"
                               size="icon-xs"
+                              aria-label="删除分类项"
                               onClick={() => handleDelete(c)}
                             >
                               <Trash2 className="size-3.5 text-destructive" />

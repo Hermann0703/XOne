@@ -265,15 +265,18 @@ export default function TaskList() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon-xs" title="手动执行"
+                            aria-label="手动执行任务"
                             disabled={executingId === t.id}
                             onClick={() => handleExecute(t)}>
                             <Play className={`size-3.5 ${executingId === t.id ? "animate-spin" : ""}`} />
                           </Button>
                           <Button variant="ghost" size="icon-xs" title="编辑"
+                            aria-label="编辑任务"
                             onClick={() => openEdit(t)}>
                             <Pencil className="size-3.5" />
                           </Button>
                           <Button variant="ghost" size="icon-xs" title="删除"
+                            aria-label="删除任务"
                             onClick={() => setDeleteTarget(t)}>
                             <Trash2 className="size-3.5 text-destructive" />
                           </Button>

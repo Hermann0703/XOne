@@ -380,6 +380,7 @@ export default function StorageDashboard() {
                             variant="ghost"
                             size="icon-xs"
                             title={t('common.edit')}
+                            aria-label="编辑档案柜"
                             onClick={() => openEditCabinet(c)}
                           >
                             <Pencil className="size-3.5" />
@@ -388,6 +389,7 @@ export default function StorageDashboard() {
                             variant="ghost"
                             size="icon-xs"
                             title={t('common.delete')}
+                            aria-label="删除档案柜"
                             onClick={() => setDeleteCabinetTarget(c)}
                           >
                             <Trash2 className="size-3.5 text-destructive" />
@@ -466,6 +468,7 @@ export default function StorageDashboard() {
                               variant="ghost"
                               size="icon-xs"
                               title={t('common.edit')}
+                              aria-label="编辑档案盒"
                               onClick={() => openEditBox(b)}
                             >
                               <Pencil className="size-3.5" />
@@ -474,6 +477,7 @@ export default function StorageDashboard() {
                               variant="ghost"
                               size="icon-xs"
                               title={t('common.delete')}
+                              aria-label="删除档案盒"
                               onClick={() => setDeleteBoxTarget(b)}
                             >
                               <Trash2 className="size-3.5 text-destructive" />

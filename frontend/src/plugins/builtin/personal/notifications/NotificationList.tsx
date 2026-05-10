@@ -90,9 +90,9 @@ function NotificationCard({
       {/* 内容 */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <h4 className="text-sm font-medium text-foreground truncate">
+          <h3 className="text-sm font-medium text-foreground truncate">
             {item.title}
-          </h4>
+          </h3>
           <span className="shrink-0 text-xs text-muted-foreground">
             {formatRelativeTime(item.created_at)}
           </span>

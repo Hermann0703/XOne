@@ -92,8 +92,8 @@ export default function FondsManager() {
                       <TableCell className="text-sm text-text-secondary max-w-[200px] truncate">{f.description || "-"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon-xs" onClick={() => openEdit(f)}><Pencil className="size-3.5" /></Button>
-                          <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(f)}><Trash2 className="size-3.5 text-destructive" /></Button>
+                          <Button variant="ghost" size="icon-xs" aria-label="编辑全宗" onClick={() => openEdit(f)}><Pencil className="size-3.5" /></Button>
+                          <Button variant="ghost" size="icon-xs" aria-label="删除全宗" onClick={() => handleDelete(f)}><Trash2 className="size-3.5 text-destructive" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>

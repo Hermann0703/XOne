@@ -122,13 +122,13 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
     <div className="max-w-2xl">
       {/* 顶部操作 */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
+        <h2 className="text-base font-semibold text-text-primary flex items-center gap-2">
           <Flag className="size-4" />
           项目里程碑
           <Badge variant="secondary" className="text-xs">
             {milestones.length}
           </Badge>
-        </h3>
+        </h2>
         <Button variant="outline" size="sm" onClick={openCreateDialog}>
           <Plus className="size-3.5 mr-1" />
           添加里程碑
@@ -171,9 +171,9 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
                         <div className="flex-1 min-w-0">
                           {/* 标题行 */}
                           <div className="flex items-center gap-2 mb-1.5">
-                            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
+                            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
                               {m.title}
-                            </h4>
+                            </h3>
                             <Badge
                               variant="outline"
                               className={`text-xs ${status.color}`}
@@ -229,6 +229,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
                             variant="ghost"
                             size="icon-xs"
                             className="size-7"
+                            aria-label="编辑里程碑"
                             onClick={() => openEditDialog(m)}
                           >
                             <Pencil className="size-3" />
@@ -237,6 +238,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
                             variant="ghost"
                             size="icon-xs"
                             className="size-7"
+                            aria-label="删除里程碑"
                             onClick={() => {
                               if (confirm(`确定要删除里程碑「${m.title}」吗？`)) {
                                 deleteMilestone(m.id);

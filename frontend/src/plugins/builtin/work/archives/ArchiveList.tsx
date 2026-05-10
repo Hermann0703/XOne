@@ -228,13 +228,13 @@ export default function ArchiveList() {
                     <TableCell className="text-sm text-text-secondary">{a.doc_date ?? '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon-xs" onClick={() => router.push(`/work/archives/${a.id}`)} title="查看">
+                        <Button variant="ghost" size="icon-xs" onClick={() => router.push(`/work/archives/${a.id}`)} title="查看" aria-label="查看档案">
                           <Eye className="size-3" />
                         </Button>
-                        <Button variant="ghost" size="icon-xs" onClick={() => router.push(`/work/archives/${a.id}/edit`)} title="编辑">
+                        <Button variant="ghost" size="icon-xs" onClick={() => router.push(`/work/archives/${a.id}/edit`)} title="编辑" aria-label="编辑档案">
                           <Pencil className="size-3" />
                         </Button>
-                        <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(a.id, a.title)} title="删除">
+                        <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(a.id, a.title)} title="删除" aria-label="删除档案">
                           <Trash2 className="size-3 text-red-500" />
                         </Button>
                       </div>

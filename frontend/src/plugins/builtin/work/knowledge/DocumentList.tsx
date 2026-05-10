@@ -507,6 +507,7 @@ export default function DocumentList() {
                     <button
                       onClick={toggleSelectAll}
                       className="inline-flex items-center justify-center hover:text-foreground text-muted-foreground"
+                      aria-label="全选"
                     >
                       {selectedIds.size === documents.length &&
                       documents.length > 0 ? (
@@ -531,6 +532,7 @@ export default function DocumentList() {
                       <button
                         onClick={() => toggleSelect(doc.id)}
                         className="inline-flex items-center justify-center hover:text-foreground text-muted-foreground"
+                        aria-label={`选择文档 ${doc.title}`}
                       >
                         {selectedIds.has(doc.id) ? (
                           <CheckSquare className="size-4" />
@@ -565,6 +567,7 @@ export default function DocumentList() {
                           variant="ghost"
                           size="icon"
                           title="重建索引"
+                          aria-label="重建索引"
                           onClick={() => handleReindex(doc.id)}
                         >
                           <RefreshCw className="size-4" />
@@ -573,6 +576,7 @@ export default function DocumentList() {
                           variant="ghost"
                           size="icon"
                           title="删除"
+                          aria-label="删除文档"
                           onClick={() => setDeleteOneId(doc.id)}
                         >
                           <Trash2 className="size-4 text-red-500" />

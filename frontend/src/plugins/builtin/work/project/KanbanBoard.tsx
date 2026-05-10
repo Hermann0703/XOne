@@ -309,6 +309,7 @@ function KanbanColumn({
               variant="ghost"
               size="icon-xs"
               className="size-5"
+              aria-label="删除列"
               onClick={() => {
                 if (confirm(`确定要删除「${column.title}」列及其所有任务吗？`)) {
                   deleteColumn(column.id);

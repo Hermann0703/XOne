@@ -256,7 +256,7 @@ export default function ArchiveDetail() {
                               </p>
                             </div>
                           </div>
-                          <Button variant="ghost" size="icon-xs" onClick={() => handleDeleteFile(f.id)} title="删除">
+                          <Button variant="ghost" size="icon-xs" onClick={() => handleDeleteFile(f.id)} title="删除" aria-label="删除文件">
                             <Trash2 className="size-3 text-red-500" />
                           </Button>
                         </div>

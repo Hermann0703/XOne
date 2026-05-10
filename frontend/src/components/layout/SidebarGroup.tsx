@@ -44,7 +44,7 @@ export function SidebarGroup({
           </TooltipContent>
         </Tooltip>
 
-        <div className="flex flex-col items-center gap-0.5 w-full">
+        <ul className="flex flex-col items-center gap-0.5 w-full" role="menubar">
           {items.map((item, i) => {
             // 菜单项高亮：当前路由以菜单项的 path 开头时激活
             const isActive = item.path
@@ -52,17 +52,18 @@ export function SidebarGroup({
               : item.active
 
             return (
-              <SidebarMenuItem
-                key={item.id}
-                {...item}
-                active={isActive}
-                collapsed={collapsed}
-                index={i}
-                onItemClick={onItemClick}
-              />
+              <li key={item.id} role="none">
+                <SidebarMenuItem
+                  {...item}
+                  active={isActive}
+                  collapsed={collapsed}
+                  index={i}
+                  onItemClick={onItemClick}
+                />
+              </li>
             )
           })}
-        </div>
+        </ul>
       </div>
     )
   }
@@ -77,7 +78,7 @@ export function SidebarGroup({
       </div>
 
       {/* Group icon + items */}
-      <div className="flex flex-col gap-0.5">
+      <ul className="flex flex-col gap-0.5" role="menu">
         {items.map((item, i) => {
           // 菜单项高亮：当前路由以菜单项的 path 开头时激活
           const isActive = item.path
@@ -85,17 +86,18 @@ export function SidebarGroup({
             : item.active
 
           return (
-            <SidebarMenuItem
-              key={item.id}
-              {...item}
-              active={isActive}
-              collapsed={collapsed}
-              index={i}
-              onItemClick={onItemClick}
-            />
+            <li key={item.id} role="none">
+              <SidebarMenuItem
+                {...item}
+                active={isActive}
+                collapsed={collapsed}
+                index={i}
+                onItemClick={onItemClick}
+              />
+            </li>
           )
         })}
-      </div>
+      </ul>
     </div>
   )
 }

@@ -257,9 +257,9 @@ export default function ChatPanel() {
             <Button
               variant="ghost"
               size="icon"
-              className="size-8 shrink-0"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
               title={t('knowledge.toggleSidebar')}
+              aria-label={t('knowledge.toggleSidebar')}
+              onClick={() => setSidebarOpen((prev) => !prev)}
             >
               <PanelLeft className="size-4" />
             </Button>
@@ -320,6 +320,7 @@ export default function ChatPanel() {
               disabled={!input.trim() || chatLoading || creatingConv}
               size="icon"
               className="size-10 shrink-0"
+              aria-label="发送消息"
             >
               {chatLoading || creatingConv ? (
                 <Loader2 className="size-4 animate-spin" />

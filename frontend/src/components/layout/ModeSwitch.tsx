@@ -39,6 +39,7 @@ export function ModeSwitch() {
     <button
       type="button"
       onClick={handleToggle}
+      aria-label={label}
       className={cn(
         'group relative flex items-center w-full gap-3 rounded-md transition-[color,background-color] duration-150',
         'text-muted-foreground hover:text-foreground hover:bg-muted',

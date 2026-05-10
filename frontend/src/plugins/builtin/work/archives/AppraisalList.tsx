@@ -138,10 +138,10 @@ export default function AppraisalList() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon-xs" title="查看">
+                        <Button variant="ghost" size="icon-xs" title="查看" aria-label="查看鉴定记录">
                           <Eye className="size-3" />
                         </Button>
-                        <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(a.id, a.archive_title ?? `#${a.id}`)} title="删除">
+                        <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(a.id, a.archive_title ?? `#${a.id}`)} title="删除" aria-label="删除鉴定记录">
                           <Trash2 className="size-3 text-red-500" />
                         </Button>
                       </div>

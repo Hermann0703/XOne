@@ -266,15 +266,15 @@ export default function ContractList() {
                         <TableCell className="text-sm">{c.contract_type || "-"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon-xs" title="查看详情"
+                            <Button variant="ghost" size="icon-xs" title="查看详情" aria-label="查看合同详情"
                               onClick={() => router.push(`/work/contracts/${c.id}`)}>
                               <Eye className="size-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon-xs" title="编辑"
+                            <Button variant="ghost" size="icon-xs" title="编辑" aria-label="编辑合同"
                               onClick={() => router.push(`/work/contracts/${c.id}/edit`)}>
                               <Pencil className="size-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon-xs" title="删除"
+                            <Button variant="ghost" size="icon-xs" title="删除" aria-label="删除合同"
                               onClick={() => setDeleteTarget(c)}>
                               <Trash2 className="size-3.5 text-destructive" />
                             </Button>

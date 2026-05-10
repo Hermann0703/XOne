@@ -138,14 +138,14 @@ export default function MilestoneTable({ contractId }: Props) {
                 <TableCell>
                   <div className="flex items-center gap-1">
                     {m.status !== "completed" && (
-                      <Button variant="ghost" size="icon-xs" title="标记完成" onClick={() => handleComplete(m)}>
+                      <Button variant="ghost" size="icon-xs" title="标记完成" aria-label="标记完成" onClick={() => handleComplete(m)}>
                         <Check className="size-3.5 text-green-600" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon-xs" title="编辑" onClick={() => openEditDialog(m)}>
+                    <Button variant="ghost" size="icon-xs" title="编辑" aria-label="编辑里程碑" onClick={() => openEditDialog(m)}>
                       <Pencil className="size-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon-xs" title="删除" onClick={() => handleDelete(m)}>
+                    <Button variant="ghost" size="icon-xs" title="删除" aria-label="删除里程碑" onClick={() => handleDelete(m)}>
                       <Trash2 className="size-3.5 text-destructive" />
                     </Button>
                   </div>

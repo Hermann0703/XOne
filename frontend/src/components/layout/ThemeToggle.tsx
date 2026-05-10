@@ -25,6 +25,7 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
       type="button"
       onClick={toggleTheme}
       title={theme === 'light' ? '切换到深色模式' : '切换到浅色模式'}
+      aria-label={theme === 'light' ? '切换到深色模式' : '切换到浅色模式'}
       className={cn(
         'flex items-center rounded-btn transition-colors duration-150',
         'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',

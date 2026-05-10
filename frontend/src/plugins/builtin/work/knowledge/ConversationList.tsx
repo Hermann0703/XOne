@@ -93,10 +93,10 @@ export default function ConversationList() {
           {t('knowledge.conversations')}
         </h3>
         <Button
-          variant="ghost"
-          size="icon"
-          className="size-8"
-          onClick={() => setSidebarOpen(false)}
+            variant="ghost"
+            size="icon"
+            aria-label="关闭侧边栏"
+            onClick={() => setSidebarOpen(false)}
         >
           <X className="size-4" />
         </Button>
