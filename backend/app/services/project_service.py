@@ -14,7 +14,7 @@ from app.models.project import Project, ProjectColumn, ProjectTask, ProjectMiles
 #  项目 (Project) CRUD
 # ══════════════════════════════════════════════════════════════════════
 
-async def list_projects(db: AsyncSession, user_id: UUID) -> list[Project]:
+async def list_projects(db: AsyncSession, user_id: str) -> list[Project]:
     """查询当前用户所有项目，按创建时间倒序"""
     stmt = (
         select(Project)
@@ -25,14 +25,14 @@ async def list_projects(db: AsyncSession, user_id: UUID) -> list[Project]:
     return list(result.scalars().all())
 
 
-async def get_project(db: AsyncSession, project_id: UUID) -> Optional[Project]:
+async def get_project(db: AsyncSession, project_id: str) -> Optional[Project]:
     """获取单个项目"""
     stmt = select(Project).where(Project.id == project_id)
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 
-async def create_project(db: AsyncSession, data: dict, user_id: UUID) -> Project:
+async def create_project(db: AsyncSession, data: dict, user_id: str) -> Project:
     """创建项目，事务中同时创建 3 个默认列（待办/进行中/已完成）"""
     project = Project(
         user_id=user_id,
@@ -59,7 +59,7 @@ async def create_project(db: AsyncSession, data: dict, user_id: UUID) -> Project
     return project
 
 
-async def update_project(db: AsyncSession, project_id: UUID, data: dict) -> Optional[Project]:
+async def update_project(db: AsyncSession, project_id: str, data: dict) -> Optional[Project]:
     """更新项目"""
     stmt = select(Project).where(Project.id == project_id)
     result = await db.execute(stmt)
@@ -77,7 +77,7 @@ async def update_project(db: AsyncSession, project_id: UUID, data: dict) -> Opti
     return project
 
 
-async def delete_project(db: AsyncSession, project_id: UUID) -> bool:
+async def delete_project(db: AsyncSession, project_id: str) -> bool:
     """删除项目（级联删除列、任务、里程碑）"""
     stmt = select(Project).where(Project.id == project_id)
     result = await db.execute(stmt)

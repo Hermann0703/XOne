@@ -1,5 +1,6 @@
 """阅读模块服务层 — 书籍CRUD业务逻辑"""
 
+from datetime import date
 from typing import Optional
 from uuid import UUID
 
@@ -54,12 +55,36 @@ async def list_books(
     return {"items": items, "total": total}
 
 
+_DATE_FIELDS = ("start_date", "finish_date")
+
+
+def _to_date(value):
+    """将日期字符串转为 date 对象"""
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        return date.fromisoformat(value)
+    return value
+
+
+def _convert_dates(data: dict) -> dict:
+    """将字符串日期字段转为 Python date 对象"""
+    data = dict(data)
+    for field in _DATE_FIELDS:
+        if field in data and data[field] is not None:
+            data[field] = _to_date(data[field])
+    return data
+
+
 async def create_book(
     db: AsyncSession,
     user_id: UUID,
     data: dict,
 ) -> Book:
     """创建新书籍记录"""
+    data = _convert_dates(data)
     book = Book(user_id=user_id, **data)
     db.add(book)
     await db.flush()
@@ -83,6 +108,8 @@ async def update_book(
 
     for key, value in data.items():
         if hasattr(book, key) and value is not None:
+            if key in _DATE_FIELDS:
+                value = _to_date(value)
             setattr(book, key, value)
 
     await db.flush()

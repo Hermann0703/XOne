@@ -1,5 +1,6 @@
 """观影模块服务层 — 影视CRUD业务逻辑"""
 
+from datetime import date
 from typing import Optional
 from uuid import UUID
 
@@ -55,12 +56,36 @@ async def list_movies(
     return {"items": items, "total": total}
 
 
+_WATCH_DATE_FIELDS = ("watch_date",)
+
+
+def _to_date(value):
+    """将日期字符串转为 date 对象"""
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        return date.fromisoformat(value)
+    return value
+
+
+def _convert_dates(data: dict) -> dict:
+    """将字符串日期字段转为 Python date 对象"""
+    data = dict(data)
+    for field in _WATCH_DATE_FIELDS:
+        if field in data and data[field] is not None:
+            data[field] = _to_date(data[field])
+    return data
+
+
 async def create_movie(
     db: AsyncSession,
     user_id: UUID,
     data: dict,
 ) -> Movie:
     """创建新影视记录"""
+    data = _convert_dates(data)
     movie = Movie(user_id=user_id, **data)
     db.add(movie)
     await db.flush()
@@ -84,6 +109,8 @@ async def update_movie(
 
     for key, value in data.items():
         if hasattr(movie, key) and value is not None:
+            if key in _WATCH_DATE_FIELDS:
+                value = _to_date(value)
             setattr(movie, key, value)
 
     await db.flush()

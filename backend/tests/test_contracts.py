@@ -11,21 +11,21 @@ import pytest
 async def _create_prerequisites(client):
     """创建全宗 + 分类 + 密级，返回其 ID。"""
     # 创建全宗
-    r = await client.post("/api/v1/work/fonds", json={
+    r = await client.post("/api/v1/work/contracts/fonds", json={
         "name": "测试全宗", "code": "TEST_FONDS", "description": "测试用全宗",
     })
     assert r.status_code == 200, f"创建全宗失败: {r.text}"
     fonds_id = r.json()["data"]["id"]
 
     # 创建分类
-    r = await client.post("/api/v1/work/categories", json={
+    r = await client.post("/api/v1/work/contracts/categories", json={
         "name": "测试分类", "code": "TEST_CAT", "fonds_id": fonds_id,
     })
     assert r.status_code == 200, f"创建分类失败: {r.text}"
     category_id = r.json()["data"]["id"]
 
     # 创建密级
-    r = await client.post("/api/v1/work/classifications", json={
+    r = await client.post("/api/v1/work/contracts/classifications", json={
         "name": "内部", "code": "INTERNAL", "level": 2,
     })
     assert r.status_code == 200, f"创建密级失败: {r.text}"
@@ -38,7 +38,7 @@ async def _create_contract(client, fonds_id, category_id, classification_id,
                            contract_no="CT-2024-001", title="测试合同"):
     """创建一条合同记录，返回响应 data。"""
     r = await client.post(
-        f"/api/v1/work/contracts?user_id=1",
+        f"/api/v1/work/contracts/contracts?user_id=1",
         json={
             "contract_no": contract_no,
             "title": title,
@@ -101,7 +101,7 @@ class TestContractCRUD:
         )
 
         r = await self.client.get(
-            f"/api/v1/work/contracts?user_id=1&page=1&page_size=20"
+            f"/api/v1/work/contracts/contracts?user_id=1&page=1&page_size=20"
         )
         assert r.status_code == 200
         body = r.json()
@@ -122,18 +122,18 @@ class TestContractCRUD:
 
         # 单独更新第二条合同状态
         r_list = await self.client.get(
-            f"/api/v1/work/contracts?user_id=1"
+            f"/api/v1/work/contracts/contracts?user_id=1"
         )
         contracts = r_list.json()["data"]
         contract_b = [c for c in contracts if c["contract_no"] == "CT-2024-B"][0]
         await self.client.patch(
-            f"/api/v1/work/contracts/{contract_b['id']}?user_id=1",
+            f"/api/v1/work/contracts/contracts/{contract_b['id']}?user_id=1",
             json={"status": "completed"},
         )
 
         # 按 status=draft 筛选
         r = await self.client.get(
-            f"/api/v1/work/contracts?user_id=1&status=draft"
+            f"/api/v1/work/contracts/contracts?user_id=1&status=draft"
         )
         assert r.status_code == 200
         assert len(r.json()["data"]) == 1
@@ -147,7 +147,7 @@ class TestContractCRUD:
         contract_id = data["id"]
 
         r = await self.client.get(
-            f"/api/v1/work/contracts/{contract_id}?user_id=1"
+            f"/api/v1/work/contracts/contracts/{contract_id}?user_id=1"
         )
         assert r.status_code == 200
         body = r.json()
@@ -158,7 +158,7 @@ class TestContractCRUD:
 
     async def test_get_contract_not_found(self):
         """查询不存在的合同应返回 404"""
-        r = await self.client.get("/api/v1/work/contracts/99999?user_id=1")
+        r = await self.client.get("/api/v1/work/contracts/contracts/99999?user_id=1")
         assert r.status_code == 404
         assert "合同不存在" in r.json()["detail"]
 
@@ -170,7 +170,7 @@ class TestContractCRUD:
         contract_id = data["id"]
 
         r = await self.client.patch(
-            f"/api/v1/work/contracts/{contract_id}?user_id=1",
+            f"/api/v1/work/contracts/contracts/{contract_id}?user_id=1",
             json={
                 "title": "更新后的合同标题",
                 "amount": 200000.00,
@@ -186,7 +186,7 @@ class TestContractCRUD:
     async def test_update_contract_not_found(self):
         """更新不存在的合同应返回 404"""
         r = await self.client.patch(
-            "/api/v1/work/contracts/99999?user_id=1",
+            "/api/v1/work/contracts/contracts/99999?user_id=1",
             json={"title": "不存在"},
         )
         assert r.status_code == 404
@@ -199,20 +199,20 @@ class TestContractCRUD:
         contract_id = data["id"]
 
         r = await self.client.delete(
-            f"/api/v1/work/contracts/{contract_id}?user_id=1"
+            f"/api/v1/work/contracts/contracts/{contract_id}?user_id=1"
         )
         assert r.status_code == 200
         assert r.json()["code"] == 0
 
         # 确认已删除
         r = await self.client.get(
-            f"/api/v1/work/contracts/{contract_id}?user_id=1"
+            f"/api/v1/work/contracts/contracts/{contract_id}?user_id=1"
         )
         assert r.status_code == 404
 
     async def test_delete_contract_not_found(self):
         """删除不存在的合同应返回 404"""
-        r = await self.client.delete("/api/v1/work/contracts/99999?user_id=1")
+        r = await self.client.delete("/api/v1/work/contracts/contracts/99999?user_id=1")
         assert r.status_code == 404
 
     async def test_search_contracts(self):
@@ -227,7 +227,7 @@ class TestContractCRUD:
         )
 
         r = await self.client.get(
-            "/api/v1/work/contracts?user_id=1&search=软件"
+            "/api/v1/work/contracts/contracts?user_id=1&search=软件"
         )
         assert r.status_code == 200
         results = r.json()["data"]

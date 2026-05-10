@@ -1,113 +1,108 @@
-"""全局搜索模块测试
+"""全局搜索模块测试 — 匹配当前 POST API
+
+POST /api/v1/work/search/global   — 全局搜索
+POST /api/v1/work/search/reindex  — 管理员重建索引
 
 使用 Mock 替代真实 Meilisearch 服务。
 """
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 
+@pytest.fixture
+def mock_search_client():
+    """创建 mock MeilisearchClient 并注入 get_search_client。"""
+    mock_client = MagicMock()
+    mock_client.search_global = MagicMock()
+    # 其他方法也用 MagicMock 防止意外调用报错
+    mock_client.delete_all_documents = MagicMock()
+    mock_client.index_document = MagicMock()
+
+    with patch("app.api.work.search.get_search_client", return_value=mock_client):
+        yield mock_client
+
+
 class TestGlobalSearch:
-    """全局搜索测试"""
+    """全局搜索 POST /api/v1/work/search/global"""
 
-    @pytest.fixture(autouse=True)
-    def mock_search_service(self):
-        """Mock app.services.search_service 中的所有方法。"""
-        with patch("app.api.work.search.search_service") as mock_svc:
-            # search_all 返回格式: {"contracts": [...], "archives": [...], ...}
-            mock_svc.search_all = AsyncMock()
-            # search_contracts 返回 list
-            mock_svc.search_contracts = AsyncMock()
-            # search_archives 返回 list
-            mock_svc.search_archives = AsyncMock()
-            mock_svc.index_contract = AsyncMock()
-            mock_svc.update_contract_index = AsyncMock()
-            mock_svc.delete_contract_index = AsyncMock()
-            mock_svc.index_archive = AsyncMock()
-            mock_svc.update_archive_index = AsyncMock()
-            mock_svc.delete_archive_index = AsyncMock()
-
-            yield mock_svc
-
-    async def test_global_search(self, async_client, mock_search_service):
-        """全局搜索应返回多类型聚合结果"""
-        mock_search_service.search_all.return_value = {
-            "contracts": [
-                {"id": 1, "title": "测试合同", "type": "contract"},
+    async def test_global_search(self, async_client, mock_search_client):
+        """全局搜索应返回聚合结果"""
+        mock_search_client.search_global.return_value = {
+            "results": [
+                {"id": "contract_1", "title": "测试合同", "type": "contract"},
+                {"id": "archive_1", "title": "测试档案", "type": "archive"},
             ],
-            "archives": [
-                {"id": 1, "title": "测试档案", "type": "archive"},
-            ],
-            "knowledge": [],
+            "total": 2,
         }
 
-        r = await async_client.get(
-            "/api/v1/work/search?keyword=测试&user_id=1"
+        r = await async_client.post(
+            "/api/v1/work/search/global",
+            json={"query": "测试", "limit": 20},
         )
         assert r.status_code == 200
         body = r.json()
         assert body["code"] == 0
-        data = body["data"]
-        assert "contracts" in data
-        assert "archives" in data
-        assert len(data["contracts"]) == 1
-        assert data["contracts"][0]["title"] == "测试合同"
-        mock_search_service.search_all.assert_awaited_once()
+        assert body["data"]["total"] == 2
+        assert len(body["data"]["results"]) == 2
 
-    async def test_search_no_results(self, async_client, mock_search_service):
-        """空结果全局搜索应返回空列表"""
-        mock_search_service.search_all.return_value = {
-            "contracts": [],
-            "archives": [],
-            "knowledge": [],
+    async def test_global_search_no_results(self, async_client, mock_search_client):
+        """无结果搜索应返回空列表"""
+        mock_search_client.search_global.return_value = {
+            "results": [],
+            "total": 0,
         }
 
-        r = await async_client.get(
-            "/api/v1/work/search?keyword=不存在&user_id=1"
+        r = await async_client.post(
+            "/api/v1/work/search/global",
+            json={"query": "不存在的内容", "limit": 20},
         )
         assert r.status_code == 200
         body = r.json()
-        assert body["code"] == 0
-        data = body["data"]
-        assert data["contracts"] == []
-        assert data["archives"] == []
+        assert body["data"]["total"] == 0
+        assert body["data"]["results"] == []
 
-    async def test_search_type_contracts(self, async_client, mock_search_service):
-        """按类型搜索合同"""
-        mock_search_service.search_contracts.return_value = [
-            {"id": 1, "title": "服务合同", "type": "contract"},
-            {"id": 2, "title": "销售合同", "type": "contract"},
-        ]
+    async def test_global_search_empty_query(self, async_client):
+        """空查询应返回 422（Pydantic 校验 min_length=1）"""
+        r = await async_client.post(
+            "/api/v1/work/search/global",
+            json={"query": "", "limit": 20},
+        )
+        assert r.status_code == 422
 
-        r = await async_client.get(
-            "/api/v1/work/search/contracts?keyword=合同&user_id=1"
+    async def test_global_search_missing_query(self, async_client):
+        """缺少必填字段应返回 422"""
+        r = await async_client.post(
+            "/api/v1/work/search/global",
+            json={"limit": 20},
+        )
+        assert r.status_code == 422
+
+    async def test_global_search_limit_range(self, async_client, mock_search_client):
+        """limit 为 1 时应正常工作"""
+        mock_search_client.search_global.return_value = {
+            "results": [{"id": "c_1", "title": "T", "type": "contract"}],
+            "total": 100,
+        }
+
+        r = await async_client.post(
+            "/api/v1/work/search/global",
+            json={"query": "T", "limit": 1},
         )
         assert r.status_code == 200
         body = r.json()
-        assert body["code"] == 0
-        assert len(body["data"]) == 2
-        mock_search_service.search_contracts.assert_awaited_once()
+        assert body["data"]["total"] == 100
+        assert len(body["data"]["results"]) == 1
 
-    async def test_search_empty_keyword(self, async_client, mock_search_service):
-        """空关键词搜索应返回错误"""
-        r = await async_client.get(
-            "/api/v1/work/search?keyword=&user_id=1"
+
+class TestSearchAuthenticated:
+    """需要认证的端点测试"""
+
+    async def test_global_search_unauthenticated(self, anon_client):
+        """未认证用户应返回 401"""
+        r = await anon_client.post(
+            "/api/v1/work/search/global",
+            json={"query": "测试", "limit": 20},
         )
-        # 空关键词应返回 400 或空结果
-        assert r.status_code in (200, 400, 422)
-
-    async def test_search_type_archives(self, async_client, mock_search_service):
-        """按类型搜索档案"""
-        mock_search_service.search_archives.return_value = [
-            {"id": 1, "title": "工程档案", "type": "archive"},
-        ]
-
-        r = await async_client.get(
-            "/api/v1/work/search/archives?keyword=工程&user_id=1"
-        )
-        assert r.status_code == 200
-        body = r.json()
-        assert body["code"] == 0
-        assert len(body["data"]) == 1
-        assert body["data"][0]["title"] == "工程档案"
+        assert r.status_code != 200  # 401 或 403

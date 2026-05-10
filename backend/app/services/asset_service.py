@@ -172,7 +172,14 @@ async def create_transaction(
                 target_account.balance += data["amount"]
 
     await db.flush()
-    await db.refresh(txn)
+    # 重新查询以加载所有标量列（onupdate 后过期）和 account 关联
+    stmt = (
+        select(Transaction)
+        .where(Transaction.id == txn.id)
+        .options(selectinload(Transaction.account))
+    )
+    result = await db.execute(stmt)
+    txn = result.scalar_one()
     return txn
 
 

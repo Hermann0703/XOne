@@ -186,7 +186,19 @@ async def update_item(
             setattr(item, field, data[field])
 
     await db.flush()
-    await db.refresh(item, ["budget"])
+
+    # 若 budget_id 变更，重新查询以加载新的 budget 关联
+    if "budget_id" in data and data["budget_id"] != (item.budget_id or 0):
+        stmt = (
+            select(ShoppingItem)
+            .where(ShoppingItem.id == item_id)
+            .options(selectinload(ShoppingItem.budget))
+        )
+        result = await db.execute(stmt)
+        item = result.scalar_one()
+    else:
+        await db.refresh(item)  # 仅加载 onupdate 列（不碰 relationship）
+
     return item
 
 

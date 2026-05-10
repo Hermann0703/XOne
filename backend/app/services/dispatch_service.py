@@ -53,7 +53,7 @@ async def list_data_sources(
     return {"items": items, "total": total}
 
 
-async def get_data_source(db: AsyncSession, source_id: uuid.UUID) -> Optional[DispatchDataSource]:
+async def get_data_source(db: AsyncSession, source_id: str) -> Optional[DispatchDataSource]:
     """获取单个数据源详情。"""
     result = await db.execute(
         select(DispatchDataSource).where(DispatchDataSource.id == source_id)
@@ -71,7 +71,7 @@ async def create_data_source(db: AsyncSession, data: dict) -> DispatchDataSource
 
 
 async def update_data_source(
-    db: AsyncSession, source_id: uuid.UUID, data: dict
+    db: AsyncSession, source_id: str, data: dict
 ) -> Optional[DispatchDataSource]:
     """更新数据源信息。"""
     result = await db.execute(
@@ -90,7 +90,7 @@ async def update_data_source(
     return source
 
 
-async def delete_data_source(db: AsyncSession, source_id: uuid.UUID) -> bool:
+async def delete_data_source(db: AsyncSession, source_id: str) -> bool:
     """删除数据源（级联删除所有关联任务）。"""
     result = await db.execute(
         select(DispatchDataSource).where(DispatchDataSource.id == source_id)
@@ -114,7 +114,7 @@ async def list_tasks(
     size: int = 20,
     search: Optional[str] = None,
     status: Optional[str] = None,
-    data_source_id: Optional[uuid.UUID] = None,
+    data_source_id: Optional[str] = None,
 ) -> dict:
     """分页查询任务列表。"""
     query = select(DispatchTask)
@@ -144,7 +144,7 @@ async def list_tasks(
     return {"items": items, "total": total}
 
 
-async def get_task(db: AsyncSession, task_id: uuid.UUID) -> Optional[DispatchTask]:
+async def get_task(db: AsyncSession, task_id: str) -> Optional[DispatchTask]:
     """获取单个任务详情。"""
     result = await db.execute(
         select(DispatchTask).where(DispatchTask.id == task_id)
@@ -154,9 +154,10 @@ async def get_task(db: AsyncSession, task_id: uuid.UUID) -> Optional[DispatchTas
 
 async def create_task(db: AsyncSession, data: dict) -> Optional[DispatchTask]:
     """创建任务。先验证所属数据源是否存在。"""
+    ds_id = str(data["data_source_id"]) if not isinstance(data["data_source_id"], str) else data["data_source_id"]
     source_result = await db.execute(
         select(DispatchDataSource).where(
-            DispatchDataSource.id == data["data_source_id"]
+            DispatchDataSource.id == ds_id
         )
     )
     if not source_result.scalar_one_or_none():
@@ -170,7 +171,7 @@ async def create_task(db: AsyncSession, data: dict) -> Optional[DispatchTask]:
 
 
 async def update_task(
-    db: AsyncSession, task_id: uuid.UUID, data: dict
+    db: AsyncSession, task_id: str, data: dict
 ) -> Optional[DispatchTask]:
     """更新任务信息。"""
     result = await db.execute(
@@ -189,7 +190,7 @@ async def update_task(
     return task
 
 
-async def delete_task(db: AsyncSession, task_id: uuid.UUID) -> bool:
+async def delete_task(db: AsyncSession, task_id: str) -> bool:
     """删除任务。"""
     result = await db.execute(
         select(DispatchTask).where(DispatchTask.id == task_id)
@@ -207,7 +208,7 @@ async def delete_task(db: AsyncSession, task_id: uuid.UUID) -> bool:
 # 执行引擎
 # ═══════════════════════════════════════════════════════════════════
 
-async def execute_task(db: AsyncSession, task_id: uuid.UUID) -> Optional[DispatchLog]:
+async def execute_task(db: AsyncSession, task_id: str) -> Optional[DispatchLog]:
     """执行单个报送任务：更新状态 → 执行查询/API → 写日志 → 更新状态。"""
     # 获取任务
     task_result = await db.execute(
@@ -312,7 +313,7 @@ async def list_logs(
     db: AsyncSession,
     page: int = 1,
     size: int = 20,
-    task_id: Optional[uuid.UUID] = None,
+    task_id: Optional[str] = None,
 ) -> dict:
     """分页查询执行日志（按时间倒序）。"""
     query = select(DispatchLog)

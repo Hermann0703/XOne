@@ -1,167 +1,127 @@
-"""pytest 配置与共享 fixtures
+"""pytest fixtures — module scope, before_create 仅改 type+server_default
 
-使用内存 SQLite (aiosqlite) 替代 PostgreSQL，避免外部数据库依赖。
+已验证模式：
+- before_create 事件：只改 col.type=String(36) 和 col.server_default=text(...)
+- 不碰 col.default（触发元数据递归死循环）
+- sqlite3.register_adapter 处理 ORM default=uuid.uuid4 生成的 UUID 对象
+- async_sessionmaker 用 class_=AsyncSession 关键字
 """
-
 from __future__ import annotations
 
 import asyncio
+import sqlite3
 import uuid
 from typing import AsyncGenerator
 
+sqlite3.register_adapter(uuid.UUID, lambda u: str(u))
+
 import pytest
 import pytest_asyncio
+from fastapi import Depends, HTTPException, status
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import event, String, text
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.database import Base, get_db
+from app.core.security import oauth2_scheme, get_current_user
 from app.main import app as _app
 from app.models.user import User
 from app.services.auth_service import AuthService
 
-# ═══════════════════════════════════════════════════════════════════
-# SQLite 引擎 — 内存模式，共享连接以便跨 session 可见
-# ═══════════════════════════════════════════════════════════════════
-
 TEST_DATABASE_URL = "sqlite+aiosqlite:///file:xone_test?mode=memory&cache=shared&uri=true"
+_auth_svc = AuthService()
 
-_test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+# ═══ UUID 列补丁（before_create）════
+def _patch_uuid_columns(target, connection, **kw):
+    """仅改 column type + server_default + insert_sentinel，不动 col.default"""
+    for t in Base.metadata.tables.values():
+        for c in list(t.columns):
+            if isinstance(c.type, PG_UUID):
+                c.type = String(36)
+                if c.server_default is not None:
+                    c.server_default = text("(lower(hex(randomblob(16))))")
+                # 禁止 RETURNING sentinel 匹配（SQLite 字符串/UUID不兼容）
+                try:
+                    setattr(c, '_fallback_insert_sentinel', False)
+                except (AttributeError, TypeError):
+                    pass
 
-TestSessionLocal = async_sessionmaker(
-    _test_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
+event.listen(Base.metadata, "before_create", _patch_uuid_columns)
 
+# ═══ 依赖覆盖 ═════
+_ref_session: AsyncSession | None = None
+_override_done = False
 
-# ── 将 PG_UUID 列替换为 String(36) 以兼容 SQLite ────────────────
-# 监听 Table 的列附加事件，在 DDL 生成前完成替换。
-# 使用 `before_create` 事件修改 metadata 中已注册的 Table。
+async def _shared_get_db():
+    yield _ref_session
 
-def _replace_uuid_columns(target, connection, **kw):
-    """遍历所有 Table，将 PG_UUID 列替换为 String(36)。"""
-    for table in Base.metadata.tables.values():
-        for col in list(table.columns):
-            if isinstance(col.type, PG_UUID):
-                col.type = String(36)
+async def _test_get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    payload = _auth_svc.decode_token(token)
+    if payload is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="凭证无效")
+    user = await db.get(User, payload.get("sub"))
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在")
+    return user
 
-                # 同时替换 server_default（如 gen_random_uuid()）
-                if col.server_default is not None:
-                    # 移除 PostgreSQL 特定的 server_default，改用 Python 默认
-                    col.server_default = None
-                    # Python 端默认在模型层面通过 uuid.uuid4 处理：
-                    # 我们在创建 User 时手动设置 id
+# ═══ Module-scope fixtures ═══
 
-
-event.listen(Base.metadata, "before_create", _replace_uuid_columns)
-
-
-# ═══════════════════════════════════════════════════════════════════
-# 覆盖 get_db 依赖 — 使用测试引擎
-# ═══════════════════════════════════════════════════════════════════
-
-async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with TestSessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
-
-
-# 标记：避免重复应用
-_override_applied = False
-
-
-def _ensure_override() -> None:
-    global _override_applied
-    if not _override_applied:
-        # 设置数据库健康状态为 True，绕过 MongoDB 连接检查
-        import app.main as main_mod
-        main_mod._db_healthy = True
-        _app.dependency_overrides[get_db] = override_get_db
-        _override_applied = True
-
-
-# ═══════════════════════════════════════════════════════════════════
-# Fixtures
-# ═══════════════════════════════════════════════════════════════════
-
-@pytest_asyncio.fixture(scope="session")
-def event_loop():
-    """为 session 级 fixture 提供事件循环。"""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest_asyncio.fixture(scope="session")
-async def _init_db():
-    """session 级：创建所有表（仅执行一次）。"""
-    async with _test_engine.begin() as conn:
+@pytest_asyncio.fixture(scope="module")
+async def engine():
+    eng = create_async_engine(TEST_DATABASE_URL, echo=False)
+    # 禁用 insertmanyvalues 优化（SQLite UUID 字符串与 sentinel 不兼容）
+    eng.sync_engine.dialect.use_insertmanyvalues = False
+    async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield
-    async with _test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    yield eng
+    await eng.dispose()
 
 
-@pytest_asyncio.fixture
-async def db_session(_init_db) -> AsyncGenerator[AsyncSession, None]:
-    """每个测试独立的数据库 session（回滚隔离）。"""
-    async with TestSessionLocal() as session:
-        # 显式开始事务用于回滚隔离
-        async with session.begin():
-            yield session
-            await session.rollback()
+@pytest_asyncio.fixture(scope="module")
+async def async_session(engine):
+    global _ref_session
+    fac = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    _ref_session = fac()
+    yield _ref_session
+    await _ref_session.rollback()
+    await _ref_session.close()
 
 
-@pytest_asyncio.fixture
-async def test_user(db_session: AsyncSession) -> User:
-    """创建测试用户并返回 User ORM 对象。
-
-    为兼容 SQLite，手动生成 UUID 字符串。
-    """
+@pytest_asyncio.fixture(scope="module")
+async def test_user(async_session: AsyncSession):
     user = User(
-        id=uuid.uuid4(),
+        id=str(uuid.uuid4()),
         username="testuser",
         email="test@example.com",
         hashed_password=AuthService.hash_password("TestPass123"),
         display_name="测试用户",
         is_active=True,
     )
-    # 绕过 server_default via manual assignment
-    db_session.add(user)
-    await db_session.flush()
-    await db_session.refresh(user)
+    async_session.add(user)
+    await async_session.flush()
+    await async_session.refresh(user)
     return user
 
 
-@pytest_asyncio.fixture
-async def auth_token(test_user: User) -> str:
-    """为测试用户生成 JWT token。"""
-    return AuthService.create_access_token(
-        user_id=test_user.id,
-        username=test_user.username,
+@pytest_asyncio.fixture(scope="module")
+async def auth_token(test_user: User):
+    global _override_done
+    token = _auth_svc.create_access_token(
+        user_id=str(test_user.id), username=test_user.username
     )
+    if not _override_done:
+        _app.dependency_overrides[get_db] = _shared_get_db
+        _app.dependency_overrides[get_current_user] = _test_get_current_user
+        _override_done = True
+    return token
 
 
-@pytest_asyncio.fixture
-async def async_client(db_session, auth_token) -> AsyncGenerator[AsyncClient, None]:
-    """提供带依赖覆盖的 AsyncClient。
-
-    将 auth_token 预置于 Authorization header 方便认证端点测试。
-    """
-    _ensure_override()
-
+@pytest_asyncio.fixture(scope="module")
+async def async_client(auth_token: str) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=_app)
     async with AsyncClient(
         transport=transport,
@@ -171,14 +131,8 @@ async def async_client(db_session, auth_token) -> AsyncGenerator[AsyncClient, No
         yield ac
 
 
-@pytest_asyncio.fixture
-async def anon_client(db_session) -> AsyncGenerator[AsyncClient, None]:
-    """无需认证的 AsyncClient（用于测试未登录场景）。"""
-    _ensure_override()
-
+@pytest_asyncio.fixture(scope="module")
+async def anon_client() -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=_app)
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as ac:
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

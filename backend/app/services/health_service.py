@@ -11,6 +11,34 @@ from app.models.health import FoodRecord, ExerciseRecord, BodyMetrics
 
 
 # ──────────────────────────────────────────────
+#  工具函数
+# ──────────────────────────────────────────────
+
+
+def _to_date(val):
+    """将字符串转为 date 对象，已是 date 对象则原样返回。"""
+    if val is None:
+        return None
+    if isinstance(val, date):
+        return val
+    from datetime import datetime as _dt
+    if isinstance(val, _dt):
+        return val.date()
+    return date.fromisoformat(val)
+
+
+_DATE_FIELDS = frozenset({"record_date", "start_date", "end_date", "created_date", "purchased_date"})
+
+
+def _convert_date_fields(data: dict) -> dict:
+    """将字典中已知日期字段的字符串值转为 date 对象。"""
+    for k, v in data.items():
+        if k in _DATE_FIELDS and isinstance(v, str):
+            data[k] = _to_date(v)
+    return data
+
+
+# ──────────────────────────────────────────────
 #  饮食记录 (FoodRecord)
 # ──────────────────────────────────────────────
 
@@ -56,6 +84,7 @@ async def list_foods(
 
 async def create_food(db: AsyncSession, user_id: UUID, data: dict) -> FoodRecord:
     """创建一条饮食记录"""
+    data = _convert_date_fields(data)
     record = FoodRecord(
         user_id=user_id,
         food_name=data["food_name"],
@@ -83,6 +112,7 @@ async def update_food(db: AsyncSession, food_id: int, user_id: UUID, data: dict)
     if record is None:
         return None
 
+    data = _convert_date_fields(data)
     for key, value in data.items():
         if hasattr(record, key) and key not in ("id", "user_id", "created_at"):
             setattr(record, key, value)
@@ -149,6 +179,7 @@ async def list_exercises(
 
 async def create_exercise(db: AsyncSession, user_id: UUID, data: dict) -> ExerciseRecord:
     """创建一条运动记录"""
+    data = _convert_date_fields(data)
     record = ExerciseRecord(
         user_id=user_id,
         exercise_name=data["exercise_name"],
@@ -174,6 +205,7 @@ async def update_exercise(db: AsyncSession, exercise_id: int, user_id: UUID, dat
     if record is None:
         return None
 
+    data = _convert_date_fields(data)
     for key, value in data.items():
         if hasattr(record, key) and key not in ("id", "user_id", "created_at"):
             setattr(record, key, value)
@@ -237,6 +269,7 @@ async def list_metrics(
 
 async def create_metric(db: AsyncSession, user_id: UUID, data: dict) -> BodyMetrics:
     """创建一条身体指标记录"""
+    data = _convert_date_fields(data)
     record = BodyMetrics(
         user_id=user_id,
         weight=data.get("weight"),
@@ -262,6 +295,7 @@ async def update_metric(db: AsyncSession, metric_id: int, user_id: UUID, data: d
     if record is None:
         return None
 
+    data = _convert_date_fields(data)
     for key, value in data.items():
         if hasattr(record, key) and key not in ("id", "user_id", "created_at"):
             setattr(record, key, value)
