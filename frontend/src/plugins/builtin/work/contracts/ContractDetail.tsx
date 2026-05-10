@@ -2,15 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useContractStore } from "./store";
-import MilestoneTable from "./MilestoneTable";
-import Timeline from "./Timeline";
+import dynamic from "next/dynamic";
+
+const MilestoneTable = dynamic(() => import("./MilestoneTable"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="size-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+});
+
+const Timeline = dynamic(() => import("./Timeline"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="size-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+});
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   draft:      { label: "草稿",   className: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" },

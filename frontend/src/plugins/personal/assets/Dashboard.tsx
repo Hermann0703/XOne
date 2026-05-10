@@ -6,8 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
+import dynamic from "next/dynamic"
 import { DollarSign, ArrowUpCircle, ArrowDownCircle, TrendingUp, Wallet } from "lucide-react"
+
+const MonthlyTrendChart = dynamic(() => import("./MonthlyTrendChart"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[280px] w-full" />,
+})
 
 const API_BASE = "http://localhost:8000/api/v1/personal"
 
@@ -227,30 +232,14 @@ export default function AssetsDashboard() {
             <CardTitle className="text-base">{t("assets.monthlyTrend")}</CardTitle>
           </CardHeader>
           <CardContent>
-            {data && data.monthly_trend && data.monthly_trend.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={data.monthly_trend}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    formatter={(value: any) => formatCurrency(Number(value))}
-                  />
-                  <Legend />
-                  <Bar
-                    dataKey="income"
-                    name={t("assets.txType.income")}
-                    fill="#22c55e"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="expense"
-                    name={t("assets.txType.expense")}
-                    fill="#ef4444"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+            {data ? (
+              <MonthlyTrendChart
+                data={data.monthly_trend}
+                formatCurrency={formatCurrency}
+                incomeLabel={t("assets.txType.income")}
+                expenseLabel={t("assets.txType.expense")}
+                emptyLabel={t("common.empty")}
+              />
             ) : (
               <div className="flex items-center justify-center h-[280px] text-text-secondary text-sm">
                 {t("common.empty")}

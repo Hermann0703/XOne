@@ -4,8 +4,13 @@ import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import dynamic from "next/dynamic"
 import { Heart, Flame, Clock, TrendingDown, Utensils } from "lucide-react"
+
+const WeightTrendChart = dynamic(() => import("./WeightTrendChart"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[240px] w-full" />,
+})
 
 interface KPI {
   label: string
@@ -114,21 +119,10 @@ export default function HealthDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {weightTrend.length > 0 ? (
-              <ResponsiveContainer width="100%" height={240}>
-                <LineChart data={weightTrend}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis domain={["auto", "auto"]} tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="weight" stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[240px] text-text-secondary text-sm">
-                {t("common.empty")}
-              </div>
-            )}
+            <WeightTrendChart
+              data={weightTrend}
+              emptyLabel={t("common.empty")}
+            />
           </CardContent>
         </Card>
 
