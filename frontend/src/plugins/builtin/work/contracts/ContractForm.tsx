@@ -171,26 +171,27 @@ export default function ContractForm() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">
+            <label htmlFor="field-contract-no" className="text-sm font-medium text-text-secondary block mb-1">
               合同编号 <span className="text-destructive">*</span>
             </label>
-            <Input value={form.contract_no || ""} onChange={(e) => setField("contract_no", e.target.value)} placeholder="请输入合同编号" />
+            <Input id="field-contract-no" value={form.contract_no || ""} onChange={(e) => setField("contract_no", e.target.value)} placeholder="请输入合同编号" />
             {fieldErrors.contract_no && (
               <p className="text-xs text-destructive mt-1">{fieldErrors.contract_no}</p>
             )}
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">
+            <label htmlFor="field-contract-title" className="text-sm font-medium text-text-secondary block mb-1">
               标题 <span className="text-destructive">*</span>
             </label>
-            <Input value={form.title || ""} onChange={(e) => setField("title", e.target.value)} placeholder="请输入合同标题" />
+            <Input id="field-contract-title" value={form.title || ""} onChange={(e) => setField("title", e.target.value)} placeholder="请输入合同标题" />
             {fieldErrors.title && (
               <p className="text-xs text-destructive mt-1">{fieldErrors.title}</p>
             )}
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">全宗</label>
+            <label htmlFor="field-contract-fonds" className="text-sm font-medium text-text-secondary block mb-1">全宗</label>
             <Select
+              id="field-contract-fonds"
               options={fonds.map(f => ({ value: String(f.id), label: f.name }))}
               value={form.fonds_id ? String(form.fonds_id) : ""}
               onChange={(e) => setField("fonds_id", e.target.value ? Number(e.target.value) : undefined)}
@@ -198,8 +199,9 @@ export default function ContractForm() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">分类</label>
+            <label htmlFor="field-contract-category" className="text-sm font-medium text-text-secondary block mb-1">分类</label>
             <Select
+              id="field-contract-category"
               options={categories.map(c => ({ value: String(c.id), label: c.name }))}
               value={form.category_id ? String(form.category_id) : ""}
               onChange={(e) => setField("category_id", e.target.value ? Number(e.target.value) : undefined)}
@@ -207,8 +209,9 @@ export default function ContractForm() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">密级</label>
+            <label htmlFor="field-contract-classification" className="text-sm font-medium text-text-secondary block mb-1">密级</label>
             <Select
+              id="field-contract-classification"
               options={classifications.map(c => ({ value: String(c.id), label: c.name }))}
               value={form.classification_id ? String(form.classification_id) : ""}
               onChange={(e) => setField("classification_id", e.target.value ? Number(e.target.value) : undefined)}
@@ -216,8 +219,9 @@ export default function ContractForm() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">合同类型</label>
+            <label htmlFor="field-contract-type" className="text-sm font-medium text-text-secondary block mb-1">合同类型</label>
             <Select
+              id="field-contract-type"
               options={[
                 { value: "purchase", label: "采购合同" },
                 { value: "sale", label: "销售合同" },
@@ -240,20 +244,21 @@ export default function ContractForm() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">甲方</label>
-            <Input value={form.party_a || ""} onChange={(e) => setField("party_a", e.target.value)} placeholder="请输入甲方名称" />
+            <label htmlFor="field-contract-party-a" className="text-sm font-medium text-text-secondary block mb-1">甲方</label>
+            <Input id="field-contract-party-a" value={form.party_a || ""} onChange={(e) => setField("party_a", e.target.value)} placeholder="请输入甲方名称" />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">乙方</label>
-            <Input value={form.party_b || ""} onChange={(e) => setField("party_b", e.target.value)} placeholder="请输入乙方名称" />
+            <label htmlFor="field-contract-party-b" className="text-sm font-medium text-text-secondary block mb-1">乙方</label>
+            <Input id="field-contract-party-b" value={form.party_b || ""} onChange={(e) => setField("party_b", e.target.value)} placeholder="请输入乙方名称" />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">合同金额</label>
-            <Input type="number" value={form.amount ?? ""} onChange={(e) => setField("amount", e.target.value ? Number(e.target.value) : undefined)} placeholder="请输入金额" />
+            <label htmlFor="field-contract-amount" className="text-sm font-medium text-text-secondary block mb-1">合同金额</label>
+            <Input id="field-contract-amount" type="number" value={form.amount ?? ""} onChange={(e) => setField("amount", e.target.value ? Number(e.target.value) : undefined)} placeholder="请输入金额" />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">币种</label>
+            <label htmlFor="field-contract-currency" className="text-sm font-medium text-text-secondary block mb-1">币种</label>
             <Select
+              id="field-contract-currency"
               options={[
                 { value: "CNY", label: "CNY (人民币)" },
                 { value: "USD", label: "USD (美元)" },
@@ -274,16 +279,16 @@ export default function ContractForm() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">签署日期</label>
-            <Input type="date" value={form.sign_date || ""} onChange={(e) => setField("sign_date", e.target.value)} />
+            <label htmlFor="field-contract-sign-date" className="text-sm font-medium text-text-secondary block mb-1">签署日期</label>
+            <Input id="field-contract-sign-date" type="date" value={form.sign_date || ""} onChange={(e) => setField("sign_date", e.target.value)} />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">开始日期</label>
-            <Input type="date" value={form.start_date || ""} onChange={(e) => setField("start_date", e.target.value)} />
+            <label htmlFor="field-contract-start-date" className="text-sm font-medium text-text-secondary block mb-1">开始日期</label>
+            <Input id="field-contract-start-date" type="date" value={form.start_date || ""} onChange={(e) => setField("start_date", e.target.value)} />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">结束日期</label>
-            <Input type="date" value={form.end_date || ""} onChange={(e) => setField("end_date", e.target.value)} />
+            <label htmlFor="field-contract-end-date" className="text-sm font-medium text-text-secondary block mb-1">结束日期</label>
+            <Input id="field-contract-end-date" type="date" value={form.end_date || ""} onChange={(e) => setField("end_date", e.target.value)} />
           </div>
         </CardContent>
       </Card>
@@ -295,13 +300,13 @@ export default function ContractForm() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">合同描述</label>
-            <Textarea value={form.description || ""} onChange={(e) => setField("description", e.target.value)} placeholder="请输入合同描述" rows={3} />
+            <label htmlFor="field-contract-description" className="text-sm font-medium text-text-secondary block mb-1">合同描述</label>
+            <Textarea id="field-contract-description" value={form.description || ""} onChange={(e) => setField("description", e.target.value)} placeholder="请输入合同描述" rows={3} />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">关键词</label>
+            <label htmlFor="field-contract-keywords" className="text-sm font-medium text-text-secondary block mb-1">关键词</label>
             <div className="flex gap-2">
-              <Input value={keywordInput} onChange={(e) => setKeywordInput(e.target.value)}
+              <Input id="field-contract-keywords" value={keywordInput} onChange={(e) => setKeywordInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addKeyword(); } }}
                 placeholder="输入关键词后按回车添加" />
               <Button variant="outline" size="sm" onClick={addKeyword}>

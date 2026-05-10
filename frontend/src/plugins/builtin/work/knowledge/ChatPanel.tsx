@@ -132,10 +132,11 @@ function NewConversationDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
+            <label htmlFor="field-conv-title" className="text-sm font-medium text-foreground mb-1.5 block">
               {t('knowledge.conversationTitle')}
             </label>
             <Input
+              id="field-conv-title"
               placeholder={t('knowledge.conversationTitlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}

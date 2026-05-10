@@ -151,20 +151,20 @@ export default function BodyMetricsDashboard() {
         <DialogBody className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">{t("health.metrics.weight")}(kg)</label>
-              <Input type="number" step="0.1" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
+              <label htmlFor="field-weight" className="text-sm font-medium">{t("health.metrics.weight")}(kg)</label>
+              <Input id="field-weight" type="number" step="0.1" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("health.metrics.height")}(cm)</label>
-              <Input type="number" step="0.1" value={form.height} onChange={(e) => setForm({ ...form, height: e.target.value })} />
+              <label htmlFor="field-height" className="text-sm font-medium">{t("health.metrics.height")}(cm)</label>
+              <Input id="field-height" type="number" step="0.1" value={form.height} onChange={(e) => setForm({ ...form, height: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("health.metrics.bodyFat")}(%)</label>
-              <Input type="number" step="0.1" value={form.body_fat} onChange={(e) => setForm({ ...form, body_fat: e.target.value })} />
+              <label htmlFor="field-body-fat" className="text-sm font-medium">{t("health.metrics.bodyFat")}(%)</label>
+              <Input id="field-body-fat" type="number" step="0.1" value={form.body_fat} onChange={(e) => setForm({ ...form, body_fat: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("health.metrics.waist")}(cm)</label>
-              <Input type="number" step="0.1" value={form.waist} onChange={(e) => setForm({ ...form, waist: e.target.value })} />
+              <label htmlFor="field-waist" className="text-sm font-medium">{t("health.metrics.waist")}(cm)</label>
+              <Input id="field-waist" type="number" step="0.1" value={form.waist} onChange={(e) => setForm({ ...form, waist: e.target.value })} />
             </div>
           </div>
         </DialogBody>

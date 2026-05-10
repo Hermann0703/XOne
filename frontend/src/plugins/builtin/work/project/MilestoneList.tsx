@@ -266,10 +266,11 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
+              <label htmlFor="field-milestone-title" className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
                 名称 *
               </label>
               <Input
+                id="field-milestone-title"
                 value={editing.title || ""}
                 onChange={(e) =>
                   setEditing((p) => ({ ...p, title: e.target.value }))
@@ -278,10 +279,11 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
+              <label htmlFor="field-milestone-description" className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
                 描述
               </label>
               <Input
+                id="field-milestone-description"
                 value={editing.description || ""}
                 onChange={(e) =>
                   setEditing((p) => ({ ...p, description: e.target.value }))
@@ -290,10 +292,11 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
+              <label htmlFor="field-milestone-duedate" className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
                 截止日期
               </label>
               <Input
+                id="field-milestone-duedate"
                 type="date"
                 value={editing.dueDate || ""}
                 onChange={(e) =>
@@ -302,10 +305,11 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
+              <label htmlFor="field-milestone-status" className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
                 状态
               </label>
               <Select
+                id="field-milestone-status"
                 value={editing.status || "pending"}
                 onChange={(e) =>
                   setEditing((p) => ({ ...p, status: e.target.value as Milestone["status"] }))
@@ -319,10 +323,11 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
+              <label htmlFor="field-milestone-progress" className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
                 进度 ({editing.progress || 0}%)
               </label>
               <Input
+                id="field-milestone-progress"
                 type="range"
                 min="0"
                 max="100"

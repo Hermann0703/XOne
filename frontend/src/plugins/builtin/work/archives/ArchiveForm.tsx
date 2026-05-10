@@ -129,8 +129,9 @@ export default function ArchiveForm() {
             {/* 档号 + 题名 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">档号 <span className="text-red-500">*</span></label>
+                <label htmlFor="field-archive-no" className="text-sm font-medium">档号 <span className="text-red-500">*</span></label>
                 <Input
+                  id="field-archive-no"
                   value={form.archive_no}
                   onChange={(e) => update('archive_no', e.target.value)}
                   placeholder="请输入档号，如 A-2025-001"
@@ -138,8 +139,9 @@ export default function ArchiveForm() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">题名 <span className="text-red-500">*</span></label>
+                <label htmlFor="field-archive-title" className="text-sm font-medium">题名 <span className="text-red-500">*</span></label>
                 <Input
+                  id="field-archive-title"
                   value={form.title}
                   onChange={(e) => update('title', e.target.value)}
                   placeholder="请输入档案题名"
@@ -151,8 +153,9 @@ export default function ArchiveForm() {
             {/* 全宗 + 分类 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">全宗</label>
+                <label htmlFor="field-archive-fonds" className="text-sm font-medium">全宗</label>
                 <Select
+                  id="field-archive-fonds"
                   value={form.fonds_id}
                   onChange={(e) => update('fonds_id', e.target.value)}
                   placeholder="选择全宗"
@@ -164,8 +167,9 @@ export default function ArchiveForm() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">分类</label>
+                <label htmlFor="field-archive-category" className="text-sm font-medium">分类</label>
                 <Select
+                  id="field-archive-category"
                   value={form.category_id}
                   onChange={(e) => update('category_id', e.target.value)}
                   placeholder="选择分类"
@@ -185,8 +189,9 @@ export default function ArchiveForm() {
             {/* 密级 + 文件编号 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">密级</label>
+                <label htmlFor="field-archive-security" className="text-sm font-medium">密级</label>
                 <Select
+                  id="field-archive-security"
                   value={form.security_level}
                   onChange={(e) => update('security_level', e.target.value)}
                   placeholder="选择密级"
@@ -200,8 +205,9 @@ export default function ArchiveForm() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">文件编号</label>
+                <label htmlFor="field-archive-file-no" className="text-sm font-medium">文件编号</label>
                 <Input
+                  id="field-archive-file-no"
                   value={form.file_no}
                   onChange={(e) => update('file_no', e.target.value)}
                   placeholder="文件编号"
@@ -212,16 +218,18 @@ export default function ArchiveForm() {
             {/* 卷号 + 责任人 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">卷号</label>
+                <label htmlFor="field-archive-volume-no" className="text-sm font-medium">卷号</label>
                 <Input
+                  id="field-archive-volume-no"
                   value={form.volume_no}
                   onChange={(e) => update('volume_no', e.target.value)}
                   placeholder="卷号"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">责任人</label>
+                <label htmlFor="field-archive-responsible" className="text-sm font-medium">责任人</label>
                 <Input
+                  id="field-archive-responsible"
                   value={form.responsible_person}
                   onChange={(e) => update('responsible_person', e.target.value)}
                   placeholder="责任人"
@@ -232,16 +240,18 @@ export default function ArchiveForm() {
             {/* 文件日期 + 页数 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">文件日期</label>
+                <label htmlFor="field-archive-doc-date" className="text-sm font-medium">文件日期</label>
                 <Input
+                  id="field-archive-doc-date"
                   type="date"
                   value={form.doc_date}
                   onChange={(e) => update('doc_date', e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">页数</label>
+                <label htmlFor="field-archive-page-count" className="text-sm font-medium">页数</label>
                 <Input
+                  id="field-archive-page-count"
                   type="number"
                   value={form.page_count}
                   onChange={(e) => update('page_count', e.target.value)}
@@ -254,8 +264,9 @@ export default function ArchiveForm() {
             {/* 保管期限 + 存放位置 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">保管期限</label>
+                <label htmlFor="field-archive-retention" className="text-sm font-medium">保管期限</label>
                 <Select
+                  id="field-archive-retention"
                   value={form.retention_period}
                   onChange={(e) => update('retention_period', e.target.value)}
                   placeholder="选择保管期限"
@@ -270,8 +281,9 @@ export default function ArchiveForm() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">存放位置</label>
+                <label htmlFor="field-archive-location" className="text-sm font-medium">存放位置</label>
                 <Input
+                  id="field-archive-location"
                   value={form.location}
                   onChange={(e) => update('location', e.target.value)}
                   placeholder="如：A区-3号柜-2层"
@@ -282,8 +294,9 @@ export default function ArchiveForm() {
             {/* 档案盒 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">档案盒编号</label>
+                <label htmlFor="field-archive-box-id" className="text-sm font-medium">档案盒编号</label>
                 <Input
+                  id="field-archive-box-id"
                   value={form.box_id}
                   onChange={(e) => update('box_id', e.target.value)}
                   placeholder="档案盒ID（上下架用）"
@@ -293,8 +306,9 @@ export default function ArchiveForm() {
 
             {/* 关键词 */}
             <div>
-              <label className="text-sm font-medium">关键词</label>
+              <label htmlFor="field-archive-keywords" className="text-sm font-medium">关键词</label>
               <Input
+                id="field-archive-keywords"
                 value={form.keywords}
                 onChange={(e) => update('keywords', e.target.value)}
                 placeholder="关键词，用逗号分隔"
@@ -303,8 +317,9 @@ export default function ArchiveForm() {
 
             {/* 描述 */}
             <div>
-              <label className="text-sm font-medium">描述</label>
+              <label htmlFor="field-archive-description" className="text-sm font-medium">描述</label>
               <Textarea
+                id="field-archive-description"
                 value={form.description}
                 onChange={(e) => update('description', e.target.value)}
                 placeholder="档案内容的简要描述"

@@ -234,12 +234,12 @@ export default function ArchiveDetail() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="text-base">文件列表 ({files.length})</CardTitle>
-                  <label className="cursor-pointer inline-flex items-center">
+                  <label htmlFor="field-file-upload" className="cursor-pointer inline-flex items-center">
                     <Button size="sm" disabled={uploading} className="cursor-pointer">
                       <Upload className="size-4" />
                       <span className="ml-1">{uploading ? '上传中...' : '上传文件'}</span>
                     </Button>
-                    <input type="file" className="hidden" onChange={handleUpload} />
+                    <input id="field-file-upload" type="file" className="hidden" onChange={handleUpload} />
                   </label>
                 </CardHeader>
                 <CardContent>

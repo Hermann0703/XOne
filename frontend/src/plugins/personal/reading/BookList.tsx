@@ -317,40 +317,45 @@ export default function BookList() {
         <DialogBody className="space-y-3 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="text-sm font-medium">{t("reading.book.title")}</label>
+              <label className="text-sm font-medium" htmlFor="field-title">{t("reading.book.title")}</label>
               <Input
+                id="field-title"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 placeholder={t("reading.book.titlePlaceholder")}
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("reading.book.author")}</label>
+              <label className="text-sm font-medium" htmlFor="field-author">{t("reading.book.author")}</label>
               <Input
+                id="field-author"
                 value={form.author}
                 onChange={(e) => setForm({ ...form, author: e.target.value })}
                 placeholder={t("reading.book.authorPlaceholder")}
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("reading.book.isbn")}</label>
+              <label className="text-sm font-medium" htmlFor="field-isbn">{t("reading.book.isbn")}</label>
               <Input
+                id="field-isbn"
                 value={form.isbn}
                 onChange={(e) => setForm({ ...form, isbn: e.target.value })}
                 placeholder="ISBN"
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("reading.book.publisher")}</label>
+              <label className="text-sm font-medium" htmlFor="field-publisher">{t("reading.book.publisher")}</label>
               <Input
+                id="field-publisher"
                 value={form.publisher}
                 onChange={(e) => setForm({ ...form, publisher: e.target.value })}
                 placeholder={t("reading.book.publisherPlaceholder")}
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("reading.book.pubYear")}</label>
+              <label className="text-sm font-medium" htmlFor="field-pubYear">{t("reading.book.pubYear")}</label>
               <Input
+                id="field-pubYear"
                 type="number"
                 value={form.pub_year}
                 onChange={(e) => setForm({ ...form, pub_year: e.target.value })}
@@ -358,8 +363,9 @@ export default function BookList() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("reading.book.status")}</label>
+              <label className="text-sm font-medium" htmlFor="field-status">{t("reading.book.status")}</label>
               <Select
+                id="field-status"
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
                 options={STATUS_TABS.filter((s) => s.value !== "").map((s) => ({
@@ -369,8 +375,9 @@ export default function BookList() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("reading.book.rating")}</label>
+              <label className="text-sm font-medium" htmlFor="field-rating">{t("reading.book.rating")}</label>
               <Select
+                id="field-rating"
                 value={form.rating}
                 onChange={(e) => setForm({ ...form, rating: e.target.value })}
                 options={[
@@ -384,8 +391,9 @@ export default function BookList() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("reading.book.totalPages")}</label>
+              <label className="text-sm font-medium" htmlFor="field-totalPages">{t("reading.book.totalPages")}</label>
               <Input
+                id="field-totalPages"
                 type="number"
                 value={form.total_pages}
                 onChange={(e) => setForm({ ...form, total_pages: e.target.value })}
@@ -393,8 +401,9 @@ export default function BookList() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("reading.book.currentPage")}</label>
+              <label className="text-sm font-medium" htmlFor="field-currentPage">{t("reading.book.currentPage")}</label>
               <Input
+                id="field-currentPage"
                 type="number"
                 value={form.current_page}
                 onChange={(e) => setForm({ ...form, current_page: e.target.value })}

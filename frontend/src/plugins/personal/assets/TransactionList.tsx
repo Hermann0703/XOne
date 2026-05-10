@@ -224,10 +224,11 @@ export default function TransactionList() {
         <CardContent className="py-3">
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[120px]">
-              <label className="text-xs font-medium text-text-secondary block mb-1">
+              <label htmlFor="field-filter-type" className="text-xs font-medium text-text-secondary block mb-1">
                 {t("assets.tx.type")}
               </label>
               <Select
+                id="field-filter-type"
                 value={filterType}
                 onChange={(e) => {
                   setFilterType(e.target.value)
@@ -242,10 +243,11 @@ export default function TransactionList() {
               />
             </div>
             <div className="min-w-[140px]">
-              <label className="text-xs font-medium text-text-secondary block mb-1">
+              <label htmlFor="field-filter-category" className="text-xs font-medium text-text-secondary block mb-1">
                 {t("assets.tx.category")}
               </label>
               <Select
+                id="field-filter-category"
                 value={filterCategory}
                 onChange={(e) => {
                   setFilterCategory(e.target.value)
@@ -259,10 +261,11 @@ export default function TransactionList() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-text-secondary block mb-1">
+              <label htmlFor="field-filter-dateFrom" className="text-xs font-medium text-text-secondary block mb-1">
                 {t("assets.filter.dateFrom")}
               </label>
               <Input
+                id="field-filter-dateFrom"
                 type="date"
                 className="h-10 w-36"
                 value={dateFrom}
@@ -273,10 +276,11 @@ export default function TransactionList() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-text-secondary block mb-1">
+              <label htmlFor="field-filter-dateTo" className="text-xs font-medium text-text-secondary block mb-1">
                 {t("assets.filter.dateTo")}
               </label>
               <Input
+                id="field-filter-dateTo"
                 type="date"
                 className="h-10 w-36"
                 value={dateTo}
@@ -404,8 +408,9 @@ export default function TransactionList() {
         </DialogHeader>
         <DialogBody className="space-y-3">
           <div>
-            <label className="text-sm font-medium">{t("assets.tx.account")}</label>
+            <label htmlFor="field-account" className="text-sm font-medium">{t("assets.tx.account")}</label>
             <Select
+              id="field-account"
               value={form.account_id}
               onChange={(e) => setForm({ ...form, account_id: e.target.value })}
               placeholder={t("assets.tx.selectAccount")}
@@ -417,8 +422,9 @@ export default function TransactionList() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">{t("assets.tx.type")}</label>
+              <label htmlFor="field-type" className="text-sm font-medium">{t("assets.tx.type")}</label>
               <Select
+                id="field-type"
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
                 options={[
@@ -429,8 +435,9 @@ export default function TransactionList() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("assets.tx.category")}</label>
+              <label htmlFor="field-category" className="text-sm font-medium">{t("assets.tx.category")}</label>
               <Select
+                id="field-category"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 placeholder={t("assets.tx.selectCategory")}
@@ -443,8 +450,9 @@ export default function TransactionList() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">{t("assets.tx.amount")}</label>
+              <label htmlFor="field-amount" className="text-sm font-medium">{t("assets.tx.amount")}</label>
               <Input
+                id="field-amount"
                 type="number"
                 step="0.01"
                 value={form.amount}
@@ -452,8 +460,9 @@ export default function TransactionList() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("assets.tx.date")}</label>
+              <label htmlFor="field-date" className="text-sm font-medium">{t("assets.tx.date")}</label>
               <Input
+                id="field-date"
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -461,8 +470,9 @@ export default function TransactionList() {
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium">{t("assets.tx.description")}</label>
+            <label htmlFor="field-description" className="text-sm font-medium">{t("assets.tx.description")}</label>
             <Input
+              id="field-description"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder={t("assets.tx.descriptionPlaceholder")}

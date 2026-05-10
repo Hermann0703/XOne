@@ -329,24 +329,27 @@ export default function MovieList() {
         <DialogBody className="space-y-3 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="text-sm font-medium">{t("media.movie.title")}</label>
+              <label className="text-sm font-medium" htmlFor="field-title">{t("media.movie.title")}</label>
               <Input
+                id="field-title"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 placeholder={t("media.movie.titlePlaceholder")}
               />
             </div>
             <div className="col-span-2">
-              <label className="text-sm font-medium">{t("media.movie.titleEn")}</label>
+              <label className="text-sm font-medium" htmlFor="field-titleEn">{t("media.movie.titleEn")}</label>
               <Input
+                id="field-titleEn"
                 value={form.title_en}
                 onChange={(e) => setForm({ ...form, title_en: e.target.value })}
                 placeholder={t("media.movie.titleEnPlaceholder")}
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("media.movie.year")}</label>
+              <label className="text-sm font-medium" htmlFor="field-year">{t("media.movie.year")}</label>
               <Input
+                id="field-year"
                 type="number"
                 value={form.year}
                 onChange={(e) => setForm({ ...form, year: e.target.value })}
@@ -354,40 +357,45 @@ export default function MovieList() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("media.movie.director")}</label>
+              <label className="text-sm font-medium" htmlFor="field-director">{t("media.movie.director")}</label>
               <Input
+                id="field-director"
                 value={form.director}
                 onChange={(e) => setForm({ ...form, director: e.target.value })}
                 placeholder={t("media.movie.directorPlaceholder")}
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("media.movie.genre")}</label>
+              <label className="text-sm font-medium" htmlFor="field-genre">{t("media.movie.genre")}</label>
               <Input
+                id="field-genre"
                 value={form.genre}
                 onChange={(e) => setForm({ ...form, genre: e.target.value })}
                 placeholder={t("media.movie.genrePlaceholder")}
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("media.movie.country")}</label>
+              <label className="text-sm font-medium" htmlFor="field-country">{t("media.movie.country")}</label>
               <Input
+                id="field-country"
                 value={form.country}
                 onChange={(e) => setForm({ ...form, country: e.target.value })}
                 placeholder={t("media.movie.countryPlaceholder")}
               />
             </div>
             <div className="col-span-2">
-              <label className="text-sm font-medium">{t("media.movie.doubanUrl")}</label>
+              <label className="text-sm font-medium" htmlFor="field-doubanUrl">{t("media.movie.doubanUrl")}</label>
               <Input
+                id="field-doubanUrl"
                 value={form.douban_url}
                 onChange={(e) => setForm({ ...form, douban_url: e.target.value })}
                 placeholder="https://movie.douban.com/subject/..."
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("media.movie.status")}</label>
+              <label className="text-sm font-medium" htmlFor="field-status">{t("media.movie.status")}</label>
               <Select
+                id="field-status"
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
                 options={STATUS_TABS.filter((s) => s.value !== "").map((s) => ({
@@ -397,8 +405,9 @@ export default function MovieList() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("media.movie.rating")}</label>
+              <label className="text-sm font-medium" htmlFor="field-rating">{t("media.movie.rating")}</label>
               <Select
+                id="field-rating"
                 value={form.rating}
                 onChange={(e) => setForm({ ...form, rating: e.target.value })}
                 options={[

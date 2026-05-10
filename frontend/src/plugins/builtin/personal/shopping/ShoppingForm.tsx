@@ -131,10 +131,11 @@ export default function ShoppingForm({ open, onClose, onSaved }: ShoppingFormPro
       <DialogBody className="space-y-4 max-h-[70vh] overflow-y-auto">
         {/* Name */}
         <div>
-          <label className="text-sm font-medium text-text-secondary block mb-1">
+          <label htmlFor="field-name" className="text-sm font-medium text-text-secondary block mb-1">
             名称 <span className="text-destructive">*</span>
           </label>
           <Input
+            id="field-name"
             value={form.name}
             onChange={(e) => setField("name", e.target.value)}
             placeholder="商品名称"
@@ -145,10 +146,11 @@ export default function ShoppingForm({ open, onClose, onSaved }: ShoppingFormPro
         {/* Price + Quantity */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">
+            <label htmlFor="field-price" className="text-sm font-medium text-text-secondary block mb-1">
               价格 (¥) <span className="text-destructive">*</span>
             </label>
             <Input
+              id="field-price"
               type="number"
               step="0.01"
               min="0"
@@ -159,10 +161,11 @@ export default function ShoppingForm({ open, onClose, onSaved }: ShoppingFormPro
             {errors.price && <p className="text-xs text-destructive mt-1">{errors.price}</p>}
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">
+            <label htmlFor="field-quantity" className="text-sm font-medium text-text-secondary block mb-1">
               数量 <span className="text-destructive">*</span>
             </label>
             <Input
+              id="field-quantity"
               type="number"
               min="1"
               value={form.quantity}
@@ -176,16 +179,18 @@ export default function ShoppingForm({ open, onClose, onSaved }: ShoppingFormPro
         {/* Category + Priority */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">分类</label>
+            <label htmlFor="field-category" className="text-sm font-medium text-text-secondary block mb-1">分类</label>
             <Input
+              id="field-category"
               value={form.category}
               onChange={(e) => setField("category", e.target.value)}
               placeholder="如: 食品, 电子, 服装"
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">优先级</label>
+            <label htmlFor="field-priority" className="text-sm font-medium text-text-secondary block mb-1">优先级</label>
             <Select
+              id="field-priority"
               value={form.priority}
               onChange={(e) => setField("priority", e.target.value)}
               options={[
@@ -200,8 +205,9 @@ export default function ShoppingForm({ open, onClose, onSaved }: ShoppingFormPro
         {/* Status + Budget */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">状态</label>
+            <label htmlFor="field-status" className="text-sm font-medium text-text-secondary block mb-1">状态</label>
             <Select
+              id="field-status"
               value={form.status}
               onChange={(e) => setField("status", e.target.value)}
               options={[
@@ -212,8 +218,9 @@ export default function ShoppingForm({ open, onClose, onSaved }: ShoppingFormPro
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">预算</label>
+            <label htmlFor="field-budget" className="text-sm font-medium text-text-secondary block mb-1">预算</label>
             <Select
+              id="field-budget"
               value={form.budget_id ? String(form.budget_id) : ""}
               onChange={(e) => setField("budget_id", e.target.value)}
               placeholder="无"
@@ -228,16 +235,18 @@ export default function ShoppingForm({ open, onClose, onSaved }: ShoppingFormPro
         {/* Store + URL */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">店铺</label>
+            <label htmlFor="field-store" className="text-sm font-medium text-text-secondary block mb-1">店铺</label>
             <Input
+              id="field-store"
               value={form.store}
               onChange={(e) => setField("store", e.target.value)}
               placeholder="购买渠道"
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-text-secondary block mb-1">链接</label>
+            <label htmlFor="field-url" className="text-sm font-medium text-text-secondary block mb-1">链接</label>
             <Input
+              id="field-url"
               value={form.url}
               onChange={(e) => setField("url", e.target.value)}
               placeholder="https://..."
@@ -247,8 +256,9 @@ export default function ShoppingForm({ open, onClose, onSaved }: ShoppingFormPro
 
         {/* Notes */}
         <div>
-          <label className="text-sm font-medium text-text-secondary block mb-1">备注</label>
+          <label htmlFor="field-notes" className="text-sm font-medium text-text-secondary block mb-1">备注</label>
           <Textarea
+            id="field-notes"
             value={form.notes}
             onChange={(e) => setField("notes", e.target.value)}
             placeholder="备注信息"

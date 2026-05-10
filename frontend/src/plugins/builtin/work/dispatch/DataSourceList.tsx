@@ -258,24 +258,27 @@ export default function DataSourceList() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">数据源名称</label>
+              <label htmlFor="field-ds-name" className="block text-sm font-medium mb-1.5">数据源名称</label>
               <Input
+                id="field-ds-name"
                 placeholder="输入数据源名称"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">数据源类型</label>
+              <label htmlFor="field-ds-type" className="block text-sm font-medium mb-1.5">数据源类型</label>
               <Select
+                id="field-ds-type"
                 options={SOURCE_TYPE_OPTIONS}
                 value={formType}
                 onChange={(e) => setFormType(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">连接配置 (JSON)</label>
+              <label htmlFor="field-ds-config" className="block text-sm font-medium mb-1.5">连接配置 (JSON)</label>
               <Textarea
+                id="field-ds-config"
                 placeholder='{"host":"localhost","port":3306,"database":"test","username":"root","password":""}'
                 className="font-mono text-xs min-h-[120px]"
                 value={formConfig}

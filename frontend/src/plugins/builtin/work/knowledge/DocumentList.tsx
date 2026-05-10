@@ -251,11 +251,12 @@ function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
         <div className="space-y-4">
           {/* 文件选择 */}
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
+            <label htmlFor="field-file" className="text-sm font-medium text-foreground mb-1.5 block">
               选择文件
             </label>
             <div className="flex items-center gap-2">
               <Input
+                id="field-file"
                 type="file"
                 accept=".pdf,.docx,.txt,.md"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
@@ -270,10 +271,11 @@ function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
           </div>
           {/* 标题 */}
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
+            <label htmlFor="field-title" className="text-sm font-medium text-foreground mb-1.5 block">
               文档标题
             </label>
             <Input
+              id="field-title"
               placeholder={file?.name || "请输入文档标题"}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -281,10 +283,11 @@ function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
           </div>
           {/* 标签 */}
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
+            <label htmlFor="field-tags" className="text-sm font-medium text-foreground mb-1.5 block">
               标签 (逗号分隔)
             </label>
             <Input
+              id="field-tags"
               placeholder="例如: 合同, 技术文档, 2024"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
@@ -292,10 +295,11 @@ function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
           </div>
           {/* 来源链接 */}
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
+            <label htmlFor="field-source-url" className="text-sm font-medium text-foreground mb-1.5 block">
               来源链接 (可选)
             </label>
             <Input
+              id="field-source-url"
               placeholder="https://..."
               value={sourceUrl}
               onChange={(e) => setSourceUrl(e.target.value)}

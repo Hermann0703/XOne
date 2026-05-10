@@ -222,31 +222,32 @@ export default function FoodRecord() {
         </DialogHeader>
         <DialogBody className="space-y-3">
           <div>
-            <label className="text-sm font-medium">{t("health.food.name")}</label>
-            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <label className="text-sm font-medium" htmlFor="field-name">{t("health.food.name")}</label>
+            <Input id="field-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">{t("health.food.calories")}</label>
-              <Input type="number" value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value })} />
+              <label className="text-sm font-medium" htmlFor="field-calories">{t("health.food.calories")}</label>
+              <Input id="field-calories" type="number" value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("health.food.protein")}(g)</label>
-              <Input type="number" value={form.protein} onChange={(e) => setForm({ ...form, protein: e.target.value })} />
+              <label className="text-sm font-medium" htmlFor="field-protein">{t("health.food.protein")}(g)</label>
+              <Input id="field-protein" type="number" value={form.protein} onChange={(e) => setForm({ ...form, protein: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("health.food.carbs")}(g)</label>
-              <Input type="number" value={form.carbs} onChange={(e) => setForm({ ...form, carbs: e.target.value })} />
+              <label className="text-sm font-medium" htmlFor="field-carbs">{t("health.food.carbs")}(g)</label>
+              <Input id="field-carbs" type="number" value={form.carbs} onChange={(e) => setForm({ ...form, carbs: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("health.food.fat")}(g)</label>
-              <Input type="number" value={form.fat} onChange={(e) => setForm({ ...form, fat: e.target.value })} />
+              <label className="text-sm font-medium" htmlFor="field-fat">{t("health.food.fat")}(g)</label>
+              <Input id="field-fat" type="number" value={form.fat} onChange={(e) => setForm({ ...form, fat: e.target.value })} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">{t("health.food.meal")}</label>
+              <label className="text-sm font-medium" htmlFor="field-meal">{t("health.food.meal")}</label>
               <Select
+                id="field-meal"
                 value={form.meal}
                 onChange={(e) => setForm({ ...form, meal: e.target.value })}
                 options={[
@@ -258,13 +259,13 @@ export default function FoodRecord() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{t("health.food.serving")}</label>
-              <Input value={form.serving} onChange={(e) => setForm({ ...form, serving: e.target.value })} placeholder={t("health.food.servingPlaceholder")} />
+              <label className="text-sm font-medium" htmlFor="field-serving">{t("health.food.serving")}</label>
+              <Input id="field-serving" value={form.serving} onChange={(e) => setForm({ ...form, serving: e.target.value })} placeholder={t("health.food.servingPlaceholder")} />
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium">{t("health.food.note")}</label>
-            <Textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} rows={2} />
+            <label className="text-sm font-medium" htmlFor="field-note">{t("health.food.note")}</label>
+            <Textarea id="field-note" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} rows={2} />
           </div>
         </DialogBody>
         <DialogFooter>

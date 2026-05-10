@@ -505,30 +505,33 @@ export default function StorageDashboard() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label htmlFor="field-cabinet-name" className="block text-sm font-medium mb-1.5">
                 {t('storage.cabinets.name')} *
               </label>
               <Input
+                id="field-cabinet-name"
                 placeholder={t('storage.cabinets.namePlaceholder')}
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label htmlFor="field-cabinet-code" className="block text-sm font-medium mb-1.5">
                 {t('storage.cabinets.code')} *
               </label>
               <Input
+                id="field-cabinet-code"
                 placeholder={t('storage.cabinets.codePlaceholder')}
                 value={formCode}
                 onChange={(e) => setFormCode(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label htmlFor="field-cabinet-location" className="block text-sm font-medium mb-1.5">
                 {t('storage.cabinets.location')} *
               </label>
               <Input
+                id="field-cabinet-location"
                 placeholder={t('storage.cabinets.locationPlaceholder')}
                 value={formLocation}
                 onChange={(e) => setFormLocation(e.target.value)}
@@ -536,20 +539,22 @@ export default function StorageDashboard() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium mb-1.5">
+                <label htmlFor="field-cabinet-floor" className="block text-sm font-medium mb-1.5">
                   {t('storage.cabinets.floor')}
                 </label>
                 <Input
+                  id="field-cabinet-floor"
                   placeholder={t('storage.cabinets.floorPlaceholder')}
                   value={formFloor}
                   onChange={(e) => setFormFloor(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">
+                <label htmlFor="field-cabinet-room" className="block text-sm font-medium mb-1.5">
                   {t('storage.cabinets.room')}
                 </label>
                 <Input
+                  id="field-cabinet-room"
                   placeholder={t('storage.cabinets.roomPlaceholder')}
                   value={formRoom}
                   onChange={(e) => setFormRoom(e.target.value)}
@@ -557,10 +562,11 @@ export default function StorageDashboard() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label htmlFor="field-cabinet-desc" className="block text-sm font-medium mb-1.5">
                 {t('storage.cabinets.description')}
               </label>
               <Input
+                id="field-cabinet-desc"
                 placeholder={t('storage.cabinets.descriptionPlaceholder')}
                 value={formDesc}
                 onChange={(e) => setFormDesc(e.target.value)}
@@ -627,10 +633,11 @@ export default function StorageDashboard() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label htmlFor="field-box-no" className="block text-sm font-medium mb-1.5">
                 {t('storage.boxes.boxNo')} *
               </label>
               <Input
+                id="field-box-no"
                 placeholder={t('storage.boxes.boxNoPlaceholder')}
                 value={formBoxNo}
                 onChange={(e) => setFormBoxNo(e.target.value)}
@@ -638,30 +645,33 @@ export default function StorageDashboard() {
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-medium mb-1.5">
+                <label htmlFor="field-box-row" className="block text-sm font-medium mb-1.5">
                   {t('storage.boxes.row')}
                 </label>
                 <Input
+                  id="field-box-row"
                   placeholder={t('storage.boxes.rowPlaceholder')}
                   value={formBoxRow}
                   onChange={(e) => setFormBoxRow(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">
+                <label htmlFor="field-box-col" className="block text-sm font-medium mb-1.5">
                   {t('storage.boxes.col')}
                 </label>
                 <Input
+                  id="field-box-col"
                   placeholder={t('storage.boxes.colPlaceholder')}
                   value={formBoxCol}
                   onChange={(e) => setFormBoxCol(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">
+                <label htmlFor="field-box-layer" className="block text-sm font-medium mb-1.5">
                   {t('storage.boxes.layer')}
                 </label>
                 <Input
+                  id="field-box-layer"
                   placeholder={t('storage.boxes.layerPlaceholder')}
                   value={formBoxLayer}
                   onChange={(e) => setFormBoxLayer(e.target.value)}
@@ -669,20 +679,22 @@ export default function StorageDashboard() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label htmlFor="field-box-barcode" className="block text-sm font-medium mb-1.5">
                 {t('storage.boxes.barcode')}
               </label>
               <Input
+                id="field-box-barcode"
                 placeholder={t('storage.boxes.barcodePlaceholder')}
                 value={formBoxBarcode}
                 onChange={(e) => setFormBoxBarcode(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label htmlFor="field-box-status" className="block text-sm font-medium mb-1.5">
                 {t('storage.boxes.status')}
               </label>
               <select
+                id="field-box-status"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={formBoxStatus}
                 onChange={(e) => setFormBoxStatus(e.target.value)}
@@ -693,10 +705,11 @@ export default function StorageDashboard() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label htmlFor="field-box-desc" className="block text-sm font-medium mb-1.5">
                 {t('storage.boxes.description')}
               </label>
               <Input
+                id="field-box-desc"
                 placeholder={t('storage.boxes.descriptionPlaceholder')}
                 value={formBoxDesc}
                 onChange={(e) => setFormBoxDesc(e.target.value)}
