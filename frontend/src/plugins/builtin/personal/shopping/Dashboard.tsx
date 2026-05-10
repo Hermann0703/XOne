@@ -53,7 +53,7 @@ export default function Dashboard() {
       icon: XCircle,
       label: "取消",
       value: dashboard.total_cancelled,
-      colorClass: "text-gray-400",
+      colorClass: "text-gray-400 dark:text-gray-500",
       bgClass: "bg-gray-50 dark:bg-gray-900/20",
     },
   ];

@@ -15,10 +15,17 @@ interface ModeState {
 }
 
 export const useModeStore = create<ModeState>((set, get) => ({
-  mode: 'personal',
-  setMode: (mode) => set({ mode }),
+  mode: typeof window !== 'undefined'
+    ? (localStorage.getItem('xone-mode') as CurrentMode) || 'personal'
+    : 'personal',
+  setMode: (mode) => {
+    localStorage.setItem('xone-mode', mode);
+    set({ mode });
+  },
   toggleMode: () => {
     const current = get().mode;
-    set({ mode: current === 'personal' ? 'work' : 'personal' });
+    const next = current === 'personal' ? 'work' : 'personal';
+    localStorage.setItem('xone-mode', next);
+    set({ mode: next });
   },
 }));

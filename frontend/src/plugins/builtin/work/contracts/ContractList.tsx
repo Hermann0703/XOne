@@ -40,7 +40,7 @@ import { useContractStore, type Contract } from "./store";
 // ─── 状态映射 ────────────────────────────────────────
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
-  draft:        { label: "草稿",   className: "bg-gray-100 text-gray-700 border-gray-300" },
+  draft:        { label: "草稿",   className: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" },
   signed:       { label: "已签署", className: "bg-blue-100 text-blue-700 border-blue-300" },
   in_progress:  { label: "履行中", className: "bg-green-100 text-green-700 border-green-300" },
   completed:    { label: "已完成", className: "bg-emerald-100 text-emerald-700 border-emerald-300" },

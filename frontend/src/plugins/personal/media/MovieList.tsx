@@ -130,7 +130,7 @@ export default function MovieList() {
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`size-3 ${star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+            className={`size-3 ${star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
           />
         ))}
       </div>
@@ -210,11 +210,11 @@ export default function MovieList() {
             return (
               <Card key={movie.id} className="overflow-hidden hover:shadow-md transition-shadow">
                 {/* Poster placeholder */}
-                <div className="h-64 bg-gray-300 flex items-center justify-center relative">
+                <div className="h-64 bg-gray-300 dark:bg-gray-600 flex items-center justify-center relative">
                   {movie.poster_url ? (
                     <Image src={movie.poster_url} alt={movie.title} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
                   ) : (
-                    <Film className="size-16 text-gray-400" />
+                    <Film className="size-16 text-gray-400 dark:text-gray-500" />
                   )}
                   <Badge variant={badge.variant} className="absolute top-2 right-2">
                     {t(badge.labelKey)}

@@ -516,7 +516,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
         ) : (
           <Button
             variant="outline"
-            className="w-full border-dashed h-10 text-sm text-gray-500 hover:text-gray-700"
+            className="w-full border-dashed h-10 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             onClick={() => setAddingColumn(true)}
           >
             <Plus className="size-4 mr-1" /> 添加列

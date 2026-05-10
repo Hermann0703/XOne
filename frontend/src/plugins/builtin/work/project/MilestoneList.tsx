@@ -24,8 +24,8 @@ const STATUS_MAP: Record<
 > = {
   pending: {
     label: "待开始",
-    color: "bg-gray-100 text-gray-600 border-gray-300",
-    dotColor: "bg-gray-400",
+    color: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600",
+    dotColor: "bg-gray-400 dark:bg-gray-500",
   },
   in_progress: {
     label: "进行中",
@@ -49,7 +49,7 @@ const STATUS_MAP: Record<
 function ProgressBar({ value }: { value: number }) {
   const pct = Math.min(100, Math.max(0, value));
   return (
-    <div className="w-full bg-gray-200 rounded-full h-1.5">
+    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
       <div
         className="bg-blue-500 h-1.5 rounded-full transition-[width] duration-200"
         style={{ width: `${pct}%` }}
@@ -145,7 +145,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
         /* 时间轴布局 */
         <div className="relative pl-8">
           {/* 左侧竖线 */}
-          <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-200" />
+          <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-200 dark:bg-gray-700" />
 
           <div className="space-y-6">
             {milestones.map((m, idx) => {
@@ -171,7 +171,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
                         <div className="flex-1 min-w-0">
                           {/* 标题行 */}
                           <div className="flex items-center gap-2 mb-1.5">
-                            <h4 className="text-sm font-semibold text-gray-800 truncate">
+                            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
                               {m.title}
                             </h4>
                             <Badge
@@ -184,13 +184,13 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
 
                           {/* 描述 */}
                           {m.description && (
-                            <p className="text-xs text-gray-500 mb-2 line-clamp-2">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">
                               {m.description}
                             </p>
                           )}
 
                           {/* 日期 */}
-                          <div className="flex items-center gap-1 text-xs text-gray-400 mb-2">
+                          <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 mb-2">
                             <span>截止：</span>
                             <span className={isPast && m.status !== "completed" ? "text-red-500 font-medium" : ""}>
                               {due.toLocaleDateString("zh-CN")}
@@ -203,7 +203,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
                           {/* 进度条 */}
                           <div className="flex items-center gap-2">
                             <ProgressBar value={m.progress} />
-                            <span className="text-xs text-gray-500 w-8 text-right">
+                            <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right">
                               {m.progress}%
                             </span>
                           </div>
@@ -266,7 +266,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
                 名称 *
               </label>
               <Input
@@ -278,7 +278,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
                 描述
               </label>
               <Input
@@ -290,7 +290,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
                 截止日期
               </label>
               <Input
@@ -302,7 +302,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
                 状态
               </label>
               <Select
@@ -319,7 +319,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 block mb-1">
                 进度 ({editing.progress || 0}%)
               </label>
               <Input

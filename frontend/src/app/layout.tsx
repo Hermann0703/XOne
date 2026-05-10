@@ -23,13 +23,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Preconnect to Google Fonts for faster font loading */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* 立即应用保存的主题，防止页面闪烁 */}
+        {/* 立即应用保存的主题和模式，防止页面闪烁 */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function(){try{
                 var t=localStorage.getItem('xone-theme');
                 if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);
+                var m=localStorage.getItem('xone-mode');
+                if(m==='personal'||m==='work')document.documentElement.setAttribute('data-mode',m);
               }catch(e){}})()
             `,
           }}

@@ -86,7 +86,7 @@ const FILE_TYPE_MAP: Record<string, { label: string; className: string }> = {
     label: "DOCX",
     className: "bg-blue-100 text-blue-700 border-blue-300",
   },
-  txt: { label: "TXT", className: "bg-gray-100 text-gray-700 border-gray-300" },
+  txt: { label: "TXT", className: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" },
   md: {
     label: "MD",
     className: "bg-purple-100 text-purple-700 border-purple-300",
@@ -100,7 +100,7 @@ const FILE_TYPE_MAP: Record<string, { label: string; className: string }> = {
 function FileTypeBadge({ fileType }: { fileType: string }) {
   const config = FILE_TYPE_MAP[fileType] || {
     label: fileType.toUpperCase(),
-    className: "bg-gray-100 text-gray-700 border-gray-300",
+    className: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600",
   };
   return (
     <Badge

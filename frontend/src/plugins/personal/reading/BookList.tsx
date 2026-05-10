@@ -130,7 +130,7 @@ export default function BookList() {
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`size-3 ${star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+            className={`size-3 ${star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
           />
         ))}
       </div>
@@ -204,11 +204,11 @@ export default function BookList() {
             return (
               <Card key={book.id} className="overflow-hidden hover:shadow-md transition-shadow">
                 {/* Cover placeholder */}
-                <div className="h-48 bg-gray-200 flex items-center justify-center relative">
+                <div className="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative">
                   {book.cover_url ? (
                     <Image src={book.cover_url} alt={book.title} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
                   ) : (
-                    <Book className="size-12 text-gray-400" />
+                    <Book className="size-12 text-gray-400 dark:text-gray-500" />
                   )}
                 </div>
                 <CardHeader className="pb-2">
