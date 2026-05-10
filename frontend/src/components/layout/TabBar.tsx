@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback } from 'react'
 import { X, Menu, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -24,6 +25,13 @@ interface TabBarProps {
  * - 移动端左侧显示 hamburger 按钮
  * - 标签水平排列，激活态有底部高亮条
  * - 每个标签右侧有关闭按钮
+ * - 键盘导航：ArrowLeft/ArrowRight 切换标签，Home/End 跳转首尾
+ * - Roving tabindex: 仅激活标签可 Tab 聚焦（tabIndex=0），其余 tabIndex=-1
+ *
+ * WAI-ARIA 标签页模式参考：
+ * - role="tablist" 包含所有 role="tab" 按钮
+ * - aria-selected 标记激活态
+ * - data-value 用于键盘导航中的 DOM 查询
  */
 export function TabBar({ onMenuClick, isMobile = false }: TabBarProps) {
   const t = useTranslations()
@@ -38,6 +46,60 @@ export function TabBar({ onMenuClick, isMobile = false }: TabBarProps) {
   const activeTab = tabs.find((tab) => tab.id === activeTabId)
   const modeLabel = mode === 'personal' ? t('nav.personal') : t('nav.work')
   const pageTitle = activeTab ? t(activeTab.labelKey) : t('app.name')
+
+  // ============================================================
+  // 键盘导航 — ArrowLeft/ArrowRight/Home/End
+  // 使用 querySelector 动态查找所有 tab 按钮（避免 ref 管理）
+  // ============================================================
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const tablist = e.currentTarget
+      // 获取所有带 data-value 属性的 tab 按钮
+      const triggers = tablist.querySelectorAll<HTMLButtonElement>(
+        '[role="tab"][data-value]'
+      )
+      if (triggers.length === 0) return
+
+      const values = Array.from(triggers)
+      const currentIndex = values.findIndex(
+        (el) => el === document.activeElement
+      )
+      if (currentIndex === -1) return
+
+      let nextIndex: number | undefined
+
+      switch (e.key) {
+        case 'ArrowRight':
+          // 下一个 tab，循环
+          nextIndex = (currentIndex + 1) % values.length
+          break
+        case 'ArrowLeft':
+          // 上一个 tab，循环
+          nextIndex = (currentIndex - 1 + values.length) % values.length
+          break
+        case 'Home':
+          // 跳转到第一个 tab
+          nextIndex = 0
+          break
+        case 'End':
+          // 跳转到最后一个 tab
+          nextIndex = values.length - 1
+          break
+        default:
+          return // 不阻止其他按键的默认行为
+      }
+
+      e.preventDefault()
+      const nextTrigger = values[nextIndex!]
+      nextTrigger.focus()
+      // 通过 data-value 激活对应 tab
+      const nextValue = nextTrigger.getAttribute('data-value')
+      if (nextValue) {
+        setActiveTab(nextValue)
+      }
+    },
+    [setActiveTab]
+  )
 
   return (
     <div
@@ -77,8 +139,14 @@ export function TabBar({ onMenuClick, isMobile = false }: TabBarProps) {
       {/* 分隔线 */}
       <Separator orientation="vertical" className="h-5 self-center" />
 
-      {/* 标签列表 — 包裹在导航性地标中 */}
-      <nav aria-label="标签页" className="flex h-full items-end">
+      {/* 标签列表 — role="tablist" 容器，统一管理键盘导航 */}
+      <div
+        role="tablist"
+        aria-label="标签页"
+        aria-orientation="horizontal"
+        className="flex h-full items-end"
+        onKeyDown={handleTabKeyDown}
+      >
         {tabs.map((tab, idx) => {
           const isActive = tab.id === activeTabId
           return (
@@ -86,30 +154,33 @@ export function TabBar({ onMenuClick, isMobile = false }: TabBarProps) {
               {idx > 0 && (
                 <Separator orientation="vertical" className="h-5 self-center" />
               )}
-              <div role="tablist" className="flex h-full items-end">
-                <button
-                  role="tab"
-                  aria-selected={isActive}
-                  className={cn(
-                    'relative flex h-full items-center px-3 text-sm font-medium cursor-pointer select-none whitespace-nowrap transition-colors',
-                    isActive
-                      ? 'bg-background border-b-2 border-primary text-foreground'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  )}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <span>{t(tab.labelKey)}</span>
-                </button>
-              </div>
+              {/* 单个 tab 按钮 — roving tabindex: 选中=0, 未选中=-1 */}
+              <button
+                role="tab"
+                aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
+                data-value={tab.id}
+                className={cn(
+                  'relative flex h-full items-center px-3 text-sm font-medium cursor-pointer select-none whitespace-nowrap transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                  isActive
+                    ? 'bg-background border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <span>{t(tab.labelKey)}</span>
+              </button>
 
-              {/* 关闭按钮 — 与 tablist 同级，不在 role="tablist" 内部 */}
+              {/* 关闭按钮 — 位于 tablist 内部但非 role="tab"，键盘导航自动跳过 */}
               <button
                 type="button"
-                aria-label={`Close ${t(tab.labelKey)}`}
+                aria-label={`关闭 ${t(tab.labelKey)}`}
                 className={cn(
                   'ml-0.5 flex h-4 w-4 items-center justify-center rounded-sm',
                   'opacity-0 group-hover:opacity-100 transition-opacity',
                   'hover:bg-destructive/10 hover:text-destructive',
+                  'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   isActive && 'opacity-100'
                 )}
                 onClick={(e) => {
@@ -122,7 +193,7 @@ export function TabBar({ onMenuClick, isMobile = false }: TabBarProps) {
             </div>
           )
         })}
-      </nav>
+      </div>
     </div>
   )
 }

@@ -29,6 +29,7 @@ export function MainContent({
 
   return (
     <main
+      id="main-content"
       className={cn(
         'pt-10 p-6 min-h-screen',
         'transition-[margin-left] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]',

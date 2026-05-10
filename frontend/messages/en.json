@@ -42,7 +42,8 @@
     "overview": "Overview",
     "viewAll": "View All",
     "confirm_delete": "Confirm Delete?",
-    "confirm_delete_desc": "This action cannot be undone. Are you sure you want to delete?"
+    "confirm_delete_desc": "This action cannot be undone. Are you sure you want to delete?",
+    "skipToContent": "Skip to main content"
   },
   "mode": {
     "switchToWork": "Switch to Work Mode",

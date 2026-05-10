@@ -97,6 +97,7 @@ export function SidebarMenuItem({
       href={`/${locale}${path}`}
       className={itemClassName}
       style={activeStyle}
+      aria-current={active ? 'page' : undefined}
       onClick={onItemClick}
     >
       {content}
@@ -107,6 +108,7 @@ export function SidebarMenuItem({
       onClick={handleCombinedClick}
       className={itemClassName}
       style={activeStyle}
+      aria-current={active ? 'page' : undefined}
     >
       {content}
     </button>

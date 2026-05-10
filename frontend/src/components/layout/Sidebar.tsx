@@ -59,7 +59,7 @@ export function Sidebar({ groups, locale, isMobile = false, mobileOpen = false, 
       <BrandHeader collapsed={isMobile ? false : isCollapsed} />
 
       {/* Scrollable menu area */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2">
+      <nav aria-label="主导航菜单" className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2">
         {groups.map((group) => (
           <SidebarGroup
             key={group.title}

@@ -72,6 +72,11 @@ function renderTrend(change: number | undefined, changeLabel?: string) {
   );
 }
 
+// ─── 常量 ──────────────────────────────────────────────────
+
+const KEY_ENTER = 'Enter';
+const KEY_SPACE = ' ';
+
 // ─── 组件 ──────────────────────────────────────────────────
 
 export function StatCard({
@@ -86,13 +91,25 @@ export function StatCard({
   className,
   onClick,
 }: StatCardProps) {
+  const handleKeyDown = onClick
+    ? (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === KEY_ENTER || e.key === KEY_SPACE) {
+          e.preventDefault();
+          onClick();
+        }
+      }
+    : undefined;
+
   return (
     <Card
       className={cn(
-        'transition-shadow duration-200 hover:shadow-md',
+        'transition-shadow duration-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-card',
         onClick && 'cursor-pointer',
         className,
       )}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={handleKeyDown}
       onClick={onClick}
     >
       <CardContent className="p-5">
