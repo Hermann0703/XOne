@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -275,6 +277,38 @@ async def chat(
         "message": "查询完成",
         "data": result,
     }
+
+
+@router.post("/chat/stream", summary="RAG 知识库流式问答")
+async def chat_stream(
+    body: ChatRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    SSE 流式 RAG 问答：
+    - 逐 token 推送答案 (type=answer)
+    - 末尾发送来源列表 (type=done)
+    - 异常时发送错误 (type=error)
+    """
+
+    async def generate():
+        async for chunk in rag_service.ask_stream(
+            question=body.question,
+            history=body.history,
+            top_k=5,
+        ):
+            yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════

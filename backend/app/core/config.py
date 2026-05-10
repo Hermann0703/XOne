@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # Qdrant
     QDRANT_URL: str = "http://localhost:6333"
 
+    # LLM (OpenAI compatible API)
+    OPENAI_API_KEY: str = ""
+    OPENAI_BASE_URL: str = "https://api.deepseek.com/v1"
+    LLM_MODEL: str = "deepseek-chat"
+
     # MinIO
     MINIO_URL: str = "http://localhost:9000"
     MINIO_ACCESS_KEY: str = "minioadmin"

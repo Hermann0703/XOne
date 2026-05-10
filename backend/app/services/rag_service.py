@@ -1,9 +1,8 @@
-"""RAG 检索增强生成服务 — 向量检索 + 上下文拼接 + 答案生成"""
+"""RAG 检索增强生成服务 — 向量检索 + 上下文拼接 + LLM 答案生成"""
 
 from __future__ import annotations
 
-import uuid
-from typing import Optional
+from typing import Optional, AsyncGenerator
 
 from app.core.config import settings
 
@@ -76,51 +75,8 @@ def _build_prompt(question: str, contexts: list[dict], history: Optional[list[di
     return "\n".join(prompt_parts)
 
 
-async def ask_question(
-    question: str,
-    history: Optional[list[dict]] = None,
-    top_k: int = 5,
-) -> dict:
-    """
-    RAG 问答：
-    1. 向量化问题
-    2. Qdrant 检索 top_k 个相关分块
-    3. 构造 prompt
-    4. 返回答案 + 引用文档列表
-
-    返回格式: {"answer": str, "sources": [{"doc_id": str, "title": str, "snippet": str}]}
-    """
-    qdrant = _get_qdrant()
-
-    if qdrant is None:
-        return {
-            "answer": "知识库向量数据库（Qdrant）当前不可用，请稍后重试。如需立即使用，请确认 Qdrant 服务已启动。",
-            "sources": [],
-        }
-
-    # 向量化问题
-    query_vector = _get_embedding(question)
-
-    # Qdrant 检索
-    try:
-        results = qdrant.search(
-            collection_name=_collection_name,
-            query_vector=query_vector,
-            limit=top_k,
-        )
-    except Exception:
-        return {
-            "answer": "知识库向量检索失败，可能索引尚未创建。请先上传并索引文档后再试。",
-            "sources": [],
-        }
-
-    if not results:
-        return {
-            "answer": "未找到与您问题相关的知识库内容。请尝试修改问题或上传相关文档。",
-            "sources": [],
-        }
-
-    # 构建上下文
+def _extract_contexts_and_sources(results) -> tuple[list[dict], list[dict]]:
+    """从 Qdrant 搜索结果提取上下文和来源"""
     contexts = []
     sources = []
     seen_docs = set()
@@ -143,18 +99,142 @@ async def ask_question(
                 "snippet": snippet,
             })
 
-    # 构造 prompt（实际生产环境应调用 LLM API，此处返回 prompt 作为 placeholder）
+    return contexts, sources
+
+
+async def ask_question(
+    question: str,
+    history: Optional[list[dict]] = None,
+    top_k: int = 5,
+) -> dict:
+    """
+    RAG 问答 (非流式)：
+    1. 向量化问题 → Qdrant 检索 top_k 分块
+    2. 拼接上下文 → 调用 LLM API 生成答案
+
+    返回格式: {"answer": str, "sources": [{"doc_id": str, "title": str, "snippet": str}]}
+    """
+    qdrant = _get_qdrant()
+
+    if qdrant is None:
+        return {
+            "answer": "知识库向量数据库（Qdrant）当前不可用，请稍后重试。",
+            "sources": [],
+        }
+
+    query_vector = _get_embedding(question)
+
+    try:
+        results = qdrant.search(
+            collection_name=_collection_name,
+            query_vector=query_vector,
+            limit=top_k,
+        )
+    except Exception:
+        return {
+            "answer": "知识库向量检索失败，请先上传并索引文档后再试。",
+            "sources": [],
+        }
+
+    if not results:
+        return {
+            "answer": "未找到与您问题相关的知识库内容。请尝试修改问题或上传相关文档。",
+            "sources": [],
+        }
+
+    contexts, sources = _extract_contexts_and_sources(results)
     prompt = _build_prompt(question, contexts, history)
 
-    answer = (
-        f"[RAG Prompt 已生成，待接入 LLM API]\n\n"
-        f"检索到 {len(results)} 个相关分块，来自 {len(sources)} 篇文档。\n\n"
-        f"--- Prompt Preview ---\n{prompt[:800]}..."
-        if len(prompt) > 800
-        else prompt
-    )
+    # ── 调用 LLM API ──
+    if not settings.OPENAI_API_KEY:
+        return {
+            "answer": f"[LLM 未配置] 检索到 {len(results)} 个相关分块，来自 {len(sources)} 篇文档。请在 .env.dev 中设置 OPENAI_API_KEY。",
+            "sources": sources,
+        }
+
+    try:
+        import openai
+        client = openai.AsyncOpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            base_url=settings.OPENAI_BASE_URL,
+        )
+        completion = await client.chat.completions.create(
+            model=settings.LLM_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=2000,
+        )
+        answer = completion.choices[0].message.content or ""
+    except Exception as e:
+        answer = f"LLM 调用失败: {str(e)[:300]}\n\n共检索到 {len(results)} 个相关分块，来自 {len(sources)} 篇文档。"
 
     return {
         "answer": answer,
         "sources": sources,
     }
+
+
+async def ask_stream(
+    question: str,
+    history: Optional[list[dict]] = None,
+    top_k: int = 5,
+) -> AsyncGenerator[dict, None]:
+    """
+    RAG 流式问答生成器 — 逐 token 推送 + 末尾来源列表
+
+    yield 格式:
+      {"type": "answer", "content": "文本片段"}
+      {"type": "error", "message": "错误信息"}
+      {"type": "done", "sources": [...]}
+    """
+    qdrant = _get_qdrant()
+
+    if qdrant is None:
+        yield {"type": "error", "message": "知识库向量数据库（Qdrant）当前不可用，请稍后重试。"}
+        return
+
+    query_vector = _get_embedding(question)
+
+    try:
+        results = qdrant.search(
+            collection_name=_collection_name,
+            query_vector=query_vector,
+            limit=top_k,
+        )
+    except Exception:
+        yield {"type": "error", "message": "知识库向量检索失败，请先上传并索引文档后再试。"}
+        return
+
+    if not results:
+        yield {"type": "answer", "content": "未找到与您问题相关的知识库内容。请尝试修改问题或上传相关文档。"}
+        yield {"type": "done", "sources": []}
+        return
+
+    contexts, sources = _extract_contexts_and_sources(results)
+    prompt = _build_prompt(question, contexts, history)
+
+    if not settings.OPENAI_API_KEY:
+        yield {"type": "error", "message": "LLM 未配置。请在 .env.dev 中设置 OPENAI_API_KEY。"}
+        return
+
+    try:
+        import openai
+        client = openai.AsyncOpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            base_url=settings.OPENAI_BASE_URL,
+        )
+        stream = await client.chat.completions.create(
+            model=settings.LLM_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=2000,
+            stream=True,
+        )
+        async for chunk in stream:
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta and delta.content:
+                yield {"type": "answer", "content": delta.content}
+
+        yield {"type": "done", "sources": sources}
+    except Exception as e:
+        yield {"type": "error", "message": f"LLM 调用失败: {str(e)[:300]}"}

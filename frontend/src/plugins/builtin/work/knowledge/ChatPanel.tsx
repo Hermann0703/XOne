@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { useConversationStore, type Message } from './conversation-store'
+import { useConversationStore, type Message, type Source } from './conversation-store'
 import ConversationList from './ConversationList'
 
 // ─── 加载状态指示器 ─────────────────────────────────
@@ -47,7 +47,7 @@ function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === 'user'
 
   return (
-    <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex flex-col', isUser ? 'items-end' : 'items-start')}>
       <div
         className={cn(
           'max-w-[75%] px-4 py-2.5 text-sm leading-relaxed',
@@ -64,6 +64,26 @@ function MessageBubble({ message }: { message: Message }) {
           </div>
         )}
       </div>
+
+      {/* 来源引用卡片 */}
+      {!isUser && message.sources && message.sources.length > 0 && (
+        <div className="max-w-[75%] mt-2 space-y-1.5">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+            引用来源
+          </p>
+          {message.sources.map((src, i) => (
+            <div
+              key={i}
+              className="rounded-lg border border-border bg-card px-3 py-2 text-xs"
+            >
+              <p className="font-medium text-foreground">{src.title}</p>
+              <p className="text-muted-foreground mt-0.5 line-clamp-2">
+                {src.snippet}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

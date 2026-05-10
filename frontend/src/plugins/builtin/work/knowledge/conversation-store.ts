@@ -6,9 +6,16 @@ import { apiGet, apiPost, apiPatch, axiosClient } from '@/lib/api/client'
 
 // ─── 类型定义 ───────────────────────────────────────
 
+export interface Source {
+  doc_id: string
+  title: string
+  snippet: string
+}
+
 export interface Message {
   role: 'user' | 'assistant'
   content: string
+  sources?: Source[]
 }
 
 export interface Conversation {
@@ -36,17 +43,73 @@ interface ConversationListResponse {
 
 const BASE = '/work/knowledge'
 
-// ─── 独立的发送消息函数 ─────────────────────────────
+// ─── 流式 SSE 发送消息 ────────────────────────────
 
-export async function sendChatMessage(
+export async function sendChatMessageStream(
   question: string,
-  history?: Message[],
-): Promise<ChatResponse> {
-  const res = await apiPost<ChatResponse>(`${BASE}/chat`, {
-    question,
-    history: history || [],
-  })
-  return res.data
+  history: Message[],
+  onToken: (token: string) => void,
+  onDone: (sources: Source[]) => void,
+  onError: (err: string) => void,
+): Promise<void> {
+  const baseURL = axiosClient.defaults.baseURL || ''
+  const url = `${baseURL}${BASE}/chat/stream`
+  const authHeader = axiosClient.defaults.headers.common['Authorization']
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: String(authHeader) } : {}),
+      },
+      body: JSON.stringify({ question, history }),
+    })
+
+    if (!res.ok) {
+      onError(`HTTP ${res.status}`)
+      return
+    }
+
+    const reader = res.body?.getReader()
+    if (!reader) {
+      onError('No response body')
+      return
+    }
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const dataStr = line.slice(6).trim()
+        if (dataStr === '[DONE]') continue
+
+        try {
+          const chunk = JSON.parse(dataStr)
+          if (chunk.type === 'answer') {
+            onToken(chunk.content)
+          } else if (chunk.type === 'done') {
+            onDone(chunk.sources || [])
+          } else if (chunk.type === 'error') {
+            onError(chunk.message || 'Unknown error')
+          }
+        } catch {
+          // skip unparsable lines
+        }
+      }
+    }
+  } catch (err: any) {
+    onError(err.message || 'Network error')
+  }
 }
 
 // ─── Store 接口 ─────────────────────────────────────
@@ -164,18 +227,51 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
     const updatedMessages = [...messages, userMsg]
     set({ messages: updatedMessages, chatLoading: true })
 
+    // 预留一个空的 assistant 消息位，用于流式填充
+    const assistantMsg: Message = { role: 'assistant', content: '' }
+    const pendingMessages = [...updatedMessages, assistantMsg]
+    set({ messages: pendingMessages })
+
+    let finalContent = ''
+    let finalSources: Source[] = []
+
     try {
-      const result = await sendChatMessage(question.trim(), messages)
-      const assistantMsg: Message = {
+      await sendChatMessageStream(
+        question.trim(),
+        messages,
+        (token) => {
+          finalContent += token
+          set({
+            messages: [
+              ...updatedMessages,
+              { role: 'assistant', content: finalContent } as Message,
+            ],
+          })
+        },
+        (sources) => {
+          finalSources = sources
+        },
+        (err) => {
+          set({
+            messages: [
+              ...updatedMessages,
+              { role: 'assistant', content: `Error: ${err}` },
+            ],
+          })
+        },
+      )
+
+      // 流式结束后合成最终消息（含 sources）
+      const finalMsg: Message = {
         role: 'assistant',
-        content: result.answer,
+        content: finalContent || '(empty response)',
+        ...(finalSources.length > 0 ? { sources: finalSources } : {}),
       }
-      const finalMessages = [...updatedMessages, assistantMsg]
+      const finalMessages = [...updatedMessages, finalMsg]
       set({ messages: finalMessages })
 
       // 自动保存到后端
       if (activeConversation) {
-        const firstUserMsg = messages.length === 0
         const autoTitle =
           activeConversation.title === '新的对话' || activeConversation.title === 'New conversation'
             ? question.trim().slice(0, 30) + (question.trim().length > 30 ? '...' : '')
@@ -200,7 +296,6 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
             ),
           }))
         } else {
-          // 即使标题不变也更新 updated_at
           set((state) => ({
             conversations: state.conversations.map((c) =>
               c.id === activeConversation.id
@@ -211,7 +306,7 @@ export const useConversationStore = create<ConversationStore>((set, get) => ({
         }
       }
     } catch {
-      // 静默处理 — 消息已通过乐观更新显示
+      // 静默处理 — SSE 内部已通过 onError 回调更新 UI
     } finally {
       set({ chatLoading: false })
     }
