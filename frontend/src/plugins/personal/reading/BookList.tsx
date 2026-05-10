@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Search, Plus, Star, Book } from "lucide-react"
+import { Search, Plus, Star, Book, Pencil, Trash2 } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 
 const API_BASE = "http://localhost:8000/api/v1/personal"
 
@@ -69,6 +70,9 @@ export default function BookList() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState<BookFormData>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
+  const [editingBook, setEditingBook] = useState<Book | null>(null)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
   const fetchBooks = useCallback(async () => {
     setLoading(true)
@@ -91,8 +95,42 @@ export default function BookList() {
   }, [fetchBooks])
 
   function handleAdd() {
+    setEditingBook(null)
     setForm(emptyForm)
     setDialogOpen(true)
+  }
+
+  function handleEdit(book: Book) {
+    setEditingBook(book)
+    setForm({
+      title: book.title,
+      author: book.author,
+      isbn: book.isbn || "",
+      publisher: book.publisher || "",
+      pub_year: book.pub_year ? String(book.pub_year) : "",
+      status: book.status,
+      rating: String(book.rating),
+      total_pages: book.total_pages ? String(book.total_pages) : "",
+      current_page: book.current_page ? String(book.current_page) : "0",
+    })
+    setDialogOpen(true)
+  }
+
+  function handleDeleteClick(id: number) {
+    setConfirmDeleteId(id)
+    setConfirmDeleteOpen(true)
+  }
+
+  async function handleConfirmDelete() {
+    if (confirmDeleteId == null) return
+    try {
+      await fetch(`${API_BASE}/reading/books/${confirmDeleteId}`, { method: "DELETE" })
+      setConfirmDeleteOpen(false)
+      setConfirmDeleteId(null)
+      fetchBooks()
+    } catch {
+      // silently fail
+    }
   }
 
   async function handleSubmit() {
@@ -110,12 +148,17 @@ export default function BookList() {
         total_pages: form.total_pages ? Number(form.total_pages) : undefined,
         current_page: Number(form.current_page) || 0,
       }
-      await fetch(`${API_BASE}/reading/books`, {
-        method: "POST",
+      const url = editingBook
+        ? `${API_BASE}/reading/books/${editingBook.id}`
+        : `${API_BASE}/reading/books`
+      const method = editingBook ? "PUT" : "POST"
+      await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       })
       setDialogOpen(false)
+      setEditingBook(null)
       fetchBooks()
     } catch {
       // silently fail
@@ -238,6 +281,27 @@ export default function BookList() {
                       </div>
                     </div>
                   )}
+                  {/* Action buttons */}
+                  <TooltipProvider>
+                    <div className="flex items-center justify-end gap-1 pt-2 border-t border-border">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); handleEdit(book) }}>
+                            <Pencil className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t("common.edit")}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); handleDeleteClick(book.id) }}>
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t("common.delete")}</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
                 </CardContent>
               </Card>
             )
@@ -245,10 +309,10 @@ export default function BookList() {
         </div>
       )}
 
-      {/* Add Book Dialog */}
+      {/* Add/Edit Book Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogHeader>
-          <DialogTitle>{t("reading.addBook")}</DialogTitle>
+          <DialogTitle>{editingBook ? t("reading.editBook") : t("reading.addBook")}</DialogTitle>
         </DialogHeader>
         <DialogBody className="space-y-3 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-3">
@@ -344,6 +408,20 @@ export default function BookList() {
           <Button onClick={handleSubmit} disabled={!form.title || !form.author || submitting}>
             {submitting ? t("common.saving") : t("common.save")}
           </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogHeader>
+          <DialogTitle>{t("common.confirm_delete")}</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          <p className="text-sm text-text-secondary">{t("common.confirm_delete_desc")}</p>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>{t("common.cancel")}</Button>
+          <Button variant="destructive" onClick={handleConfirmDelete}>{t("common.confirm")}</Button>
         </DialogFooter>
       </Dialog>
     </div>

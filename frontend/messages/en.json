@@ -40,7 +40,9 @@
     "total": "{total} total",
     "days": "{days} days",
     "overview": "Overview",
-    "viewAll": "View All"
+    "viewAll": "View All",
+    "confirm_delete": "Confirm Delete?",
+    "confirm_delete_desc": "This action cannot be undone. Are you sure you want to delete?"
   },
   "mode": {
     "switchToWork": "Switch to Work Mode",
@@ -270,6 +272,7 @@
     "addMedia": "Add Media",
     "editMedia": "Edit Media",
     "addMovie": "Add Movie",
+    "editMovie": "Edit Movie",
     "doubanLink": "Douban Link",
     "movie": {
       "country": "Country",
