@@ -105,7 +105,7 @@ export default function BodyMetricsDashboard() {
         {statCards.map((stat, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium text-text-secondary">{stat.label}</CardTitle>
+              <span className="text-xs font-medium text-text-secondary">{stat.label}</span>
               {stat.icon}
             </CardHeader>
             <CardContent>

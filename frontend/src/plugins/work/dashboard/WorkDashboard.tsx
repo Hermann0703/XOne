@@ -185,7 +185,7 @@ function ProjectOverview({ data }: { data: ProjectItem[] }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base font-semibold">{t('dashboard.work.projectProgress')}</CardTitle>
+        <CardTitle as="h2" className="text-base font-semibold">{t('dashboard.work.projectProgress')}</CardTitle>
         <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
           {t('common.viewAll')} <ArrowUpRight className="h-3 w-3" />
         </button>
@@ -254,7 +254,7 @@ function RecentActivity({ data }: { data: ActivityItem[] }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base font-semibold">{t('dashboard.rightPanel.todayActivity')}</CardTitle>
+        <CardTitle as="h2" className="text-base font-semibold">{t('dashboard.rightPanel.todayActivity')}</CardTitle>
         <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
           {t('common.viewAll')} <ArrowUpRight className="h-3 w-3" />
         </button>
@@ -418,7 +418,7 @@ export default function WorkDashboard() {
           {/* 项目状态分布环形图 */}
           <Card className="border-none shadow-none">
             <CardHeader className="px-0 pb-2 pt-0">
-              <CardTitle className="text-sm font-semibold">{t('dashboard.rightPanel.chartTitle')}</CardTitle>
+              <CardTitle as="h2" className="text-sm font-semibold">{t('dashboard.rightPanel.chartTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="px-0 pb-0">
               <RingChartSection data={ringChartData} total={projects.length} />
@@ -428,7 +428,7 @@ export default function WorkDashboard() {
           {/* 当月日历 */}
           <Card className="border-none shadow-none">
             <CardHeader className="px-0 pb-2 pt-0">
-              <CardTitle className="text-sm font-semibold">
+              <CardTitle as="h2" className="text-sm font-semibold">
                 {t('calendar.monthNames')[currentMonth - 1]}
               </CardTitle>
             </CardHeader>

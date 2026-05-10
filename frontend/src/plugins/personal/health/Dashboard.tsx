@@ -97,7 +97,7 @@ export default function HealthDashboard() {
         {kpis.map((kpi, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-text-secondary">{kpi.label}</CardTitle>
+              <span className="text-sm font-medium text-text-secondary">{kpi.label}</span>
               {kpi.icon}
             </CardHeader>
             <CardContent>
@@ -113,7 +113,7 @@ export default function HealthDashboard() {
         {/* Weight Trend Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle as="h2" className="flex items-center gap-2 text-base">
               <TrendingDown className="size-4 text-primary" />
               {t("health.weightTrend")}
             </CardTitle>
@@ -129,7 +129,7 @@ export default function HealthDashboard() {
         {/* Recent Foods */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle as="h2" className="flex items-center gap-2 text-base">
               <Heart className="size-4 text-primary" />
               {t("health.recentFoods")}
             </CardTitle>
