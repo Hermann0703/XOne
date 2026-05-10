@@ -63,6 +63,7 @@ interface StorageStore {
   // ── 档案盒 CRUD ──
   fetchBoxes: (cabinetId: number) => Promise<void>;
   createBox: (cabinetId: number, data: Partial<Box>) => Promise<Box | null>;
+  updateBox: (cabinetId: number, boxId: number, data: Partial<Box>) => Promise<Box | null>;
   deleteBox: (cabinetId: number, boxId: number) => Promise<boolean>;
 
   // ── 统计 ──
@@ -165,6 +166,20 @@ export const useStorageStore = create<StorageStore>((set, get) => ({
       if (res.code === 0) {
         const { boxes } = get();
         set({ boxes: [res.data, ...boxes] });
+        return res.data;
+      }
+    } catch {
+      // 静默处理
+    }
+    return null;
+  },
+
+  updateBox: async (cabinetId, boxId, data) => {
+    try {
+      const res = await apiPatch<Box>(`${API_PREFIX}/cabinets/${cabinetId}/boxes/${boxId}`, data);
+      if (res.code === 0) {
+        const { boxes } = get();
+        set({ boxes: boxes.map((b) => (b.id === boxId ? res.data : b)) });
         return res.data;
       }
     } catch {

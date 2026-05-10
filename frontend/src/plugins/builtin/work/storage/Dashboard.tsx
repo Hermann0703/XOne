@@ -91,6 +91,7 @@ export default function StorageDashboard() {
     deleteCabinet,
     fetchBoxes,
     createBox,
+    updateBox,
     deleteBox,
     fetchStats,
     selectCabinet,
@@ -114,8 +115,9 @@ export default function StorageDashboard() {
   const [deleteCabinetTarget, setDeleteCabinetTarget] = useState<Cabinet | null>(null);
   const [deletingCabinet, setDeletingCabinet] = useState(false);
 
-  // 档案盒创建弹窗
+  // 档案盒创建/编辑弹窗
   const [boxDialogOpen, setBoxDialogOpen] = useState(false);
+  const [editingBox, setEditingBox] = useState<Box | null>(null);
   const [formBoxNo, setFormBoxNo] = useState('');
   const [formBoxRow, setFormBoxRow] = useState('');
   const [formBoxCol, setFormBoxCol] = useState('');
@@ -209,6 +211,7 @@ export default function StorageDashboard() {
   // ── 档案盒弹窗 ──
 
   const openCreateBox = () => {
+    setEditingBox(null);
     setFormBoxNo('');
     setFormBoxRow('');
     setFormBoxCol('');
@@ -216,6 +219,18 @@ export default function StorageDashboard() {
     setFormBoxBarcode('');
     setFormBoxStatus('empty');
     setFormBoxDesc('');
+    setBoxDialogOpen(true);
+  };
+
+  const openEditBox = (box: Box) => {
+    setEditingBox(box);
+    setFormBoxNo(box.box_no);
+    setFormBoxRow(box.row || '');
+    setFormBoxCol(box.col || '');
+    setFormBoxLayer(box.layer || '');
+    setFormBoxBarcode(box.barcode || '');
+    setFormBoxStatus(box.status);
+    setFormBoxDesc(box.description || '');
     setBoxDialogOpen(true);
   };
 
@@ -233,7 +248,11 @@ export default function StorageDashboard() {
     if (formBoxBarcode) data.barcode = formBoxBarcode.trim();
     if (formBoxDesc) data.description = formBoxDesc.trim();
 
-    await createBox(selectedCabinetId, data);
+    if (editingBox) {
+      await updateBox(selectedCabinetId, editingBox.id, data);
+    } else {
+      await createBox(selectedCabinetId, data);
+    }
 
     setSavingBox(false);
     setBoxDialogOpen(false);
@@ -442,14 +461,24 @@ export default function StorageDashboard() {
                           <BoxStatusBadge status={b.status} />
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            title={t('common.delete')}
-                            onClick={() => setDeleteBoxTarget(b)}
-                          >
-                            <Trash2 className="size-3.5 text-destructive" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
+                              title={t('common.edit')}
+                              onClick={() => openEditBox(b)}
+                            >
+                              <Pencil className="size-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
+                              title={t('common.delete')}
+                              onClick={() => setDeleteBoxTarget(b)}
+                            >
+                              <Trash2 className="size-3.5 text-destructive" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -591,7 +620,9 @@ export default function StorageDashboard() {
         }}
       >
         <DialogHeader>
-          <DialogTitle>{t('storage.boxes.add')}</DialogTitle>
+          <DialogTitle>
+            {editingBox ? t('storage.boxes.edit') : t('storage.boxes.add')}
+          </DialogTitle>
         </DialogHeader>
         <DialogBody>
           <div className="space-y-4">
@@ -681,7 +712,7 @@ export default function StorageDashboard() {
             onClick={handleSaveBox}
             disabled={savingBox || !formBoxNo.trim() || !selectedCabinetId}
           >
-            {savingBox ? t('common.saving') : t('common.add')}
+            {savingBox ? t('common.saving') : editingBox ? t('common.save') : t('common.add')}
           </Button>
         </DialogFooter>
       </Dialog>

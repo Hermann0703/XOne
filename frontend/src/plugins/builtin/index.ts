@@ -7,6 +7,8 @@ import { contractsPlugin } from './work/contracts';
 import { archivesPlugin } from './work/archives';
 import { knowledgePlugin } from './work/knowledge';
 import { dispatchPlugin } from './work/dispatch';
+import { searchPlugin } from './work/search';
+import { storagePlugin } from './work/storage';
 import { projectPlugin } from './work/project';
 import { readingPlugin } from '../personal/reading';
 import { mediaPlugin } from '../personal/media';
@@ -55,7 +57,7 @@ const helpPlugin: XOnePlugin = {
 };
 
 /** 所有内建插件 */
-const builtinPlugins: XOnePlugin[] = [settingsPlugin, helpPlugin, contractsPlugin, archivesPlugin, knowledgePlugin, dispatchPlugin, projectPlugin, readingPlugin, mediaPlugin, healthPlugin, assetsPlugin, shoppingPlugin];
+const builtinPlugins: XOnePlugin[] = [settingsPlugin, helpPlugin, contractsPlugin, archivesPlugin, knowledgePlugin, dispatchPlugin, searchPlugin, storagePlugin, projectPlugin, readingPlugin, mediaPlugin, healthPlugin, assetsPlugin, shoppingPlugin];
 
 /**
  * 注册所有内建插件到全局注册表

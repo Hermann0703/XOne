@@ -417,7 +417,10 @@
     }
   },
   "dispatch": {
-    "title": "数据报送"
+    "title": "数据报送",
+    "sources": "数据源管理",
+    "tasks": "报送任务",
+    "monitor": "监控面板"
   },
   "search": {
     "title": "全局搜索",
@@ -651,6 +654,7 @@
     "boxes": {
       "title": "档案盒列表",
       "add": "新增档案盒",
+      "edit": "编辑档案盒",
       "boxNo": "盒号",
       "row": "排",
       "col": "列",

@@ -417,7 +417,10 @@
     }
   },
   "dispatch": {
-    "title": "Data Dispatch"
+    "title": "Data Dispatch",
+    "sources": "Data Sources",
+    "tasks": "Dispatch Tasks",
+    "monitor": "Monitor"
   },
   "search": {
     "title": "Global Search",
@@ -642,6 +645,7 @@
     "boxes": {
       "title": "Boxes",
       "add": "Add Box",
+      "edit": "Edit Box",
       "boxNo": "Box No.",
       "row": "Row",
       "col": "Column",
