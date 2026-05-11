@@ -101,6 +101,9 @@ services:
     container_name: xone-backend
     expose:
       - "8000"
+    environment:
+      <<: *common-env
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-4}
     depends_on:
       postgres:
         condition: service_healthy

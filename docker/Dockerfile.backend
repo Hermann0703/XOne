@@ -38,12 +38,17 @@ COPY --from=builder /install /usr/local
 # 复制源码
 COPY backend/ ./
 
+# 复制入口脚本 (必须在 USER xone 之前，否则无法 chmod)
+COPY docker/entrypoint-backend.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # 非 root 用户
-RUN chown -R xone:xone /app
+RUN chown -R xone:xone /app /entrypoint.sh
 USER xone
 
 EXPOSE 8000
 
 # 生产环境：多 worker 模式，无热重载
-# Uvicorn workers 数量通过环境变量 WEB_CONCURRENCY 控制，默认 CPU 核数
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--proxy-headers", "--forwarded-allow-ips", "*"]
+# WEB_CONCURRENCY 控制 worker 数量 (默认: CPU 核数)
+
+ENTRYPOINT ["/entrypoint.sh"]
