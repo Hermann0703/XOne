@@ -55,6 +55,8 @@
       "subtitle": "Welcome back, what would you like to do today?",
       "quickActions": "Quick Actions",
       "recentActivity": "Recent Activity",
+      "loading": "Loading…",
+      "error": "Failed to load, please try again",
       "actionLabels": {
         "health": "Health Log",
         "reading": "Reading Notes",

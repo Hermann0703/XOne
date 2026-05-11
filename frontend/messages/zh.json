@@ -55,6 +55,8 @@
       "subtitle": "欢迎回来，今天想做些什么？",
       "quickActions": "快捷入口",
       "recentActivity": "最近活动",
+      "loading": "载入中…",
+      "error": "加载失败，请稍后重试",
       "actionLabels": {
         "health": "健康记录",
         "reading": "阅读笔记",
