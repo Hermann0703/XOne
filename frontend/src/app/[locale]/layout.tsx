@@ -1,4 +1,5 @@
 import { getMessages, getTranslations } from 'next-intl/server'
+import { Toaster } from 'sonner'
 import { AppShell } from '@/components/layout/AppShell'
 
 export default async function LocaleLayout({
@@ -20,6 +21,7 @@ export default async function LocaleLayout({
         {t('common.skipToContent')}
       </a>
       <AppShell locale={locale} messages={messages}>{children}</AppShell>
+      <Toaster />
     </>
   )
 }

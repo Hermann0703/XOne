@@ -19,14 +19,11 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
   // ── Bundle & import optimizations ──
+  // modularizeImports removed — conflicts with optimizePackageImports
+  // and causes stale chunk references (vendor-chunks/lucide-react.js)
+  // in incremental dev-server builds.
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts'],
-  },
-  modularizeImports: {
-    'lucide-react': {
-      transform: 'lucide-react/dist/esm/icons/{{member}}',
-      skipDefaultConversion: true,
-    },
   },
   // Production source maps only in dev (saves ~2MB in production)
   productionBrowserSourceMaps: process.env.NODE_ENV === 'development',

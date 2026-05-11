@@ -70,8 +70,8 @@ function DashboardCards() {
 
   const cards = [
     { label: "合同总数", value: dashboard?.total_contracts ?? "--", icon: <FileText className="size-5 text-blue-500" /> },
-    { label: "履行中",   value: dashboard?.by_status?.in_progress ?? "--", icon: <TrendingUp className="size-5 text-green-500" /> },
-    { label: "已签署",   value: dashboard?.by_status?.signed ?? "--", icon: <Clock className="size-5 text-orange-500" /> },
+    { label: "履行中",   value: dashboard?.by_status?.find(s => s.status === 'in_progress')?.count ?? "--", icon: <TrendingUp className="size-5 text-green-500" /> },
+    { label: "已签署",   value: dashboard?.by_status?.find(s => s.status === 'signed')?.count ?? "--", icon: <Clock className="size-5 text-orange-500" /> },
     { label: "即将到期", value: dashboard?.expiring_count ?? "--", icon: <AlertTriangle className="size-5 text-red-500" /> },
   ];
 
@@ -211,6 +211,7 @@ export default function ContractList() {
                 { value: "sale", label: "销售合同" },
                 { value: "service", label: "服务合同" },
                 { value: "lease", label: "租赁合同" },
+                { value: "loan", label: "借款合同" },
                 { value: "other", label: "其他" },
               ]}
               value={typeFilter}
@@ -260,7 +261,7 @@ export default function ContractList() {
                             <p className="text-lg font-medium text-foreground">{t("contracts.empty.title")}</p>
                             <p className="text-sm text-muted-foreground mt-1">{t("contracts.empty.description")}</p>
                           </div>
-                          <Button onClick={() => router.push(`/contracts/create`)} className="gap-1.5">
+                          <Button onClick={() => router.push(`/work/contracts/new`)} className="gap-1.5">
                             <Plus className="w-4 h-4" />
                             {t("contracts.empty.cta")}
                           </Button>

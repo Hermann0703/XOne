@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Save, X, Plus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,6 +114,12 @@ export default function ContractForm() {
     const errors: Record<string, string> = {};
     if (!form.contract_no?.trim()) errors.contract_no = "请输入合同编号";
     if (!form.contract_name?.trim()) errors.contract_name = "请输入合同名称";
+    if (!form.fonds_id) errors.fonds_id = "请选择全宗";
+    if (!form.category_id) errors.category_id = "请选择分类";
+    if (!form.classification_id) errors.classification_id = "请选择密级";
+    if (!form.buyer?.trim()) errors.buyer = "请输入采购方";
+    if (!form.supplier?.trim()) errors.supplier = "请输入供应商";
+    if (form.amount == null || form.amount === undefined) errors.amount = "请输入采购金额";
     // 编码字段正则校验: 仅允许字母+数字+'-'，最长32字符
     const codePattern = /^[a-zA-Z0-9-]{0,32}$/;
     if (form.requirement_no && !codePattern.test(form.requirement_no))
@@ -140,15 +147,26 @@ export default function ContractForm() {
   const handleSubmit = async () => {
     if (!validate()) return;
     setSubmitting(true);
-    let result: Contract | null;
-    if (isEdit && id) {
-      result = await updateContract(Number(id), form);
-    } else {
-      result = await createContract(form);
-    }
-    setSubmitting(false);
-    if (result) {
-      router.push(`/work/contracts/${result.id}`);
+    try {
+      // keywords 序列化为逗号分隔字符串后 as any（API 接口接收字符串，类型定义使用 string[]）
+      const data = {
+        ...form,
+        keywords: form.keywords?.length ? form.keywords.join(",") : undefined,
+      } as Partial<Contract>;
+      let result: Contract | null;
+      if (isEdit && id) {
+        result = await updateContract(Number(id), data);
+      } else {
+        result = await createContract(data);
+      }
+      if (result) {
+        router.push(`/work/contracts/${result.id}`);
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "未知错误";
+      toast(message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -230,7 +248,7 @@ export default function ContractForm() {
             )}
           </div>
           <div>
-            <label htmlFor="field-contract-fonds" className="text-sm font-medium text-text-secondary block mb-1">全宗</label>
+            <label htmlFor="field-contract-fonds" className="text-sm font-medium text-text-secondary block mb-1">全宗 <span className="text-destructive">*</span></label>
             <Select
               id="field-contract-fonds"
               options={fonds.map(f => ({ value: String(f.id), label: f.name }))}
@@ -238,9 +256,12 @@ export default function ContractForm() {
               onChange={(e) => setField("fonds_id", e.target.value ? Number(e.target.value) : undefined)}
               placeholder="选择全宗"
             />
+            {fieldErrors.fonds_id && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.fonds_id}</p>
+            )}
           </div>
           <div>
-            <label htmlFor="field-contract-category" className="text-sm font-medium text-text-secondary block mb-1">分类</label>
+            <label htmlFor="field-contract-category" className="text-sm font-medium text-text-secondary block mb-1">分类 <span className="text-destructive">*</span></label>
             <Select
               id="field-contract-category"
               options={categories.map(c => ({ value: String(c.id), label: c.name }))}
@@ -248,9 +269,12 @@ export default function ContractForm() {
               onChange={(e) => setField("category_id", e.target.value ? Number(e.target.value) : undefined)}
               placeholder="选择分类"
             />
+            {fieldErrors.category_id && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.category_id}</p>
+            )}
           </div>
           <div>
-            <label htmlFor="field-contract-classification" className="text-sm font-medium text-text-secondary block mb-1">密级</label>
+            <label htmlFor="field-contract-classification" className="text-sm font-medium text-text-secondary block mb-1">密级 <span className="text-destructive">*</span></label>
             <Select
               id="field-contract-classification"
               options={classifications.map(c => ({ value: String(c.id), label: c.name }))}
@@ -258,6 +282,9 @@ export default function ContractForm() {
               onChange={(e) => setField("classification_id", e.target.value ? Number(e.target.value) : undefined)}
               placeholder="选择密级"
             />
+            {fieldErrors.classification_id && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.classification_id}</p>
+            )}
           </div>
           <div>
             <label htmlFor="field-contract-type" className="text-sm font-medium text-text-secondary block mb-1">合同类型</label>
@@ -268,6 +295,7 @@ export default function ContractForm() {
                 { value: "sale", label: "销售合同" },
                 { value: "service", label: "服务合同" },
                 { value: "lease", label: "租赁合同" },
+                { value: "loan", label: "借款合同" },
                 { value: "other", label: "其他" },
               ]}
               value={form.contract_type || ""}
@@ -285,16 +313,25 @@ export default function ContractForm() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="field-contract-buyer" className="text-sm font-medium text-text-secondary block mb-1">采购方</label>
-            <Input id="field-contract-buyer" value={form.buyer || ""} onChange={(e) => setField("buyer", e.target.value)} placeholder="请输入采购方名称" />
+            <label htmlFor="field-contract-buyer" className="text-sm font-medium text-text-secondary block mb-1">采购方 <span className="text-destructive">*</span></label>
+            <Input id="field-contract-buyer" required value={form.buyer || ""} onChange={(e) => setField("buyer", e.target.value)} placeholder="请输入采购方名称" />
+            {fieldErrors.buyer && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.buyer}</p>
+            )}
           </div>
           <div>
-            <label htmlFor="field-contract-supplier" className="text-sm font-medium text-text-secondary block mb-1">供应商</label>
-            <Input id="field-contract-supplier" value={form.supplier || ""} onChange={(e) => setField("supplier", e.target.value)} placeholder="请输入供应商名称" />
+            <label htmlFor="field-contract-supplier" className="text-sm font-medium text-text-secondary block mb-1">供应商 <span className="text-destructive">*</span></label>
+            <Input id="field-contract-supplier" required value={form.supplier || ""} onChange={(e) => setField("supplier", e.target.value)} placeholder="请输入供应商名称" />
+            {fieldErrors.supplier && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.supplier}</p>
+            )}
           </div>
           <div>
-            <label htmlFor="field-contract-amount" className="text-sm font-medium text-text-secondary block mb-1">采购金额</label>
-            <Input id="field-contract-amount" type="number" value={form.amount ?? ""} onChange={(e) => setField("amount", e.target.value ? Number(e.target.value) : undefined)} placeholder="请输入金额" />
+            <label htmlFor="field-contract-amount" className="text-sm font-medium text-text-secondary block mb-1">采购金额 <span className="text-destructive">*</span></label>
+            <Input id="field-contract-amount" type="number" required value={form.amount ?? ""} onChange={(e) => setField("amount", e.target.value ? Number(e.target.value) : undefined)} placeholder="请输入金额" />
+            {fieldErrors.amount && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.amount}</p>
+            )}
           </div>
           <div>
             <label htmlFor="field-contract-currency" className="text-sm font-medium text-text-secondary block mb-1">币种</label>

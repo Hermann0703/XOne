@@ -63,7 +63,7 @@ export interface Milestone {
   contract_id: number;
   name: string;
   amount?: number;
-  planned_date?: string;
+  due_date?: string;
   completed_date?: string;
   status: string;   // pending/completed
   remark?: string;
@@ -71,11 +71,11 @@ export interface Milestone {
 
 export interface DashboardData {
   total_contracts: number;
-  by_status: Record<string, number>;
-  by_type: Record<string, number>;
+  by_status: Array<{ status: string; count: number }>;
+  by_type: Array<{ type: string; count: number }>;
   expiring_count: number;
   monthly_trends: Array<{ month: string; count: number }>;
-  by_fonds: Record<string, number>;
+  by_fonds: Array<{ fonds_name: string; count: number }>;
 }
 
 export interface Paging {

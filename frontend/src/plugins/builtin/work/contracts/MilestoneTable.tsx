@@ -30,7 +30,7 @@ interface Props {
 const INITIAL_MILESTONE: Partial<Milestone> = {
   name: "",
   amount: undefined,
-  planned_date: "",
+  due_date: "",
   status: "pending",
   remark: "",
 };
@@ -59,7 +59,7 @@ export default function MilestoneTable({ contractId }: Props) {
       id: m.id,
       name: m.name,
       amount: m.amount,
-      planned_date: m.planned_date || "",
+      due_date: m.due_date || "",
       status: m.status,
       remark: m.remark || "",
     });
@@ -125,7 +125,7 @@ export default function MilestoneTable({ contractId }: Props) {
                 <TableCell className="text-right">
                   {m.amount != null ? `¥${m.amount.toLocaleString()}` : "-"}
                 </TableCell>
-                <TableCell className="text-sm">{m.planned_date || "-"}</TableCell>
+                <TableCell className="text-sm">{m.due_date || "-"}</TableCell>
                 <TableCell>
                   <Badge variant="outline" className={
                     m.status === "completed"
@@ -173,7 +173,7 @@ export default function MilestoneTable({ contractId }: Props) {
             </div>
             <div>
               <label className="text-sm font-medium text-text-secondary block mb-1">计划日期</label>
-              <Input type="date" value={editing.planned_date || ""} onChange={(e) => setEditing((prev) => ({ ...prev, planned_date: e.target.value }))} />
+              <Input type="date" value={editing.due_date || ""} onChange={(e) => setEditing((prev) => ({ ...prev, due_date: e.target.value }))} />
             </div>
             <div>
               <label className="text-sm font-medium text-text-secondary block mb-1">备注</label>

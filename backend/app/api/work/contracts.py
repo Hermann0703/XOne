@@ -1,10 +1,10 @@
 """合同管理模块 API — 全宗 / 分类 / 密级 / 合同 / 里程碑 / 仪表盘"""
 
 from datetime import date
-from typing import Optional
+from typing import List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -93,7 +93,7 @@ class ContractCreate(BaseModel):
     )
     contract_type: str = Field(
         default="other",
-        pattern="^(purchase|service|lease|loan|other)$",
+        pattern="^(purchase|service|lease|sale|loan|other)$",
         description="合同类型"
     )
     requirement_no: Optional[str] = Field(
@@ -114,6 +114,15 @@ class ContractCreate(BaseModel):
     subject_name: Optional[str] = Field(default=None, max_length=256, description="标的名称")
     description: Optional[str] = Field(default=None, description="描述")
     keywords: Optional[str] = Field(default=None, max_length=512, description="关键词")
+
+    @field_validator('keywords', mode='before')
+    @classmethod
+    def coerce_keywords(cls, v: Union[str, List[str], None]) -> Optional[str]:
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return ', '.join(v)
+        return v
 
 
 class ContractUpdate(BaseModel):
@@ -137,7 +146,7 @@ class ContractUpdate(BaseModel):
     )
     contract_type: Optional[str] = Field(
         default=None,
-        pattern="^(purchase|service|lease|loan|other)$",
+        pattern="^(purchase|service|lease|sale|loan|other)$",
         description="合同类型"
     )
     requirement_no: Optional[str] = Field(
@@ -158,6 +167,15 @@ class ContractUpdate(BaseModel):
     subject_name: Optional[str] = Field(default=None, max_length=256, description="标的名称")
     description: Optional[str] = Field(default=None, description="描述")
     keywords: Optional[str] = Field(default=None, max_length=512, description="关键词")
+
+    @field_validator('keywords', mode='before')
+    @classmethod
+    def coerce_keywords(cls, v: Union[str, List[str], None]) -> Optional[str]:
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return ', '.join(v)
+        return v
 
 
 class MilestoneCreate(BaseModel):
@@ -536,7 +554,7 @@ async def delete_classification(
 # ═══════════════════════════════════════════════════════════════════════
 
 
-@router.get("/contracts", summary="获取合同列表")
+@router.get("/", summary="获取合同列表")
 async def get_contracts_list(
     current_user: User = Depends(get_current_user),
     fonds_id: Optional[int] = Query(default=None, description="按全宗ID筛选"),
@@ -573,7 +591,7 @@ async def get_contracts_list(
     }
 
 
-@router.post("/contracts", summary="创建合同")
+@router.post("/", summary="创建合同")
 async def create_contract(
     body: ContractCreate,
     current_user: User = Depends(get_current_user),
@@ -588,7 +606,7 @@ async def create_contract(
     }
 
 
-@router.get("/contracts/{contract_id}", summary="获取合同详情")
+@router.get("/{contract_id}", summary="获取合同详情")
 async def get_contract(
     contract_id: int,
     current_user: User = Depends(get_current_user),
@@ -609,7 +627,7 @@ async def get_contract(
     }
 
 
-@router.patch("/contracts/{contract_id}", summary="更新合同")
+@router.patch("/{contract_id}", summary="更新合同")
 async def update_contract(
     contract_id: int,
     body: ContractUpdate,
@@ -629,7 +647,7 @@ async def update_contract(
     }
 
 
-@router.delete("/contracts/{contract_id}", summary="删除合同")
+@router.delete("/{contract_id}", summary="删除合同")
 async def delete_contract(
     contract_id: int,
     current_user: User = Depends(get_current_user),
@@ -651,7 +669,7 @@ async def delete_contract(
 # ═══════════════════════════════════════════════════════════════════════
 
 
-@router.get("/contracts/{contract_id}/milestones", summary="获取合同里程碑列表")
+@router.get("/{contract_id}/milestones", summary="获取合同里程碑列表")
 async def get_milestones_list(
     contract_id: int,
     current_user: User = Depends(get_current_user),
@@ -670,7 +688,7 @@ async def get_milestones_list(
     }
 
 
-@router.post("/contracts/{contract_id}/milestones", summary="创建里程碑")
+@router.post("/{contract_id}/milestones", summary="创建里程碑")
 async def create_milestone(
     contract_id: int,
     body: MilestoneCreate,
