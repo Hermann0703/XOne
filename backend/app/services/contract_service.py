@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.contract import Fonds, Category, Classification, Contract, Milestone
+from app.models.supplier import Supplier
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -253,8 +254,6 @@ async def list_contracts(
             or_(
                 Contract.contract_no.ilike(search_term),
                 Contract.contract_name.ilike(search_term),
-                Contract.buyer.ilike(search_term),
-                Contract.supplier.ilike(search_term),
                 Contract.keywords.ilike(search_term),
             )
         )
@@ -274,6 +273,7 @@ async def list_contracts(
             selectinload(Contract.fonds),
             selectinload(Contract.category),
             selectinload(Contract.classification),
+            selectinload(Contract.supplier_rel),
         )
         .order_by(Contract.updated_at.desc())
         .offset((page - 1) * page_size)
@@ -294,6 +294,7 @@ async def get_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> Opt
             selectinload(Contract.fonds),
             selectinload(Contract.category),
             selectinload(Contract.classification),
+            selectinload(Contract.supplier_rel),
             selectinload(Contract.milestones),
         )
     )
@@ -310,8 +311,7 @@ async def create_contract(db: AsyncSession, user_id: UUID, data: dict) -> Contra
         fonds_id=data["fonds_id"],
         category_id=data["category_id"],
         classification_id=data["classification_id"],
-        buyer=data["buyer"],
-        supplier=data["supplier"],
+        supplier_id=data.get("supplier_id"),
         amount=data["amount"],
         currency=data.get("currency", "CNY"),
         sign_date=data.get("sign_date"),
@@ -325,7 +325,7 @@ async def create_contract(db: AsyncSession, user_id: UUID, data: dict) -> Contra
     db.add(contract)
     await db.flush()
     await db.refresh(contract)
-    await db.refresh(contract, ["fonds", "category", "classification"])
+    await db.refresh(contract, ["fonds", "category", "classification", "supplier_rel"])
     return contract
 
 
@@ -340,6 +340,7 @@ async def update_contract(
             selectinload(Contract.fonds),
             selectinload(Contract.category),
             selectinload(Contract.classification),
+            selectinload(Contract.supplier_rel),
         )
     )
     result = await db.execute(stmt)
@@ -349,7 +350,7 @@ async def update_contract(
 
     updatable = (
         "contract_no", "contract_name", "fonds_id", "category_id", "classification_id",
-        "buyer", "supplier", "amount", "currency", "sign_date", "start_date",
+        "supplier_id", "amount", "currency", "sign_date", "start_date",
         "end_date", "status", "contract_type", "description", "keywords",
         "requirement_no", "subject_no", "procurement_no", "subject_name",
     )
@@ -358,9 +359,8 @@ async def update_contract(
             setattr(contract, field, data[field])
 
     await db.flush()
-    await db.refresh(contract, ["fonds", "category", "classification"])
+    await db.refresh(contract, ["fonds", "category", "classification", "supplier_rel"])
     return contract
-
 
 async def delete_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> bool:
     """删除合同（级联删除里程碑）"""
@@ -466,14 +466,154 @@ async def delete_milestone(db: AsyncSession, milestone_id: int, user_id: UUID) -
 
 
 # ══════════════════════════════════════════════════════════════════════
+#  供应商 (Supplier) CRUD
+# ══════════════════════════════════════════════════════════════════════
+
+
+async def list_suppliers(
+    db: AsyncSession,
+    user_id: UUID,
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[list[Supplier], int]:
+    """获取供应商列表，支持分页+搜索+状态筛选"""
+    from uuid import UUID as PyUUID
+
+    conditions = [Supplier.user_id == user_id]
+
+    if status is not None:
+        conditions.append(Supplier.status == status)
+    if search is not None and search.strip():
+        search_term = f"%{search.strip()}%"
+        conditions.append(
+            or_(
+                Supplier.name.ilike(search_term),
+                Supplier.contact_person.ilike(search_term),
+                Supplier.business_license.ilike(search_term),
+            )
+        )
+
+    where_clause = and_(*conditions)
+
+    # 总数
+    count_stmt = select(func.count()).select_from(Supplier).where(where_clause)
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar() or 0
+
+    # 分页列表
+    stmt = (
+        select(Supplier)
+        .where(where_clause)
+        .order_by(Supplier.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    result = await db.execute(stmt)
+    items = list(result.scalars().all())
+
+    return items, total
+
+
+async def get_supplier(db: AsyncSession, supplier_id: str, user_id: UUID) -> Optional[Supplier]:
+    """获取单个供应商"""
+    from uuid import UUID as PyUUID
+
+    try:
+        sid = PyUUID(supplier_id)
+    except ValueError:
+        return None
+
+    stmt = select(Supplier).where(Supplier.id == sid, Supplier.user_id == user_id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def create_supplier(db: AsyncSession, user_id: UUID, data: dict) -> Supplier:
+    """创建供应商"""
+    supplier = Supplier(
+        user_id=user_id,
+        name=data["name"],
+        contact_person=data.get("contact_person"),
+        contact_phone=data.get("contact_phone"),
+        address=data.get("address"),
+        business_license=data.get("business_license"),
+        tax_id=data.get("tax_id"),
+        bank_name=data.get("bank_name"),
+        bank_account=data.get("bank_account"),
+        rating=data.get("rating"),
+        status=data.get("status", "active"),
+        notes=data.get("notes"),
+    )
+    db.add(supplier)
+    await db.flush()
+    await db.refresh(supplier)
+    return supplier
+
+
+async def update_supplier(
+    db: AsyncSession, supplier_id: str, user_id: UUID, data: dict
+) -> Optional[Supplier]:
+    """更新供应商"""
+    from uuid import UUID as PyUUID
+
+    try:
+        sid = PyUUID(supplier_id)
+    except ValueError:
+        return None
+
+    stmt = select(Supplier).where(Supplier.id == sid, Supplier.user_id == user_id)
+    result = await db.execute(stmt)
+    supplier = result.scalar_one_or_none()
+    if not supplier:
+        return None
+
+    updatable = (
+        "name", "contact_person", "contact_phone", "address",
+        "business_license", "tax_id", "bank_name", "bank_account",
+        "rating", "status", "notes",
+    )
+    for field in updatable:
+        if field in data:
+            setattr(supplier, field, data[field])
+
+    await db.flush()
+    await db.refresh(supplier)
+    return supplier
+
+
+async def delete_supplier(db: AsyncSession, supplier_id: str, user_id: UUID) -> bool:
+    """删除供应商"""
+    from uuid import UUID as PyUUID
+
+    try:
+        sid = PyUUID(supplier_id)
+    except ValueError:
+        return False
+
+    stmt = select(Supplier).where(Supplier.id == sid, Supplier.user_id == user_id)
+    result = await db.execute(stmt)
+    supplier = result.scalar_one_or_none()
+    if not supplier:
+        return False
+
+    await db.delete(supplier)
+    await db.flush()
+    return True
+
+
+# ══════════════════════════════════════════════════════════════════════
 #  合同仪表盘
 # ══════════════════════════════════════════════════════════════════════
 
 async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
     """合同仪表盘聚合数据"""
+    from datetime import timedelta
+
     today = date.today()
 
-    # 合同总数
+    # ── summary ──
     total_stmt = (
         select(func.count())
         .select_from(Contract)
@@ -481,19 +621,75 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
     )
     total = (await db.execute(total_stmt)).scalar() or 0
 
-    # 按状态分布
+    total_amount_stmt = (
+        select(func.coalesce(func.sum(Contract.amount), 0))
+        .select_from(Contract)
+        .where(Contract.user_id == user_id)
+    )
+    total_amount = float((await db.execute(total_amount_stmt)).scalar() or 0)
+
+    # 按状态计数
     status_stmt = (
         select(Contract.status, func.count().label("count"))
         .where(Contract.user_id == user_id)
         .group_by(Contract.status)
     )
     status_result = await db.execute(status_stmt)
+    status_map = {row.status: row.count for row in status_result.all()}
+
+    summary = {
+        "total_contracts": total,
+        "total_amount": total_amount,
+        "active_count": status_map.get("in_progress", 0) + status_map.get("signed", 0),
+        "completed_count": status_map.get("completed", 0),
+        "terminated_count": status_map.get("terminated", 0),
+        "draft_count": status_map.get("draft", 0),
+    }
+
+    # ── performance (里程碑维度) ──
+    total_ms_stmt = (
+        select(func.count())
+        .select_from(Milestone)
+        .join(Contract, Milestone.contract_id == Contract.id)
+        .where(Contract.user_id == user_id)
+    )
+    total_milestones = (await db.execute(total_ms_stmt)).scalar() or 0
+
+    completed_ms_stmt = (
+        select(func.count())
+        .select_from(Milestone)
+        .join(Contract, Milestone.contract_id == Contract.id)
+        .where(Contract.user_id == user_id, Milestone.status == "completed")
+    )
+    completed_milestones = (await db.execute(completed_ms_stmt)).scalar() or 0
+
+    overdue_ms_stmt = (
+        select(func.count())
+        .select_from(Milestone)
+        .join(Contract, Milestone.contract_id == Contract.id)
+        .where(Contract.user_id == user_id, Milestone.status == "overdue")
+    )
+    overdue_count = (await db.execute(overdue_ms_stmt)).scalar() or 0
+
+    on_time_rate = (
+        round(completed_milestones / total_milestones, 2)
+        if total_milestones > 0 else 0
+    )
+
+    performance = {
+        "on_time_rate": on_time_rate,
+        "overdue_count": overdue_count,
+        "total_milestones": total_milestones,
+        "completed_milestones": completed_milestones,
+    }
+
+    # ── by_status ──
     by_status = [
-        {"status": row.status, "count": row.count}
-        for row in status_result.all()
+        {"status": status, "count": count}
+        for status, count in status_map.items()
     ]
 
-    # 按类型分布
+    # ── by_type ──
     type_stmt = (
         select(Contract.contract_type, func.count().label("count"))
         .where(Contract.user_id == user_id)
@@ -505,34 +701,7 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
         for row in type_result.all()
     ]
 
-    # 到期合同（未终止且结束日期在今天之前）
-    expiring_stmt = (
-        select(func.count())
-        .select_from(Contract)
-        .where(
-            Contract.user_id == user_id,
-            Contract.status != "terminated",
-            Contract.end_date < today,
-        )
-    )
-    expiring = (await db.execute(expiring_stmt)).scalar() or 0
-
-    # 即将到期（30天内）
-    from datetime import timedelta
-    upcoming = today + timedelta(days=30)
-    upcoming_stmt = (
-        select(func.count())
-        .select_from(Contract)
-        .where(
-            Contract.user_id == user_id,
-            Contract.status.notin_(["terminated", "completed"]),
-            Contract.end_date >= today,
-            Contract.end_date <= upcoming,
-        )
-    )
-    upcoming_count = (await db.execute(upcoming_stmt)).scalar() or 0
-
-    # 近6月趋势（按月统计创建合同数）
+    # ── monthly_trends ──
     trends = []
     for i in range(5, -1, -1):
         year = today.year
@@ -558,7 +727,7 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
             "count": count,
         })
 
-    # 按全宗统计合同数
+    # ── by_fonds ──
     fonds_stmt = (
         select(Fonds.name, func.count(Contract.id).label("count"))
         .outerjoin(Contract, and_(
@@ -574,12 +743,37 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
         for row in fonds_result.all()
     ]
 
+    # ── expiring_soon (30天内到期) ──
+    upcoming = today + timedelta(days=30)
+    expiring_stmt = (
+        select(Contract)
+        .where(
+            Contract.user_id == user_id,
+            Contract.status.notin_(["terminated", "completed"]),
+            Contract.end_date >= today,
+            Contract.end_date <= upcoming,
+        )
+        .options(selectinload(Contract.fonds))
+        .order_by(Contract.end_date.asc())
+    )
+    expiring_result = await db.execute(expiring_stmt)
+    expiring_soon = []
+    for ct in expiring_result.scalars().all():
+        expiring_soon.append({
+            "id": ct.id,
+            "contract_no": ct.contract_no,
+            "contract_name": ct.contract_name,
+            "end_date": ct.end_date.isoformat() if ct.end_date else None,
+            "status": ct.status,
+            "fonds_name": ct.fonds.name if ct.fonds else None,
+        })
+
     return {
-        "total_contracts": total,
-        "by_status": by_status,
+        "summary": summary,
+        "performance": performance,
         "by_type": by_type,
-        "expiring_count": expiring,
-        "upcoming_expire_count": upcoming_count,
+        "by_status": by_status,
         "monthly_trends": trends,
         "by_fonds": by_fonds,
+        "expiring_soon": expiring_soon,
     }

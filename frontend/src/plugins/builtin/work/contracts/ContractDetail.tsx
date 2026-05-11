@@ -151,7 +151,6 @@ export default function ContractDetail() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                <InfoItem label="采购方" value={c.buyer} />
                 <InfoItem label="供应商" value={c.supplier} />
                 <InfoItem label="采购金额" value={c.amount != null ? `${c.currency || "CNY"} ${c.amount.toLocaleString()}` : "-"} />
               </div>

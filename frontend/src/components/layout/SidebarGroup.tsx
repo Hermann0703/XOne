@@ -4,16 +4,22 @@ import { usePathname } from 'next/navigation'
 import { type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SidebarMenuItem, type SidebarMenuItemProps } from './SidebarMenuItem'
+import { SidebarExpandableItem } from './SidebarExpandableItem'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
+/** 菜单项类型：兼容 children 以支持可折叠子菜单 */
+export type SidebarItemWithChildren = SidebarMenuItemProps & {
+  children?: SidebarMenuItemProps[]
+}
+
 export interface SidebarGroupProps {
   title: string
   icon: LucideIcon
-  items: SidebarMenuItemProps[]
+  items: SidebarItemWithChildren[]
   collapsed: boolean
   /** 移动端点击菜单项后关闭侧边栏的回调 */
   onItemClick?: () => void
@@ -46,6 +52,22 @@ export function SidebarGroup({
 
         <ul className="flex flex-col items-center gap-0.5 w-full" role="menubar">
           {items.map((item, i) => {
+            // 有 children：渲染可折叠父项（折叠模式下仅显示图标）
+            if (item.children && item.children.length > 0) {
+              return (
+                <li key={item.id} role="none">
+                  <SidebarExpandableItem
+                    icon={item.icon}
+                    label={item.label}
+                    items={item.children}
+                    collapsed={collapsed}
+                    index={i}
+                    onItemClick={onItemClick}
+                  />
+                </li>
+              )
+            }
+
             // 菜单项高亮：当前路由以菜单项的 path 开头时激活
             const isActive = item.path
               ? pathname.startsWith(item.path)
@@ -83,6 +105,22 @@ export function SidebarGroup({
       {/* Group icon + items */}
       <ul className="flex flex-col gap-0.5" role="menu">
         {items.map((item, i) => {
+          // 有 children：渲染可折叠父子菜单
+          if (item.children && item.children.length > 0) {
+            return (
+              <li key={item.id} role="none">
+                <SidebarExpandableItem
+                  icon={item.icon}
+                  label={item.label}
+                  items={item.children}
+                  collapsed={collapsed}
+                  index={i}
+                  onItemClick={onItemClick}
+                />
+              </li>
+            )
+          }
+
           // 菜单项高亮：当前路由以菜单项的 path 开头时激活
           const isActive = item.path
             ? pathname.startsWith(item.path)

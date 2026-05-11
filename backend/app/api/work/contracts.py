@@ -79,8 +79,7 @@ class ContractCreate(BaseModel):
     fonds_id: int = Field(..., gt=0, description="所属全宗ID")
     category_id: int = Field(..., gt=0, description="所属分类ID")
     classification_id: int = Field(..., gt=0, description="密级ID")
-    buyer: str = Field(..., min_length=1, max_length=256, description="采购方")
-    supplier: str = Field(..., min_length=1, max_length=256, description="供应商")
+    supplier_id: Optional[str] = Field(default=None, description="供应商ID（UUID字符串）")
     amount: float = Field(..., ge=0, description="合同金额")
     currency: str = Field(default="CNY", max_length=8, description="币种")
     sign_date: Optional[date] = Field(default=None, description="签订日期")
@@ -132,8 +131,7 @@ class ContractUpdate(BaseModel):
     fonds_id: Optional[int] = Field(default=None, gt=0, description="所属全宗ID")
     category_id: Optional[int] = Field(default=None, gt=0, description="所属分类ID")
     classification_id: Optional[int] = Field(default=None, gt=0, description="密级ID")
-    buyer: Optional[str] = Field(default=None, min_length=1, max_length=256, description="采购方")
-    supplier: Optional[str] = Field(default=None, min_length=1, max_length=256, description="供应商")
+    supplier_id: Optional[str] = Field(default=None, description="供应商ID（UUID字符串）")
     amount: Optional[float] = Field(default=None, ge=0, description="合同金额")
     currency: Optional[str] = Field(default=None, max_length=8, description="币种")
     sign_date: Optional[date] = Field(default=None, description="签订日期")
@@ -208,6 +206,36 @@ class MilestoneUpdate(BaseModel):
     description: Optional[str] = Field(default=None, description="描述")
 
 
+class SupplierCreate(BaseModel):
+    """创建供应商请求体"""
+    name: str = Field(..., min_length=1, max_length=256, description="供应商名称")
+    contact_person: Optional[str] = Field(default=None, max_length=128, description="联系人")
+    contact_phone: Optional[str] = Field(default=None, max_length=32, description="联系电话")
+    address: Optional[str] = Field(default=None, max_length=512, description="地址")
+    business_license: Optional[str] = Field(default=None, max_length=128, description="营业执照号")
+    tax_id: Optional[str] = Field(default=None, max_length=64, description="税号")
+    bank_name: Optional[str] = Field(default=None, max_length=256, description="开户银行")
+    bank_account: Optional[str] = Field(default=None, max_length=64, description="银行账号")
+    rating: Optional[str] = Field(default=None, max_length=32, description="评级")
+    status: Optional[str] = Field(default="active", max_length=32, description="状态: active/inactive")
+    notes: Optional[str] = Field(default=None, description="备注")
+
+
+class SupplierUpdate(BaseModel):
+    """更新供应商请求体"""
+    name: Optional[str] = Field(default=None, min_length=1, max_length=256, description="供应商名称")
+    contact_person: Optional[str] = Field(default=None, max_length=128, description="联系人")
+    contact_phone: Optional[str] = Field(default=None, max_length=32, description="联系电话")
+    address: Optional[str] = Field(default=None, max_length=512, description="地址")
+    business_license: Optional[str] = Field(default=None, max_length=128, description="营业执照号")
+    tax_id: Optional[str] = Field(default=None, max_length=64, description="税号")
+    bank_name: Optional[str] = Field(default=None, max_length=256, description="开户银行")
+    bank_account: Optional[str] = Field(default=None, max_length=64, description="银行账号")
+    rating: Optional[str] = Field(default=None, max_length=32, description="评级")
+    status: Optional[str] = Field(default=None, max_length=32, description="状态")
+    notes: Optional[str] = Field(default=None, description="备注")
+
+
 # ── 辅助序列化函数 ────────────────────────────────────────────────────
 
 
@@ -260,8 +288,8 @@ def _contract_to_dict(ct) -> dict:
         "fonds_id": ct.fonds_id,
         "category_id": ct.category_id,
         "classification_id": ct.classification_id,
-        "buyer": ct.buyer,
-        "supplier": ct.supplier,
+        "supplier_id": str(ct.supplier_id) if ct.supplier_id else None,
+        "supplier": ct.supplier_rel.name if ct.supplier_rel else None,
         "amount": ct.amount,
         "currency": ct.currency,
         "sign_date": ct.sign_date.isoformat() if ct.sign_date else None,
@@ -296,6 +324,26 @@ def _milestone_to_dict(m) -> dict:
         "description": m.description,
         "created_at": m.created_at.isoformat() if m.created_at else None,
         "updated_at": m.updated_at.isoformat() if m.updated_at else None,
+    }
+
+
+def _supplier_to_dict(s) -> dict:
+    return {
+        "id": str(s.id),
+        "user_id": str(s.user_id) if s.user_id else None,
+        "name": s.name,
+        "contact_person": s.contact_person,
+        "contact_phone": s.contact_phone,
+        "address": s.address,
+        "business_license": s.business_license,
+        "tax_id": s.tax_id,
+        "bank_name": s.bank_name,
+        "bank_account": s.bank_account,
+        "rating": s.rating,
+        "status": s.status,
+        "notes": s.notes,
+        "created_at": s.created_at.isoformat() if s.created_at else None,
+        "updated_at": s.updated_at.isoformat() if s.updated_at else None,
     }
 
 
@@ -741,6 +789,111 @@ async def delete_milestone(
     return {
         "code": 0,
         "message": "里程碑删除成功",
+        "data": None,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  供应商 (Supplier) 端点
+# ═══════════════════════════════════════════════════════════════════════
+
+
+@router.get("/suppliers", summary="获取供应商列表")
+async def get_suppliers_list(
+    current_user: User = Depends(get_current_user),
+    search: Optional[str] = Query(default=None, description="搜索关键词"),
+    status: Optional[str] = Query(default=None, description="按状态筛选"),
+    page: int = Query(default=1, ge=1, description="页码"),
+    page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取供应商列表，支持分页+搜索+状态筛选"""
+    items, total = await contract_service.list_suppliers(
+        db,
+        user_id=current_user.id,
+        search=search,
+        status=status,
+        page=page,
+        page_size=page_size,
+    )
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": [_supplier_to_dict(s) for s in items],
+        "paging": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size if total > 0 else 0,
+        },
+    }
+
+
+@router.post("/suppliers", summary="创建供应商")
+async def create_supplier(
+    body: SupplierCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """创建新的供应商"""
+    supplier = await contract_service.create_supplier(db, current_user.id, body.model_dump())
+    return {
+        "code": 0,
+        "message": "供应商创建成功",
+        "data": _supplier_to_dict(supplier),
+    }
+
+
+@router.get("/suppliers/{supplier_id}", summary="获取供应商详情")
+async def get_supplier(
+    supplier_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取单个供应商详情"""
+    supplier = await contract_service.get_supplier(db, supplier_id, current_user.id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": _supplier_to_dict(supplier),
+    }
+
+
+@router.patch("/suppliers/{supplier_id}", summary="更新供应商")
+async def update_supplier(
+    supplier_id: str,
+    body: SupplierUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """更新供应商信息"""
+    supplier = await contract_service.update_supplier(
+        db, supplier_id, current_user.id, body.model_dump(exclude_none=True)
+    )
+    if not supplier:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    return {
+        "code": 0,
+        "message": "供应商更新成功",
+        "data": _supplier_to_dict(supplier),
+    }
+
+
+@router.delete("/suppliers/{supplier_id}", summary="删除供应商")
+async def delete_supplier(
+    supplier_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除供应商"""
+    success = await contract_service.delete_supplier(db, supplier_id, current_user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    return {
+        "code": 0,
+        "message": "供应商删除成功",
         "data": None,
     }
 

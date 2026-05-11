@@ -417,7 +417,6 @@
       "contractNo": "Contract No.",
       "name": "Contract Name",
       "contractName": "Contract Name",
-      "buyer": "Buyer",
       "supplier": "Supplier",
       "procurementAmount": "Procurement Amount",
       "requirementNo": "Requirement No.",
@@ -443,6 +442,39 @@
       "title": "No Contracts",
       "description": "Create your first contract and start managing contract workflows",
       "cta": "Create Contract"
+    },
+    "overview": {
+      "title": "Overview",
+      "totalContracts": "Total Contracts",
+      "totalAmount": "Total Amount",
+      "active": "Active",
+      "completed": "Completed",
+      "performance": "Performance",
+      "onTimeRate": "On-Time Rate",
+      "overdueCount": "Overdue",
+      "milestoneProgress": "Milestone Progress",
+      "expiringSoon": "Expiring Soon",
+      "noData": "No Data"
+    },
+    "suppliers": {
+      "title": "Suppliers",
+      "addSupplier": "Add Supplier",
+      "editSupplier": "Edit Supplier",
+      "deleteSupplier": "Delete Supplier",
+      "deleteConfirm": "Are you sure you want to delete this supplier?",
+      "name": "Name",
+      "contactPerson": "Contact",
+      "contactPhone": "Phone",
+      "address": "Address",
+      "businessLicense": "Business License",
+      "taxId": "Tax ID",
+      "bankName": "Bank",
+      "bankAccount": "Account",
+      "rating": "Rating",
+      "status": "Status",
+      "notes": "Notes",
+      "searchPlaceholder": "Search suppliers...",
+      "noData": "No suppliers"
     }
   },
   "dispatch": {

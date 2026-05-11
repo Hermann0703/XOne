@@ -19,8 +19,7 @@ const INITIAL_FORM: Partial<Contract> = {
   fonds_id: undefined,
   category_id: undefined,
   classification_id: undefined,
-  buyer: "",
-  supplier: "",
+  supplier_id: undefined,
   amount: undefined,
   currency: "CNY",
   sign_date: "",
@@ -47,10 +46,12 @@ export default function ContractForm() {
     fonds,
     categories,
     classifications,
+    suppliers,
     fetchContract,
     fetchFonds,
     fetchCategories,
     fetchClassifications,
+    fetchSuppliers,
     createContract,
     updateContract,
   } = useContractStore();
@@ -66,7 +67,8 @@ export default function ContractForm() {
     fetchFonds();
     fetchCategories();
     fetchClassifications();
-  }, [fetchFonds, fetchCategories, fetchClassifications]);
+    fetchSuppliers();
+  }, [fetchFonds, fetchCategories, fetchClassifications, fetchSuppliers]);
 
   // 编辑模式下加载合同
   useEffect(() => {
@@ -80,8 +82,7 @@ export default function ContractForm() {
             fonds_id: c.fonds_id,
             category_id: c.category_id,
             classification_id: c.classification_id,
-            buyer: c.buyer || "",
-            supplier: c.supplier || "",
+            supplier_id: c.supplier_id || undefined,
             amount: c.amount,
             currency: c.currency || "CNY",
             sign_date: c.sign_date || "",
@@ -117,8 +118,7 @@ export default function ContractForm() {
     if (!form.fonds_id) errors.fonds_id = "请选择全宗";
     if (!form.category_id) errors.category_id = "请选择分类";
     if (!form.classification_id) errors.classification_id = "请选择密级";
-    if (!form.buyer?.trim()) errors.buyer = "请输入采购方";
-    if (!form.supplier?.trim()) errors.supplier = "请输入供应商";
+    if (!form.supplier_id) errors.supplier_id = "请选择供应商";
     if (form.amount == null || form.amount === undefined) errors.amount = "请输入采购金额";
     // 编码字段正则校验: 仅允许字母+数字+'-'，最长32字符
     const codePattern = /^[a-zA-Z0-9-]{0,32}$/;
@@ -313,17 +313,16 @@ export default function ContractForm() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="field-contract-buyer" className="text-sm font-medium text-text-secondary block mb-1">采购方 <span className="text-destructive">*</span></label>
-            <Input id="field-contract-buyer" required value={form.buyer || ""} onChange={(e) => setField("buyer", e.target.value)} placeholder="请输入采购方名称" />
-            {fieldErrors.buyer && (
-              <p className="text-xs text-destructive mt-1">{fieldErrors.buyer}</p>
-            )}
-          </div>
-          <div>
             <label htmlFor="field-contract-supplier" className="text-sm font-medium text-text-secondary block mb-1">供应商 <span className="text-destructive">*</span></label>
-            <Input id="field-contract-supplier" required value={form.supplier || ""} onChange={(e) => setField("supplier", e.target.value)} placeholder="请输入供应商名称" />
-            {fieldErrors.supplier && (
-              <p className="text-xs text-destructive mt-1">{fieldErrors.supplier}</p>
+            <Select
+              id="field-contract-supplier"
+              options={suppliers.map(s => ({ value: s.id, label: s.name }))}
+              value={form.supplier_id || ""}
+              onChange={(e) => setField("supplier_id", e.target.value || undefined)}
+              placeholder="选择供应商"
+            />
+            {fieldErrors.supplier_id && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.supplier_id}</p>
             )}
           </div>
           <div>

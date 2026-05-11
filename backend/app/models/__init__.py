@@ -1,6 +1,7 @@
 from app.models.user import User
 from app.models.project import Project, ProjectColumn, ProjectTask, ProjectMilestone
 from app.models.contract import Fonds, Category, Classification, Contract, Milestone
+from app.models.supplier import Supplier
 from app.models.archive import Archive, BorrowRecord, AppraisalRecord, ArchiveFile
 from app.models.dispatch import DispatchDataSource, DispatchTask, DispatchLog
 from app.models.knowledge import KnowledgeDocument, KnowledgeConversation
@@ -15,6 +16,7 @@ __all__ = [
     "User",
     "Project", "ProjectColumn", "ProjectTask", "ProjectMilestone",
     "Fonds", "Category", "Classification", "Contract", "Milestone",
+    "Supplier",
     "Archive", "BorrowRecord", "AppraisalRecord", "ArchiveFile",
     "DispatchDataSource", "DispatchTask", "DispatchLog",
     "KnowledgeDocument", "KnowledgeConversation",

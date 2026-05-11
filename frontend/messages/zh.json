@@ -417,7 +417,6 @@
       "contractNo": "合同编号",
       "name": "合同名称",
       "contractName": "合同名称",
-      "buyer": "采购方",
       "supplier": "供应商",
       "procurementAmount": "采购金额",
       "requirementNo": "需求编号",
@@ -443,6 +442,39 @@
       "title": "暂无合同",
       "description": "创建您的第一份合同，开始管理合同流程",
       "cta": "创建合同"
+    },
+    "overview": {
+      "title": "总体情况",
+      "totalContracts": "合同总数",
+      "totalAmount": "合同总金额",
+      "active": "生效中",
+      "completed": "已完成",
+      "performance": "履约情况",
+      "onTimeRate": "按时履约率",
+      "overdueCount": "逾期数量",
+      "milestoneProgress": "里程碑进度",
+      "expiringSoon": "即将到期",
+      "noData": "暂无数据"
+    },
+    "suppliers": {
+      "title": "供应商管理",
+      "addSupplier": "新增供应商",
+      "editSupplier": "编辑供应商",
+      "deleteSupplier": "删除供应商",
+      "deleteConfirm": "确定要删除该供应商吗？",
+      "name": "供应商名称",
+      "contactPerson": "联系人",
+      "contactPhone": "联系电话",
+      "address": "地址",
+      "businessLicense": "营业执照号",
+      "taxId": "税号",
+      "bankName": "开户行",
+      "bankAccount": "银行账号",
+      "rating": "评级",
+      "status": "状态",
+      "notes": "备注",
+      "searchPlaceholder": "搜索供应商名称...",
+      "noData": "暂无供应商数据"
     }
   },
   "dispatch": {

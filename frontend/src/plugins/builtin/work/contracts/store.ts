@@ -16,8 +16,8 @@ export interface Contract {
   category_name?: string;
   classification_id?: number; // 密级ID
   classification_name?: string;
-  buyer?: string;            // 采购方
-  supplier?: string;         // 供应商
+  supplier_id?: string;      // 供应商ID (UUID)
+  supplier?: string;         // 供应商名称（后端返回 supplier_rel.name）
   amount?: number;           // 采购金额
   currency?: string;         // 币种
   sign_date?: string;        // 签署日期
@@ -69,19 +69,61 @@ export interface Milestone {
   remark?: string;
 }
 
-export interface DashboardData {
+export interface DashboardSummary {
   total_contracts: number;
-  by_status: Array<{ status: string; count: number }>;
+  total_amount: number;
+  active_count: number;
+  completed_count: number;
+  terminated_count: number;
+  draft_count: number;
+}
+
+export interface DashboardPerformance {
+  on_time_rate: number;
+  overdue_count: number;
+  total_milestones: number;
+  completed_milestones: number;
+}
+
+export interface ExpiringContract {
+  id: number;
+  contract_no: string;
+  contract_name: string;
+  end_date: string;
+  days_left: number;
+  amount?: number;
+}
+
+export interface DashboardData {
+  summary: DashboardSummary;
+  performance: DashboardPerformance;
   by_type: Array<{ type: string; count: number }>;
-  expiring_count: number;
   monthly_trends: Array<{ month: string; count: number }>;
   by_fonds: Array<{ fonds_name: string; count: number }>;
+  expiring_soon: ExpiringContract[];
 }
 
 export interface Paging {
   total: number;
   page: number;
   size: number;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contact_person?: string;
+  contact_phone?: string;
+  address?: string;
+  business_license?: string;
+  tax_id?: string;
+  bank_name?: string;
+  bank_account?: string;
+  rating?: string;
+  status?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // ─── Store 接口 ─────────────────────────────────────
@@ -105,6 +147,11 @@ interface ContractStore {
 
   // 仪表盘
   dashboard: DashboardData | null;
+
+  // 供应商
+  suppliers: Supplier[];
+  supplierPaging: Paging | null;
+  supplierLoading: boolean;
 
   // ── 合同 CRUD ──
   fetchContracts: (params?: Record<string, unknown>) => Promise<void>;
@@ -142,6 +189,12 @@ interface ContractStore {
 
   // ── 选择器 ──
   setSelectedContract: (c: Contract | null) => void;
+
+  // ── 供应商 CRUD ──
+  fetchSuppliers: (search?: string, status?: string, page?: number, pageSize?: number) => Promise<void>;
+  createSupplier: (data: Partial<Supplier>) => Promise<Supplier | null>;
+  updateSupplier: (id: string, data: Partial<Supplier>) => Promise<Supplier | null>;
+  deleteSupplier: (id: string) => Promise<boolean>;
 }
 
 // ─── Store 实现 ─────────────────────────────────────
@@ -156,6 +209,9 @@ export const useContractStore = create<ContractStore>((set, get) => ({
   classifications: [],
   milestones: [],
   dashboard: null,
+  suppliers: [],
+  supplierPaging: null,
+  supplierLoading: false,
 
   // ── 合同 CRUD ──
 
@@ -412,4 +468,57 @@ export const useContractStore = create<ContractStore>((set, get) => ({
   // ── 选择器 ──
 
   setSelectedContract: (c) => set({ selectedContract: c }),
+
+  // ── 供应商 CRUD ──
+
+  fetchSuppliers: async (search = '', status = '', page = 1, pageSize = 15) => {
+    set({ supplierLoading: true });
+    try {
+      const params: Record<string, unknown> = { page, size: pageSize };
+      if (search) params.search = search;
+      if (status) params.status = status;
+      const res = await apiGet<Supplier[]>('/work/contracts/suppliers', params);
+      if (res.code === 0) {
+        set({ suppliers: res.data, supplierPaging: res.paging || null });
+      }
+    } catch { /* 静默处理 */ } finally {
+      set({ supplierLoading: false });
+    }
+  },
+
+  createSupplier: async (data) => {
+    try {
+      const res = await apiPost<Supplier>('/work/contracts/suppliers', data);
+      if (res.code === 0) {
+        const { suppliers } = get();
+        set({ suppliers: [res.data, ...suppliers] });
+        return res.data;
+      }
+    } catch { /* 静默处理 */ }
+    return null;
+  },
+
+  updateSupplier: async (id, data) => {
+    try {
+      const res = await apiPatch<Supplier>(`/work/contracts/suppliers/${id}`, data);
+      if (res.code === 0) {
+        const { suppliers } = get();
+        set({ suppliers: suppliers.map((s) => (s.id === id ? res.data : s)) });
+        return res.data;
+      }
+    } catch { /* 静默处理 */ }
+    return null;
+  },
+
+  deleteSupplier: async (id) => {
+    try {
+      const res = await apiDelete(`/work/contracts/suppliers/${id}`);
+      if (res.code === 0) {
+        const { suppliers } = get();
+        set({ suppliers: suppliers.filter((s) => s.id !== id) });
+        return true;
+      }
+    } catch { /* 静默处理 */ }
+    return false;
+  },
 }));

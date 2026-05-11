@@ -69,10 +69,10 @@ function DashboardCards() {
   }, [fetchDashboard, fetchFonds]);
 
   const cards = [
-    { label: "合同总数", value: dashboard?.total_contracts ?? "--", icon: <FileText className="size-5 text-blue-500" /> },
-    { label: "履行中",   value: dashboard?.by_status?.find(s => s.status === 'in_progress')?.count ?? "--", icon: <TrendingUp className="size-5 text-green-500" /> },
-    { label: "已签署",   value: dashboard?.by_status?.find(s => s.status === 'signed')?.count ?? "--", icon: <Clock className="size-5 text-orange-500" /> },
-    { label: "即将到期", value: dashboard?.expiring_count ?? "--", icon: <AlertTriangle className="size-5 text-red-500" /> },
+    { label: "合同总数", value: dashboard?.summary?.total_contracts ?? "--", icon: <FileText className="size-5 text-blue-500" /> },
+    { label: "生效中",   value: dashboard?.summary?.active_count ?? "--", icon: <TrendingUp className="size-5 text-green-500" /> },
+    { label: "已完成",   value: dashboard?.summary?.completed_count ?? "--", icon: <Clock className="size-5 text-orange-500" /> },
+    { label: "即将到期", value: dashboard?.expiring_soon?.length ?? "--", icon: <AlertTriangle className="size-5 text-red-500" /> },
   ];
 
   return (
@@ -239,7 +239,6 @@ export default function ContractList() {
                     <TableHead className="w-[120px]">合同编号</TableHead>
                     <TableHead>合同名称</TableHead>
                     <TableHead className="w-[120px]">需求编号</TableHead>
-                    <TableHead className="w-[120px]">采购方</TableHead>
                     <TableHead className="w-[120px]">供应商</TableHead>
                     <TableHead>标的名称</TableHead>
                     <TableHead className="w-[100px]">采购金额</TableHead>
@@ -252,7 +251,7 @@ export default function ContractList() {
                 <TableBody>
                   {contracts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="py-10">
+                      <TableCell colSpan={10} className="py-10">
                         <div className="flex flex-col items-center justify-center gap-3 text-center">
                           <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
                             <FileText className="w-7 h-7 text-muted-foreground" />
@@ -274,7 +273,6 @@ export default function ContractList() {
                         <TableCell className="font-mono text-sm">{c.contract_no}</TableCell>
                         <TableCell className="max-w-[200px] truncate" title={c.contract_name}>{c.contract_name}</TableCell>
                         <TableCell className="font-mono text-sm">{c.requirement_no || "-"}</TableCell>
-                        <TableCell>{c.buyer || "-"}</TableCell>
                         <TableCell>{c.supplier || "-"}</TableCell>
                         <TableCell className="max-w-[150px] truncate" title={c.subject_name}>{c.subject_name || "-"}</TableCell>
                         <TableCell className="text-right">

@@ -12,6 +12,8 @@ import {
   Activity,
   FolderOpen,
   FileText,
+  BarChart3,
+  Building2,
   Package,
   Settings2,
   User,
@@ -26,7 +28,9 @@ import type { SidebarMenuItemProps } from './SidebarMenuItem'
 // 菜单项配置类型（不含 collapsed / index，由 Sidebar 运行时注入）
 // ---------------------------------------------------------------------------
 export interface SidebarMenuConfigItem
-  extends Omit<SidebarMenuItemProps, 'collapsed' | 'index'> {}
+  extends Omit<SidebarMenuItemProps, 'collapsed' | 'index'> {
+  children?: SidebarMenuConfigItem[]
+}
 
 export interface SidebarGroupConfig {
   title: string
@@ -124,7 +128,26 @@ const workGroups: SidebarGroupConfig[] = [
         id: 'work.contracts',
         icon: FileText,
         label: '合同管理',
-        path: '/work/contracts',
+        children: [
+          {
+            id: 'work.contracts.overview',
+            icon: BarChart3,
+            label: '总体情况',
+            path: '/work/contracts/overview',
+          },
+          {
+            id: 'work.contracts.list',
+            icon: FileText,
+            label: '合同详情',
+            path: '/work/contracts',
+          },
+          {
+            id: 'work.contracts.suppliers',
+            icon: Building2,
+            label: '供应商管理',
+            path: '/work/contracts/suppliers',
+          },
+        ],
       },
       {
         id: 'work.archives',

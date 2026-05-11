@@ -4,8 +4,10 @@ from datetime import date
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import Float, ForeignKey, Integer, String, Date, Text, Index, UUID as SAUUID
+from sqlalchemy import Column, Float, ForeignKey, Integer, String, Date, Text, Index, UUID as SAUUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.models.supplier import Supplier
 
 from app.core.database import Base
 from app.models.base import TimestampMixin
@@ -98,8 +100,7 @@ class Contract(TimestampMixin, Base):
     classification_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("classifications.id", ondelete="RESTRICT"), nullable=False, comment="密级ID"
     )
-    buyer: Mapped[str] = mapped_column(String(256), nullable=False, comment="采购方")
-    supplier: Mapped[str] = mapped_column(String(256), nullable=False, comment="供应商")
+    supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id"), nullable=True, comment="供应商ID")
     amount: Mapped[float] = mapped_column(Float, nullable=False, comment="合同金额")
     currency: Mapped[str] = mapped_column(String(8), nullable=False, default="CNY", comment="币种")
     sign_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="签订日期")
@@ -124,6 +125,7 @@ class Contract(TimestampMixin, Base):
     fonds: Mapped["Fonds"] = relationship("Fonds", foreign_keys=[fonds_id])
     category: Mapped["Category"] = relationship("Category", foreign_keys=[category_id])
     classification: Mapped["Classification"] = relationship("Classification", foreign_keys=[classification_id])
+    supplier_rel = relationship("Supplier", lazy="selectin")
     milestones: Mapped[list["Milestone"]] = relationship(
         "Milestone", back_populates="contract", lazy="selectin", cascade="all, delete-orphan"
     )

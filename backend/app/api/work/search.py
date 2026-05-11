@@ -13,6 +13,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -126,7 +127,7 @@ async def _reindex_contracts(client: MeilisearchClient, db: AsyncSession, stats:
 
     client.delete_all_documents(INDEX_CONTRACTS)
 
-    stmt = select(Contract).limit(10000)
+    stmt = select(Contract).options(selectinload(Contract.supplier_rel)).limit(10000)
     result = await db.execute(stmt)
     contracts = result.scalars().all()
 
@@ -136,12 +137,12 @@ async def _reindex_contracts(client: MeilisearchClient, db: AsyncSession, stats:
             "id": f"contract_{c.id}",
             "title": c.contract_name,
             "content": c.description or "",
-            "summary": f"合同 {c.contract_no} - {c.buyer} / {c.supplier} - 金额 {c.amount} {c.currency}",
+            "summary": f"合同 {c.contract_no} - 供应商 {c.supplier_rel.name if c.supplier_rel else '—'} - 金额 {c.amount} {c.currency}",
             "type": "contract",
             "contract_no": c.contract_no,
             "status": c.status,
-            "party_a": c.buyer,
-            "party_b": c.supplier,
+            "party_a": c.supplier_rel.name if c.supplier_rel else None,
+            "party_b": None,
             "amount": c.amount,
             "keywords": c.keywords or "",
         }
