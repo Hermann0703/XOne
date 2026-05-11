@@ -4,7 +4,7 @@
   "private": true,
   "description": "XOne — 个人/工作一体化管理平台前端",
   "scripts": {
-    "predev": "rm -rf .next",
+    "predev": "lsof -ti:3456 | xargs kill -9 2>/dev/null; rm -rf .next",
     "dev": "next dev -p 3456",
     "build": "next build",
     "start": "next start -p 3456",
