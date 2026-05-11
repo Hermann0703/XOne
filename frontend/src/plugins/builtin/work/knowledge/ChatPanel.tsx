@@ -259,7 +259,7 @@ export default function ChatPanel() {
               size="icon"
               title={t('knowledge.toggleSidebar')}
               aria-label={t('knowledge.toggleSidebar')}
-              onClick={() => setSidebarOpen((prev) => !prev)}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
             >
               <PanelLeft className="size-4" />
             </Button>

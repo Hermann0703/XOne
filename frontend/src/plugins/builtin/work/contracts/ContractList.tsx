@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Search,
   Plus,
@@ -104,6 +105,7 @@ function DashboardCards() {
 
 export default function ContractList() {
   const router = useRouter();
+  const t = useTranslations();
   const {
     contracts,
     paging,
@@ -247,8 +249,20 @@ export default function ContractList() {
                 <TableBody>
                   {contracts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center text-text-secondary py-10">
-                        暂无合同数据
+                      <TableCell colSpan={9} className="py-10">
+                        <div className="flex flex-col items-center justify-center gap-3 text-center">
+                          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+                            <FileText className="w-7 h-7 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="text-lg font-medium text-foreground">{t("contracts.empty.title")}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{t("contracts.empty.description")}</p>
+                          </div>
+                          <Button onClick={() => router.push(`/contracts/create`)} className="gap-1.5">
+                            <Plus className="w-4 h-4" />
+                            {t("contracts.empty.cta")}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (

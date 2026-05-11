@@ -73,7 +73,9 @@
         "archives": "档案管理",
         "contracts": "合同管理",
         "dispatch": "数据报送"
-      }
+      },
+      "noActivity": "暂无最近活动",
+      "noDeadlines": "本月无截止日期"
     },
     "statCards": {
       "activeProjects": "活跃项目",
@@ -103,6 +105,10 @@
       "inProgress": "进行中",
       "pending": "待开始",
       "todayActivity": "今日活动"
+    },
+    "empty": {
+      "noActivity": "暂无最近活动",
+      "noActivityDesc": "开始使用各功能模块，活动记录将显示在这里"
     }
   },
   "shopping": {
@@ -225,7 +231,12 @@
       "kcal": "千卡",
       "minutes": "分钟"
     },
-    "weightTrend": "体重趋势"
+    "weightTrend": "体重趋势",
+    "empty": {
+      "title": "暂无健康数据",
+      "description": "开始记录您的健康指标，获取个性化健康建议",
+      "cta": "开始记录"
+    }
   },
   "reading": {
     "title": "阅读管理",
@@ -415,6 +426,11 @@
       "active": "生效",
       "expired": "到期",
       "terminated": "终止"
+    },
+    "empty": {
+      "title": "暂无合同",
+      "description": "创建您的第一份合同，开始管理合同流程",
+      "cta": "创建合同"
     }
   },
   "dispatch": {

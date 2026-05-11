@@ -506,7 +506,7 @@ export default function DocumentList() {
                   <TableHead className="w-10">
                     <button
                       onClick={toggleSelectAll}
-                      className="inline-flex items-center justify-center hover:text-foreground text-muted-foreground"
+                      className="inline-flex items-center justify-center hover:text-foreground text-muted-foreground transition-colors duration-150"
                       aria-label="全选"
                     >
                       {selectedIds.size === documents.length &&

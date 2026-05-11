@@ -17,20 +17,25 @@ export function ModeSwitch() {
   const router = useRouter()
   const pathname = usePathname()
   const isCollapsed = useSidebarStore((s) => s.isCollapsed);
-  const mode = useModeStore((s) => s.mode);
+  const storedMode = useModeStore((s) => s.mode);
   const toggleMode = useModeStore((s) => s.toggleMode);
+
+  // 从 URL 推导当前模式，确保 SSR 与客户端首次渲染一致
+  const isWorkPath = pathname.includes('/work/');
+  const effectiveMode: 'personal' | 'work' =
+    isWorkPath ? 'work' : storedMode;
 
   // Synchronize mode to documentElement for CSS data-mode selectors
   useEffect(() => {
-    document.documentElement.setAttribute('data-mode', mode);
-  }, [mode]);
+    document.documentElement.setAttribute('data-mode', effectiveMode);
+  }, [effectiveMode]);
 
-  const isWork = mode === 'work';
+  const isWork = effectiveMode === 'work';
   const Icon = isWork ? User : Briefcase;
   const label = isWork ? '个人模式' : '工作模式';
 
   const handleToggle = () => {
-    const nextMode = mode === 'work' ? 'personal' : 'work';
+    const nextMode = effectiveMode === 'work' ? 'personal' : 'work';
     toggleMode();
     router.push(`/${nextMode}/dashboard`);
   };

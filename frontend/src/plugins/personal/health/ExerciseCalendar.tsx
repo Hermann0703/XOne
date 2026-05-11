@@ -29,6 +29,12 @@ export default function ExerciseCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const firstDayOfWeek = new Date(year, month, 1).getDay()
 
+  // Today for highlighting
+  const today = new Date()
+  const todayYear = today.getFullYear()
+  const todayMonth = today.getMonth()
+  const todayDay = today.getDate()
+
   // Build set of exercise dates
   const exerciseDates = new Set(records.map((r) => r.date))
 
@@ -66,7 +72,7 @@ export default function ExerciseCalendar() {
             >
               ←
             </button>
-            <span className="text-sm font-medium">{year}年{month + 1}月</span>
+            <span className="text-sm font-semibold">{year}年{month + 1}月</span>
             <button
               className="text-sm px-2 py-1 rounded hover:bg-muted"
               onClick={() => setCurrentMonth(new Date(year, month + 1))}
@@ -84,12 +90,13 @@ export default function ExerciseCalendar() {
             {calendarDays.map((day, i) => {
               const dateStr = day ? `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` : ""
               const hasExercise = day ? exerciseDates.has(dateStr) : false
+              const isToday = day && year === todayYear && month === todayMonth && day === todayDay
               return (
                 <div
                   key={i}
                   className={`aspect-square flex flex-col items-center justify-center rounded-md text-sm ${
                     day ? "hover:bg-muted cursor-default" : ""
-                  }`}
+                  } ${isToday ? "bg-primary/10 text-primary font-bold ring-1 ring-primary/30" : ""}`}
                 >
                   {day && (
                     <>

@@ -205,7 +205,7 @@ async def get_project(
     current_user: User = Depends(get_current_user),
 ):
     """获取单个项目详情"""
-    project = await project_service.get_project(db, project_id)
+    project = await project_service.get_project(db, str(project_id))
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     if project.user_id != current_user.id:
@@ -225,14 +225,14 @@ async def update_project(
     current_user: User = Depends(get_current_user),
 ):
     """更新项目信息"""
-    project = await project_service.get_project(db, project_id)
+    project = await project_service.get_project(db, str(project_id))
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     if project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权修改该项目")
 
     updated = await project_service.update_project(
-        db, project_id, body.model_dump(exclude_none=True)
+        db, str(project_id), body.model_dump(exclude_none=True)
     )
     return {
         "code": 0,
@@ -248,13 +248,13 @@ async def delete_project(
     current_user: User = Depends(get_current_user),
 ):
     """删除项目（级联删除列、任务、里程碑）"""
-    project = await project_service.get_project(db, project_id)
+    project = await project_service.get_project(db, str(project_id))
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     if project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权删除该项目")
 
-    success = await project_service.delete_project(db, project_id)
+    success = await project_service.delete_project(db, str(project_id))
     if not success:
         raise HTTPException(status_code=404, detail="项目不存在")
     return {
@@ -276,13 +276,13 @@ async def get_column_list(
     current_user: User = Depends(get_current_user),
 ):
     """获取项目的所有看板列"""
-    project = await project_service.get_project(db, project_id)
+    project = await project_service.get_project(db, str(project_id))
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     if project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权访问该项目")
 
-    items = await project_service.list_columns(db, project_id)
+    items = await project_service.list_columns(db, str(project_id))
     return {
         "code": 0,
         "message": "查询成功",
@@ -298,13 +298,13 @@ async def create_column(
     current_user: User = Depends(get_current_user),
 ):
     """在项目中创建新的看板列"""
-    project = await project_service.get_project(db, project_id)
+    project = await project_service.get_project(db, str(project_id))
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     if project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权操作该项目")
 
-    column = await project_service.create_column(db, project_id, body.model_dump())
+    column = await project_service.create_column(db, str(project_id), body.model_dump())
     return {
         "code": 0,
         "message": "看板列创建成功",
@@ -327,7 +327,7 @@ async def update_column(
     if not project or project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权操作")
 
-    column = await project_service.update_column(db, column_id, body.model_dump(exclude_none=True))
+    column = await project_service.update_column(db, str(column_id), body.model_dump(exclude_none=True))
     if not column:
         raise HTTPException(status_code=404, detail="看板列不存在")
     return {
@@ -351,7 +351,7 @@ async def delete_column(
     if not project or project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权操作")
 
-    success = await project_service.delete_column(db, column_id)
+    success = await project_service.delete_column(db, str(column_id))
     if not success:
         raise HTTPException(status_code=404, detail="看板列不存在")
     return {
@@ -369,13 +369,13 @@ async def reorder_columns(
     current_user: User = Depends(get_current_user),
 ):
     """批量调整看板列顺序"""
-    project = await project_service.get_project(db, project_id)
+    project = await project_service.get_project(db, str(project_id))
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     if project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权操作该项目")
 
-    success = await project_service.reorder_columns(db, project_id, body.ordered_ids)
+    success = await project_service.reorder_columns(db, str(project_id), body.ordered_ids)
     if not success:
         raise HTTPException(status_code=400, detail="列ID列表与项目实际列不匹配")
     return {
@@ -397,13 +397,13 @@ async def get_task_list(
     current_user: User = Depends(get_current_user),
 ):
     """获取项目下的所有任务（跨列）"""
-    project = await project_service.get_project(db, project_id)
+    project = await project_service.get_project(db, str(project_id))
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     if project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权访问该项目")
 
-    items = await project_service.list_tasks_by_project(db, project_id)
+    items = await project_service.list_tasks_by_project(db, str(project_id))
     return {
         "code": 0,
         "message": "查询成功",
@@ -447,7 +447,7 @@ async def update_task(
         raise HTTPException(status_code=403, detail="无权操作")
 
     data = body.model_dump(exclude_none=True)
-    task = await project_service.update_task(db, task_id, data)
+    task = await project_service.update_task(db, str(task_id), data)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
     return {
@@ -475,7 +475,7 @@ async def delete_task(
     if not project or project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权操作")
 
-    success = await project_service.delete_task(db, task_id)
+    success = await project_service.delete_task(db, str(task_id))
     if not success:
         raise HTTPException(status_code=404, detail="任务不存在")
     return {
@@ -504,7 +504,7 @@ async def move_task(
     if not project or project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权操作")
 
-    task = await project_service.move_task(db, task_id, body.target_column_id, body.target_order)
+    task = await project_service.move_task(db, str(task_id), body.target_column_id, body.target_order)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
     return {
@@ -526,13 +526,13 @@ async def get_milestone_list(
     current_user: User = Depends(get_current_user),
 ):
     """获取项目的所有里程碑"""
-    project = await project_service.get_project(db, project_id)
+    project = await project_service.get_project(db, str(project_id))
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     if project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权访问该项目")
 
-    items = await project_service.list_milestones(db, project_id)
+    items = await project_service.list_milestones(db, str(project_id))
     return {
         "code": 0,
         "message": "查询成功",
@@ -548,7 +548,7 @@ async def create_milestone(
     current_user: User = Depends(get_current_user),
 ):
     """为项目创建新的里程碑"""
-    project = await project_service.get_project(db, project_id)
+    project = await project_service.get_project(db, str(project_id))
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     if project.user_id != current_user.id:
@@ -581,7 +581,7 @@ async def update_milestone(
         raise HTTPException(status_code=403, detail="无权操作")
 
     milestone = await project_service.update_milestone(
-        db, milestone_id, body.model_dump(exclude_none=True)
+        db, str(milestone_id), body.model_dump(exclude_none=True)
     )
     if not milestone:
         raise HTTPException(status_code=404, detail="里程碑不存在")
@@ -607,7 +607,7 @@ async def delete_milestone(
     if not project or project.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权操作")
 
-    success = await project_service.delete_milestone(db, milestone_id)
+    success = await project_service.delete_milestone(db, str(milestone_id))
     if not success:
         raise HTTPException(status_code=404, detail="里程碑不存在")
     return {

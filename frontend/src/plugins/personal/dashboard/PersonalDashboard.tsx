@@ -354,8 +354,16 @@ export default function PersonalDashboard() {
               ))
             ) : (
               /* 空态 */
-              <div className="py-8 text-center text-sm text-text-secondary">
-                {t('common.empty')}
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
+                  <Clock className="size-7 text-text-secondary/50" />
+                </div>
+                <p className="text-sm font-medium text-text-primary mb-1">
+                  {t("dashboard.empty.noActivity")}
+                </p>
+                <p className="text-xs text-text-secondary max-w-xs">
+                  {t("dashboard.empty.noActivityDesc")}
+                </p>
               </div>
             )}
           </CardContent>

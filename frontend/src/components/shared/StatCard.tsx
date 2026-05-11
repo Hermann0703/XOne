@@ -42,32 +42,32 @@ function formatValue(value: number | string): string {
 function renderTrend(change: number | undefined, changeLabel?: string) {
   if (change === undefined || change === null) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-xs font-medium text-text-secondary">
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
         <Minus className="h-3 w-3" />—
       </span>
     );
   }
   if (change > 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-green-700">
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-400">
         <TrendingUp className="h-3 w-3" />+{change}
-        {changeLabel && <span className="ml-0.5 text-text-secondary/50">{changeLabel}</span>}
+        {changeLabel && <span className="ml-0.5 opacity-60">{changeLabel}</span>}
       </span>
     );
   }
   if (change < 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-red-600">
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-950 dark:text-red-400">
         <TrendingDown className="h-3 w-3" />
         {change}
-        {changeLabel && <span className="ml-0.5 text-text-secondary/50">{changeLabel}</span>}
+        {changeLabel && <span className="ml-0.5 opacity-60">{changeLabel}</span>}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-0.5 text-xs font-medium text-text-secondary">
+    <span className="inline-flex items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
       <Minus className="h-3 w-3" />持平
-      {changeLabel && <span className="ml-0.5 text-text-secondary/50">{changeLabel}</span>}
+      {changeLabel && <span className="ml-0.5 opacity-60">{changeLabel}</span>}
     </span>
   );
 }
@@ -103,7 +103,7 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        'transition-shadow duration-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-card',
+        'transition-all duration-300 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-card',
         onClick && 'cursor-pointer',
         className,
       )}
@@ -122,13 +122,15 @@ export function StatCard({
         </div>
 
         {/* 数值 + 单位 + 标题 */}
-        <p className="text-2xl font-bold tracking-tight text-text-primary">
-          {formatValue(value)}
-          {unit && (
-            <span className="ml-1 text-sm font-normal text-text-secondary">{unit}</span>
-          )}
-        </p>
-        <p className="mt-0.5 text-sm text-text-secondary">{title}</p>
+        <div className="flex flex-col gap-2">
+          <p className="text-3xl font-bold tracking-tight text-text-primary">
+            {formatValue(value)}
+            {unit && (
+              <span className="ml-1 text-sm font-normal text-text-secondary">{unit}</span>
+            )}
+          </p>
+          <p className="text-sm text-muted-foreground">{title}</p>
+        </div>
       </CardContent>
     </Card>
   );

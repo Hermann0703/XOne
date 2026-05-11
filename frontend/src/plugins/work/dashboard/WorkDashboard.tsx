@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useAuthStore } from '@/stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,12 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard, type StatCardProps } from '@/components/shared/StatCard';
 import { RightPanel, RingChartSection, CalendarSection, type CalendarDay } from '@/components/shared/RightPanel';
+
+// ─── 月份名称（不用 i18n 数组，避免 use-intl 数组消息报错） ──
+const MONTH_NAMES: Record<string, string[]> = {
+  zh: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+};
 
 // ─── 类型定义 ────────────────────────────────────────────
 
@@ -260,31 +266,42 @@ function RecentActivity({ data }: { data: ActivityItem[] }) {
         </button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-1">
-          {data.map((activity) => (
-            <div
-              key={activity.id}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/50"
-            >
-              {/* 时间轴圆点 */}
-              <div className="relative flex h-2 w-2 shrink-0 items-center justify-center">
-                <div className="h-2 w-2 rounded-full bg-primary/40" />
-              </div>
-              {/* 活动内容 */}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-text-primary">
-                  <span className="font-medium">{activity.user}</span>
-                  {' '}
-                  <span className="text-text-secondary">{activity.action}</span>
-                  {' '}
-                  <span className="font-medium">{activity.target}</span>
-                </p>
-              </div>
-              {/* 时间 */}
-              <span className="shrink-0 text-xs text-text-secondary/70">{activity.time}</span>
+        {data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-3">
+              <Clock className="size-7 text-text-secondary/50" />
             </div>
-          ))}
-        </div>
+            <p className="text-sm text-text-secondary">
+              {t("dashboard.work.noActivity")}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {data.map((activity) => (
+              <div
+                key={activity.id}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/50"
+              >
+                {/* 时间轴圆点 */}
+                <div className="relative flex h-2 w-2 shrink-0 items-center justify-center">
+                  <div className="h-2 w-2 rounded-full bg-primary/40" />
+                </div>
+                {/* 活动内容 */}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-text-primary">
+                    <span className="font-medium">{activity.user}</span>
+                    {' '}
+                    <span className="text-text-secondary">{activity.action}</span>
+                    {' '}
+                    <span className="font-medium">{activity.target}</span>
+                  </p>
+                </div>
+                {/* 时间 */}
+                <span className="shrink-0 text-xs text-text-secondary/70">{activity.time}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -294,6 +311,7 @@ function RecentActivity({ data }: { data: ActivityItem[] }) {
 
 export default function WorkDashboard() {
   const t = useTranslations();
+  const locale = useLocale();
   const user = useAuthStore((s) => s.user);
   const [mounted, setMounted] = useState(false);
 
@@ -429,11 +447,16 @@ export default function WorkDashboard() {
           <Card className="border-none shadow-none">
             <CardHeader className="px-0 pb-2 pt-0">
               <CardTitle as="h2" className="text-sm font-semibold">
-                {t('calendar.monthNames')[currentMonth - 1]}
+                {MONTH_NAMES[locale]?.[currentMonth - 1] || MONTH_NAMES['zh'][currentMonth - 1]}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0 pb-0">
               <CalendarSection days={calendarDays} />
+              {deadlineDays.length === 0 && (
+                <p className="text-center text-xs text-text-secondary/60 mt-3">
+                  {t("dashboard.work.noDeadlines")}
+                </p>
+              )}
             </CardContent>
           </Card>
         </RightPanel>

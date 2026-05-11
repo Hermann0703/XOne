@@ -29,7 +29,14 @@ export function AppShell({
   const mode = useModeStore((s) => s.mode)
   const setMode = useModeStore((s) => s.setMode)
   const pathname = usePathname()
-  const groups = getSidebarGroups(mode)
+
+  // 从 URL 路径推导当前模式，确保 SSR 与客户端首次渲染一致
+  const isWorkPath = pathname.includes('/work/')
+  const isPersonalPath = pathname.includes('/personal/')
+  const effectiveMode: 'personal' | 'work' =
+    isWorkPath ? 'work' : isPersonalPath ? 'personal' : mode
+
+  const groups = getSidebarGroups(effectiveMode)
 
   // 移动端检测
   const [isMobile, setIsMobile] = useState(false)

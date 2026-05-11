@@ -87,8 +87,10 @@ async def create_data_source(
     db: AsyncSession = Depends(get_db),
 ):
     """创建新的数据源"""
+    source_data = data.model_dump(exclude_none=True)
+    source_data["user_id"] = str(current_user.id)
     source = await dispatch_service.create_data_source(
-        db=db, data=data.model_dump(exclude_none=True),
+        db=db, data=source_data,
     )
     return {"message": "创建成功", "data": source}
 
@@ -101,10 +103,10 @@ async def get_data_source(
 ):
     """获取单个数据源的详细信息"""
     try:
-        uid = uuid.UUID(source_id)
+        uuid.UUID(source_id)  # validate format only
     except ValueError:
         raise HTTPException(status_code=400, detail="无效的 UUID 格式")
-    source = await dispatch_service.get_data_source(db=db, source_id=uid)
+    source = await dispatch_service.get_data_source(db=db, source_id=source_id)
     if not source:
         raise HTTPException(status_code=404, detail="数据源不存在")
     return {"message": "查询成功", "data": source}
@@ -119,11 +121,11 @@ async def update_data_source(
 ):
     """更新数据源信息"""
     try:
-        uid = uuid.UUID(source_id)
+        uuid.UUID(source_id)  # validate format only
     except ValueError:
         raise HTTPException(status_code=400, detail="无效的 UUID 格式")
     source = await dispatch_service.update_data_source(
-        db=db, source_id=uid, data=data.model_dump(exclude_none=True),
+        db=db, source_id=source_id, data=data.model_dump(exclude_none=True),
     )
     if not source:
         raise HTTPException(status_code=404, detail="数据源不存在")
@@ -138,10 +140,10 @@ async def delete_data_source(
 ):
     """删除数据源（级联删除所有关联任务）"""
     try:
-        uid = uuid.UUID(source_id)
+        uuid.UUID(source_id)  # validate format only
     except ValueError:
         raise HTTPException(status_code=400, detail="无效的 UUID 格式")
-    deleted = await dispatch_service.delete_data_source(db=db, source_id=uid)
+    deleted = await dispatch_service.delete_data_source(db=db, source_id=source_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="数据源不存在")
     return {"message": "删除成功"}
@@ -164,13 +166,13 @@ async def list_tasks(
     ds_id = None
     if data_source_id:
         try:
-            ds_id = uuid.UUID(data_source_id)
+            uuid.UUID(data_source_id)  # validate format only
         except ValueError:
             raise HTTPException(status_code=400, detail="无效的 data_source_id UUID 格式")
 
     result = await dispatch_service.list_tasks(
         db=db, page=page, size=size, search=search,
-        status=status, data_source_id=ds_id,
+        status=status, data_source_id=data_source_id,
     )
     return {"message": "查询成功", "data": result}
 
@@ -183,8 +185,9 @@ async def create_task(
 ):
     """创建新的报送任务"""
     payload = data.model_dump(exclude_none=True)
+    payload["user_id"] = str(current_user.id)
     try:
-        payload["data_source_id"] = uuid.UUID(payload["data_source_id"])
+        uuid.UUID(payload["data_source_id"])  # validate format only
     except (ValueError, KeyError):
         raise HTTPException(status_code=400, detail="无效的 data_source_id UUID 格式")
 
@@ -202,10 +205,10 @@ async def get_task(
 ):
     """获取单个任务的详细信息"""
     try:
-        uid = uuid.UUID(task_id)
+        uuid.UUID(task_id)  # validate format only
     except ValueError:
         raise HTTPException(status_code=400, detail="无效的 UUID 格式")
-    task = await dispatch_service.get_task(db=db, task_id=uid)
+    task = await dispatch_service.get_task(db=db, task_id=task_id)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
     return {"message": "查询成功", "data": task}
@@ -220,11 +223,11 @@ async def update_task(
 ):
     """更新任务信息"""
     try:
-        uid = uuid.UUID(task_id)
+        uuid.UUID(task_id)  # validate format only
     except ValueError:
         raise HTTPException(status_code=400, detail="无效的 UUID 格式")
     task = await dispatch_service.update_task(
-        db=db, task_id=uid, data=data.model_dump(exclude_none=True),
+        db=db, task_id=task_id, data=data.model_dump(exclude_none=True),
     )
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
@@ -239,10 +242,10 @@ async def delete_task(
 ):
     """删除任务"""
     try:
-        uid = uuid.UUID(task_id)
+        uuid.UUID(task_id)  # validate format only
     except ValueError:
         raise HTTPException(status_code=400, detail="无效的 UUID 格式")
-    deleted = await dispatch_service.delete_task(db=db, task_id=uid)
+    deleted = await dispatch_service.delete_task(db=db, task_id=task_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="任务不存在")
     return {"message": "删除成功"}
@@ -256,10 +259,10 @@ async def execute_task(
 ):
     """手动触发某个报送任务的执行"""
     try:
-        uid = uuid.UUID(task_id)
+        uuid.UUID(task_id)  # validate format only
     except ValueError:
         raise HTTPException(status_code=400, detail="无效的 UUID 格式")
-    log = await dispatch_service.execute_task(db=db, task_id=uid)
+    log = await dispatch_service.execute_task(db=db, task_id=task_id)
     if not log:
         raise HTTPException(status_code=404, detail="任务不存在或数据源不可用")
     return {
@@ -283,12 +286,12 @@ async def list_logs(
     uid = None
     if task_id:
         try:
-            uid = uuid.UUID(task_id)
+            uuid.UUID(task_id)  # validate format only
         except ValueError:
             raise HTTPException(status_code=400, detail="无效的 task_id UUID 格式")
 
     result = await dispatch_service.list_logs(
-        db=db, page=page, size=size, task_id=uid,
+        db=db, page=page, size=size, task_id=task_id,
     )
     return {"message": "查询成功", "data": result}
 

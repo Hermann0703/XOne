@@ -66,7 +66,9 @@ export function SidebarMenuItem({
   // 共享的内容（图标 + 文本 + badge）
   const content = (
     <>
-      <Icon className="h-5 w-5 shrink-0" strokeWidth={1.5} />
+      <span suppressHydrationWarning>
+        <Icon className="h-5 w-5 shrink-0" strokeWidth={1.5} />
+      </span>
 
       {!collapsed && (
         <>
@@ -128,6 +130,7 @@ export function SidebarMenuItem({
               delay: index * 0.05,
               ease: 'easeOut',
             }}
+            suppressHydrationWarning
           >
             {itemContent}
           </motion.div>
@@ -148,6 +151,7 @@ export function SidebarMenuItem({
         delay: index * 0.05,
         ease: 'easeOut',
       }}
+      suppressHydrationWarning
     >
       {itemContent}
     </motion.div>

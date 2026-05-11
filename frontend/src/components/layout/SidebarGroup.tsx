@@ -72,7 +72,10 @@ export function SidebarGroup({
     <div className="flex flex-col gap-0.5">
       {/* Group title */}
       <div className="px-3 py-2">
-        <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold select-none">
+        <span
+          className="text-xs text-muted-foreground uppercase tracking-wider font-semibold select-none"
+          suppressHydrationWarning
+        >
           {title}
         </span>
       </div>

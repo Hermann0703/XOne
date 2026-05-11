@@ -73,7 +73,9 @@
         "archives": "Archives",
         "contracts": "Contracts",
         "dispatch": "Reports"
-      }
+      },
+      "noActivity": "No Recent Activity",
+      "noDeadlines": "No Deadlines This Month"
     },
     "statCards": {
       "activeProjects": "Active Projects",
@@ -103,6 +105,10 @@
       "inProgress": "In Progress",
       "pending": "Pending",
       "todayActivity": "Today's Activity"
+    },
+    "empty": {
+      "noActivity": "No Recent Activity",
+      "noActivityDesc": "Start using the modules and your activity will show up here"
     }
   },
   "shopping": {
@@ -225,7 +231,12 @@
       "kcal": "kcal",
       "minutes": "min"
     },
-    "weightTrend": "Weight Trend"
+    "weightTrend": "Weight Trend",
+    "empty": {
+      "title": "No Health Data",
+      "description": "Start tracking your health metrics for personalized health advice",
+      "cta": "Start Tracking"
+    }
   },
   "reading": {
     "title": "Reading",
@@ -415,6 +426,11 @@
       "active": "Active",
       "expired": "Expired",
       "terminated": "Terminated"
+    },
+    "empty": {
+      "title": "No Contracts",
+      "description": "Create your first contract and start managing contract workflows",
+      "cta": "Create Contract"
     }
   },
   "dispatch": {

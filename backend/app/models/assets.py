@@ -29,9 +29,13 @@ class Account(TimestampMixin, Base):
     color: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    # 反向关联
+    # 反向关联 — 显式指定 foreign_keys 以消除歧义
+    # (Transaction 同时有 account_id 和 target_account_id 两个指向 accounts 的 FK)
     transactions: Mapped[list["Transaction"]] = relationship(
-        "Transaction", back_populates="account", lazy="selectin"
+        "Transaction",
+        back_populates="account",
+        foreign_keys="[Transaction.account_id]",
+        lazy="selectin",
     )
 
     def __repr__(self) -> str:

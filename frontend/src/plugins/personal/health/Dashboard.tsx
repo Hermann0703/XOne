@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import dynamic from "next/dynamic"
-import { Heart, Flame, Clock, TrendingDown, Utensils } from "lucide-react"
+import { Heart, Flame, Clock, TrendingDown, Utensils, Plus } from "lucide-react"
 
 const WeightTrendChart = dynamic(() => import("./WeightTrendChart"), {
   ssr: false,
@@ -36,7 +38,10 @@ const API_BASE = "http://localhost:8000/api/v1/personal"
 
 export default function HealthDashboard() {
   const t = useTranslations()
+  const locale = useLocale()
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [isEmpty, setIsEmpty] = useState(false)
   const [kpis, setKpis] = useState<KPI[]>([])
   const [weightTrend, setWeightTrend] = useState<WeightTrend[]>([])
   const [recentFoods, setRecentFoods] = useState<FoodItem[]>([])
@@ -62,8 +67,15 @@ export default function HealthDashboard() {
         }
         setWeightTrend(weightData.data ?? [])
         setRecentFoods(foodData.data ?? [])
+        // Check if truly empty (all values zero and arrays empty)
+        const hasData =
+          (kpiData.data && (kpiData.data.calories_in > 0 || kpiData.data.calories_out > 0 || kpiData.data.exercise_minutes > 0)) ||
+          (weightData.data && weightData.data.length > 0) ||
+          (foodData.data && foodData.data.length > 0)
+        setIsEmpty(!hasData)
       } catch {
-        // 后端未就绪时使用占位数据
+        // 后端未就绪时显示空态
+        setIsEmpty(true)
         setKpis([
           { label: t("health.kpi.caloriesIn"), value: "--", unit: t("health.unit.kcal"), icon: <Utensils className="size-5 text-orange-500" /> },
           { label: t("health.kpi.caloriesOut"), value: "--", unit: t("health.unit.kcal"), icon: <Flame className="size-5 text-red-500" /> },
@@ -86,6 +98,28 @@ export default function HealthDashboard() {
           <Skeleton className="h-64 rounded-card" />
           <Skeleton className="h-64 rounded-card" />
         </div>
+      </div>
+    )
+  }
+
+  if (isEmpty) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-6">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/20 mb-6">
+          <Heart className="size-10 text-red-400" />
+        </div>
+        <h2 className="text-lg font-semibold text-text-primary mb-2">
+          {t("health.empty.title")}
+        </h2>
+        <p className="text-sm text-text-secondary mb-6 text-center max-w-md">
+          {t("health.empty.description")}
+        </p>
+        <Button
+          onClick={() => router.push(`/${locale}/personal/health/add`)}
+        >
+          <Plus className="size-4 mr-1.5" />
+          {t("health.empty.cta")}
+        </Button>
       </div>
     )
   }

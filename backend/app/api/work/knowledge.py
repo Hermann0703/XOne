@@ -97,7 +97,9 @@ async def get_documents(
     if search:
         result = await knowledge_service.search_documents(db, search, page, page_size)
     else:
-        result = await knowledge_service.list_documents(db, page, page_size, status, tags)
+        result = await knowledge_service.list_documents(
+            db, user_id=current_user.id, page=page, page_size=page_size, status=status, tags=tags
+        )
 
     return {
         "code": 0,
