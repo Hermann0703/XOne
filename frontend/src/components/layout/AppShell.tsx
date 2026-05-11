@@ -28,7 +28,13 @@ export function AppShell({
 }) {
   const mode = useModeStore((s) => s.mode)
   const setMode = useModeStore((s) => s.setMode)
+  const hydrateMode = useModeStore((s) => s.hydrate)
   const pathname = usePathname()
+
+  // 客户端 hydration：从 localStorage 同步模式（解决 SSR mismatch）
+  useEffect(() => {
+    hydrateMode()
+  }, [])
 
   // 从 URL 路径推导当前模式，确保 SSR 与客户端首次渲染一致
   const isWorkPath = pathname.includes('/work/')
