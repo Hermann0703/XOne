@@ -1,0 +1,84 @@
+# =============================================================================
+# XOne — Release 工作流 (Tag 触发)
+# =============================================================================
+# Trigger: push of v* tag → 创建 GitHub Release + changelog
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'       # v1.0, v2.1.3, v1.0-rc1, v4a 等
+      - 'd[0-9]*'  # d6, d7, d10-4 等 sprint tags
+
+jobs:
+  release:
+    name: Create Release — ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # 创建 Release
+      packages: write      # 写入 GHCR (如需)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 拉取所有 tags 以生成 changelog
+
+      # ── 生成 Changelog ─────────────────────────────────────────
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # 找到前一个 tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            # 首次 release: 所有 commits
+            CHANGELOG=$(git log --pretty=format:"* %s (%h)" "${GITHUB_SHA}")
+          else
+            CHANGELOG=$(git log --pretty=format:"* %s (%h)" "${PREV_TAG}..${GITHUB_REF_NAME}")
+          fi
+          # 写入文件 (release body 从文件读取更可靠)
+          echo "$CHANGELOG" > /tmp/changelog.md
+          cat /tmp/changelog.md
+
+      # ── 收集 Assets ────────────────────────────────────────────
+      - name: Collect release assets
+        id: assets
+        run: |
+          mkdir -p /tmp/release-assets
+
+          # 复制 docker-compose 到 assets
+          cp docker/docker-compose.prod.yml /tmp/release-assets/
+          cp docker/nginx.conf /tmp/release-assets/
+          cp scripts/setup-ssl.sh /tmp/release-assets/
+          cp .env.example /tmp/release-assets/
+
+          # 打包
+          tar -czf /tmp/release-assets.tgz -C /tmp release-assets/
+          echo "ASSET_PATH=/tmp/release-assets.tgz" >> $GITHUB_OUTPUT
+
+      # ── 创建 GitHub Release ────────────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "XOne ${{ github.ref_name }}"
+          tag_name: ${{ github.ref_name }}
+          body_path: /tmp/changelog.md
+          draft: false
+          prerelease: ${{ startsWith(github.ref_name, 'd') }}
+          files: |
+            /tmp/release-assets.tgz
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 通知 (可选: 企业微信 / Slack) ──────────────────────────
+      - name: Release summary
+        run: |
+          echo "════════════════════════════════════"
+          echo "  Release: ${{ github.ref_name }}"
+          echo "  Draft:   false"
+          echo "  Pre-release: ${{ startsWith(github.ref_name, 'd') }}"
+          echo "  Assets:  docker-compose, nginx, SSL script"
+          echo "════════════════════════════════════"
