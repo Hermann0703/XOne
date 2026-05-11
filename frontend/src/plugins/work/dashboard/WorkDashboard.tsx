@@ -27,6 +27,47 @@ const MONTH_NAMES: Record<string, string[]> = {
   en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
 };
 
+// ─── API 响应类型 ────────────────────────────────────────
+
+interface DashboardStats {
+  active_projects: number;
+  completed_projects: number;
+  pending_tasks: number;
+  overdue_tasks: number;
+  contract_count: number;
+  expiring_contracts: number;
+  archive_count: number;
+  pending_borrows: number;
+  dispatch_count: number;
+  pending_dispatch: number;
+}
+
+interface ApiProjectProgress {
+  id: string;
+  name: string;
+  progress: number; // 0-100
+  deadline: string | null;
+  status: 'active' | 'completed' | 'archived';
+}
+
+interface ApiActivity {
+  id: string;
+  action: string;
+  target: string;
+  time: string; // ISO timestamp
+  user: string;
+}
+
+interface DashboardApiResponse {
+  code: number;
+  message: string;
+  data: {
+    stats: DashboardStats;
+    project_progress: ApiProjectProgress[];
+    recent_activities: ApiActivity[];
+  };
+}
+
 // ─── 类型定义 ────────────────────────────────────────────
 
 /** 项目进度条目 */
@@ -47,100 +88,43 @@ interface ActivityItem {
   user: string;
 }
 
-// ─── 占位数据（后端 API 就绪后替换） ──────────────────────
+// ─── 工具函数 ────────────────────────────────────────────
 
-const projects: ProjectItem[] = [
-  {
-    id: '1',
-    name: 'XOne 平台 v2.0 重构',
-    progress: 72,
-    deadline: '2026-06-15',
-    status: '进行中',
-  },
-  {
-    id: '2',
-    name: '客户门户移动端适配',
-    progress: 45,
-    deadline: '2026-06-30',
-    status: '进行中',
-  },
-  {
-    id: '3',
-    name: '合同审批流自动化',
-    progress: 90,
-    deadline: '2026-05-20',
-    status: '进行中',
-  },
-  {
-    id: '4',
-    name: '数据归档与备份方案',
-    progress: 100,
-    deadline: '2026-04-30',
-    status: '已完成',
-  },
-  {
-    id: '5',
-    name: '知识库 API 集成',
-    progress: 30,
-    deadline: '2026-07-10',
-    status: '已延期',
-  },
-];
+/** 将 API 状态映射为 UI 中文状态 */
+function mapApiStatus(apiStatus: ApiProjectProgress['status']): ProjectItem['status'] {
+  switch (apiStatus) {
+    case 'active':
+      return '进行中';
+    case 'completed':
+      return '已完成';
+    case 'archived':
+      return '已延期';
+    default:
+      return '待启动';
+  }
+}
 
-const recentActivities: ActivityItem[] = [
-  {
-    id: '1',
-    action: '更新了项目进度',
-    target: 'XOne 平台 v2.0 重构',
-    time: '10 分钟前',
-    user: '张明',
-  },
-  {
-    id: '2',
-    action: '签署了合同',
-    target: '2026年度服务协议',
-    time: '1 小时前',
-    user: '李娜',
-  },
-  {
-    id: '3',
-    action: '上传了文档',
-    target: 'Q1 财报分析.pdf',
-    time: '3 小时前',
-    user: '王磊',
-  },
-  {
-    id: '4',
-    action: '完成了调度任务',
-    target: '服务器巡检',
-    time: '5 小时前',
-    user: '赵婷',
-  },
-  {
-    id: '5',
-    action: '创建了新合同',
-    target: '供应商框架协议',
-    time: '昨天',
-    user: '李娜',
-  },
-  {
-    id: '6',
-    action: '归档了项目文档',
-    target: '数据归档与备份方案',
-    time: '昨天',
-    user: '张明',
-  },
-];
+/** 将 ISO 时间戳转换为相对时间描述（中文） */
+function formatRelativeTime(isoString: string): string {
+  const now = Date.now();
+  const then = new Date(isoString).getTime();
+  const diffMs = now - then;
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffSeconds < 60) return '刚刚';
+  if (diffMinutes < 60) return `${diffMinutes} 分钟前`;
+  if (diffHours < 24) return `${diffHours} 小时前`;
+  if (diffDays === 1) return '昨天';
+  if (diffDays < 7) return `${diffDays} 天前`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} 周前`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} 个月前`;
+  return `${Math.floor(diffDays / 365)} 年前`;
+}
 
 // ─── 右侧面板数据 ──────────────────────────────────────────
-
-/** 项目状态分布数据（环形图） */
-const ringChartData = [
-  { label: '进行中', value: 3, color: '#3b82f6' },
-  { label: '已完成', value: 1, color: '#22c55e' },
-  { label: '已延期', value: 1, color: '#ef4444' },
-  { label: '待启动', value: 0, color: '#9ca3af' },
-];
 
 /** 生成当月日历数据 */
 function buildCalendarDays(year: number, month: number, deadlineDays: number[]): CalendarDay[] {
@@ -315,9 +299,63 @@ export default function WorkDashboard() {
   const user = useAuthStore((s) => s.user);
   const [mounted, setMounted] = useState(false);
 
+  // ─── API 数据状态 ────────────────────────────────────────
+  const [apiData, setApiData] = useState<DashboardApiResponse['data'] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 客户端挂载标记
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // 获取仪表盘数据
+  useEffect(() => {
+    if (!mounted) return;
+
+    let cancelled = false;
+
+    async function fetchDashboard() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const token = typeof window !== 'undefined' ? localStorage.getItem('xone-token') : null;
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const res = await fetch('/api/v1/work/dashboard', { headers });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
+        const json: DashboardApiResponse = await res.json();
+        if (json.code !== 0) {
+          throw new Error(json.message || '请求失败');
+        }
+
+        if (!cancelled) {
+          setApiData(json.data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载失败');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchDashboard();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted]);
 
   if (!mounted) {
     return null;
@@ -334,6 +372,31 @@ export default function WorkDashboard() {
     weekday: 'long',
   });
 
+  // ─── 从 API 数据派生 UI 数据 ──────────────────────────────
+
+  // 映射项目进度
+  const projects: ProjectItem[] = (apiData?.project_progress || []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    progress: p.progress,
+    deadline: p.deadline || '未设定',
+    status: mapApiStatus(p.status),
+  }));
+
+  // 映射最近活动
+  const recentActivities: ActivityItem[] = (apiData?.recent_activities || []).map((a) => ({
+    ...a,
+    time: formatRelativeTime(a.time),
+  }));
+
+  // 项目状态分布数据（环形图）—— 从实际数据动态计算
+  const ringChartData = [
+    { label: '进行中', value: projects.filter((p) => p.status === '进行中').length, color: '#3b82f6' },
+    { label: '已完成', value: projects.filter((p) => p.status === '已完成').length, color: '#22c55e' },
+    { label: '已延期', value: projects.filter((p) => p.status === '已延期').length, color: '#ef4444' },
+    { label: '待启动', value: projects.filter((p) => p.status === '待启动').length, color: '#9ca3af' },
+  ];
+
   // 构建当月日历（含截止日标记）
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -341,7 +404,7 @@ export default function WorkDashboard() {
   const deadlineDays = projects
     .map((p) => {
       const d = new Date(p.deadline);
-      if (d.getFullYear() === currentYear && d.getMonth() + 1 === currentMonth) {
+      if (!isNaN(d.getTime()) && d.getFullYear() === currentYear && d.getMonth() + 1 === currentMonth) {
         return d.getDate();
       }
       return null;
@@ -349,54 +412,113 @@ export default function WorkDashboard() {
     .filter((d): d is number => d !== null);
   const calendarDays = buildCalendarDays(currentYear, currentMonth, deadlineDays);
 
+  // 统计卡片数据
+  const stats = apiData?.stats;
   const statCards: StatCardProps[] = [
     {
       title: t('dashboard.statCards.activeProjects'),
-      value: 6,
+      value: stats?.active_projects ?? 0,
       unit: '个',
-      change: 2,
+      change: stats?.completed_projects ?? undefined,
       icon: FolderOpen,
       iconColor: 'text-blue-600',
       iconBg: 'bg-blue-50',
     },
     {
       title: t('dashboard.statCards.completedTasks'),
-      value: 3,
+      value: stats?.contract_count ?? 0,
       unit: '份',
-      change: -1,
+      change: stats?.expiring_contracts ?? undefined,
       icon: FileText,
       iconColor: 'text-indigo-600',
       iconBg: 'bg-indigo-50',
     },
     {
       title: t('dashboard.statCards.documents'),
-      value: 1248,
+      value: stats?.archive_count ?? 0,
       unit: '个',
-      change: 128,
+      change: stats?.pending_borrows ?? undefined,
       icon: Package,
       iconColor: 'text-teal-600',
       iconBg: 'bg-teal-50',
     },
     {
       title: t('dashboard.statCards.teamMembers'),
-      value: 156,
+      value: stats?.dispatch_count ?? 0,
       unit: '篇',
-      change: 12,
+      change: stats?.pending_dispatch ?? undefined,
       icon: BookOpen,
       iconColor: 'text-cyan-600',
       iconBg: 'bg-cyan-50',
     },
     {
       title: t('dashboard.statCards.thisMonth'),
-      value: 42,
+      value: (stats?.pending_tasks ?? 0) + (stats?.overdue_tasks ?? 0),
       unit: '项',
-      change: 0,
+      change: stats?.overdue_tasks ?? undefined,
       icon: Calendar,
       iconColor: 'text-violet-600',
       iconBg: 'bg-violet-50',
     },
   ];
 
+  // ─── 加载态 ──────────────────────────────────────────────
+  if (loading && !apiData) {
+    return (
+      <div className="flex h-full flex-col">
+        <PageHeader
+          title={<>{t('dashboard.work.greeting')}</>}
+          description={t('dashboard.work.subtitle')}
+          rightContent={
+            <span className="text-sm text-text-secondary">{dateStr}</span>
+          }
+          bordered
+        />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <p className="text-sm text-text-secondary">{t('common.loading')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── 错误态 ──────────────────────────────────────────────
+  if (error && !apiData) {
+    return (
+      <div className="flex h-full flex-col">
+        <PageHeader
+          title={<>{t('dashboard.work.greeting')}</>}
+          description={t('dashboard.work.subtitle')}
+          rightContent={
+            <span className="text-sm text-text-secondary">{dateStr}</span>
+          }
+          bordered
+        />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+            <p className="text-sm text-destructive">{error}</p>
+            <button
+              onClick={() => {
+                setLoading(true);
+                setError(null);
+                // 重新触发 effect
+                setMounted(false);
+                setTimeout(() => setMounted(true), 0);
+              }}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── 正常渲染 ────────────────────────────────────────────
   return (
     <div className="flex h-full flex-col">
       {/* ── 页面标题（共享组件 PageHeader） ── */}

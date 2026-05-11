@@ -12,6 +12,8 @@ import {
   TrendingUp,
   Heart,
   Clock,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import {
   PageHeader,
@@ -52,105 +54,48 @@ interface QuickEntry {
   color: string;
 }
 
-// ====================================================================
-//  硬编码占位数据 — 后续接入真实统计 API 后替换
-// ====================================================================
+// ── API 响应数据类型 ──
+interface DashboardStats {
+  shopping_pending: number;
+  shopping_total: number;
+  reading_total: number;
+  reading_in_progress: number;
+  reading_completed: number;
+  media_total: number;
+  media_watched: number;
+  health_today_calories: number;
+  health_exercise_minutes: number;
+  weight_trend: number[];
+  assets_net_worth: number;
+  assets_month_income: number;
+  assets_month_expense: number;
+}
 
-const statCards: StatCardData[] = [
-  {
-    title: '购物清单',
-    value: '12',
-    label: '待购项',
-    icon: ShoppingCart,
-    color: 'text-orange-500',
-    bgColor: 'bg-orange-50',
-    trend: 3,
-    trendLabel: '较上周',
-  },
-  {
-    title: '藏书阁',
-    value: '45',
-    label: '已读本',
-    icon: BookOpen,
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50',
-    trend: 5,
-    trendLabel: '本月新增',
-  },
-  {
-    title: '影音馆',
-    value: '8',
-    label: '在看部',
-    icon: Film,
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-50',
-    trend: -2,
-    trendLabel: '较上周',
-  },
-  {
-    title: '资产管理',
-    value: '¥128,500',
-    label: '总资产',
-    icon: TrendingUp,
-    color: 'text-green-500',
-    bgColor: 'bg-green-50',
-    trend: 2.4,
-    trendLabel: '本月收益',
-  },
-  {
-    title: '健康打卡',
-    value: '18',
-    label: '本月天',
-    icon: Heart,
-    color: 'text-red-500',
-    bgColor: 'bg-red-50',
-    trend: 4,
-    trendLabel: '较上月',
-  },
-];
+interface DashboardApiData {
+  stats: DashboardStats;
+  recent_reading: Array<{
+    id: string;
+    title: string;
+    progress: number;
+    last_read: string;
+  }>;
+  recent_activities: Array<{
+    id: string;
+    action: string;
+    target: string;
+    time: string;
+  }>;
+}
 
-const recentActivities: ActivityItem[] = [
-  {
-    id: '1',
-    action: '添加了购物项「有机牛奶」',
-    module: '购物清单',
-    time: '10 分钟前',
-    icon: ShoppingCart,
-    color: 'text-orange-500',
-  },
-  {
-    id: '2',
-    action: '记录了《三体》阅读笔记',
-    module: '藏书阁',
-    time: '2 小时前',
-    icon: BookOpen,
-    color: 'text-amber-600',
-  },
-  {
-    id: '3',
-    action: '标记《奥本海默》为已看',
-    module: '影音馆',
-    time: '昨天',
-    icon: Film,
-    color: 'text-purple-500',
-  },
-  {
-    id: '4',
-    action: '更新了基金持仓数据',
-    module: '资产管理',
-    time: '昨天',
-    icon: TrendingUp,
-    color: 'text-green-500',
-  },
-  {
-    id: '5',
-    action: '完成今日运动打卡',
-    module: '健康管理',
-    time: '2 天前',
-    icon: Heart,
-    color: 'text-red-500',
-  },
-];
+interface DashboardApiResponse {
+  code: number;
+  message: string;
+  data: DashboardApiData;
+}
+
+// ====================================================================
+//  硬编码快速入口（不依赖 API，保持静态）
+// ====================================================================
 
 const quickEntries: QuickEntry[] = [
   { title: '购物清单', href: '../shopping', icon: ShoppingCart, color: 'hover:text-orange-500' },
@@ -158,18 +103,6 @@ const quickEntries: QuickEntry[] = [
   { title: '影音馆',   href: '../media',    icon: Film,        color: 'hover:text-purple-500' },
   { title: '资产管理', href: '../assets',   icon: TrendingUp,  color: 'hover:text-green-500' },
   { title: '健康管理', href: '../health',   icon: Heart,       color: 'hover:text-red-500' },
-];
-
-// ====================================================================
-//  环形图数据（基于 statCards 模块分布）
-// ====================================================================
-
-const ringChartData = [
-  { label: '购物', value: 12, color: '#f97316' },
-  { label: '藏书', value: 45, color: '#d97706' },
-  { label: '影音', value: 8,  color: '#a855f7' },
-  { label: '资产', value: 1,  color: '#22c55e' },
-  { label: '健康', value: 18, color: '#ef4444' },
 ];
 
 // ====================================================================
@@ -230,6 +163,50 @@ function getCalendarDays(activityDays: number[]): CalendarDay[] {
   return days;
 }
 
+/** 格式化 ISO 时间戳为相对时间 */
+function formatRelativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return '刚刚';
+  if (mins < 60) return `${mins}分钟前`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}小时前`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}天前`;
+  return new Date(iso).toLocaleDateString('zh-CN');
+}
+
+/** 格式化金额为中文短格式 */
+function formatCurrency(value: number | undefined | null): string {
+  if (value == null) return '¥0';
+  if (value >= 10000) {
+    return `¥${(value / 10000).toFixed(1)}万`;
+  }
+  return `¥${value.toLocaleString('zh-CN')}`;
+}
+
+/** 根据模块名获取活动图标和颜色 */
+function getActivityIconAndColor(module: string): {
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+} {
+  const map: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
+    '购物清单': { icon: ShoppingCart, color: 'text-orange-500' },
+    '藏书阁': { icon: BookOpen, color: 'text-amber-600' },
+    '影音馆': { icon: Film, color: 'text-purple-500' },
+    '资产管理': { icon: TrendingUp, color: 'text-green-500' },
+    '健康管理': { icon: Heart, color: 'text-red-500' },
+  };
+  return map[module] || { icon: Clock, color: 'text-gray-500' };
+}
+
+/** 判断是否为当前月份的日期 */
+function isCurrentMonthDate(isoString: string): boolean {
+  const d = new Date(isoString);
+  const now = new Date();
+  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+}
+
 // ====================================================================
 //  页面组件
 // ====================================================================
@@ -237,6 +214,9 @@ function getCalendarDays(activityDays: number[]): CalendarDay[] {
 export default function PersonalDashboard() {
   const user = useAuthStore((s) => s.user);
   const [mounted, setMounted] = useState(false);
+  const [data, setData] = useState<DashboardApiData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const t = useTranslations();
 
   // ── Hooks MUST be called before any early return ──
@@ -244,24 +224,147 @@ export default function PersonalDashboard() {
   const greetingKey = getGreetingKey();
   const today = getTodayString();
 
-  // 当月有活动的日期（基于 recentActivities 推断的示例数据）
+  // ── 从 API 获取仪表盘数据 ──
+  useEffect(() => {
+    setMounted(true);
+
+    const fetchDashboard = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('xone-token') : null;
+        const res = await fetch('/api/v1/personal/dashboard', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const json: DashboardApiResponse = await res.json();
+
+        if (json.code !== 0) {
+          throw new Error(json.message || '请求失败');
+        }
+
+        setData(json.data);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : '加载失败';
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, []);
+
+  // ── 从 API 数据计算统计卡片 ──
+  const statCards: StatCardData[] = useMemo(() => {
+    const s = data?.stats;
+    return [
+      {
+        title: '购物清单',
+        value: String(s?.shopping_pending ?? 0),
+        label: '待购项',
+        icon: ShoppingCart,
+        color: 'text-orange-500',
+        bgColor: 'bg-orange-50',
+        trend: s?.shopping_total ?? 0,
+        trendLabel: '总计',
+      },
+      {
+        title: '藏书阁',
+        value: String(s?.reading_in_progress ?? 0),
+        label: '在读',
+        icon: BookOpen,
+        color: 'text-amber-600',
+        bgColor: 'bg-amber-50',
+        trend: s?.reading_completed ?? 0,
+        trendLabel: '已读完',
+      },
+      {
+        title: '影音馆',
+        value: String(s?.media_watched ?? 0),
+        label: '已看',
+        icon: Film,
+        color: 'text-purple-500',
+        bgColor: 'bg-purple-50',
+        trend: s?.media_total ?? 0,
+        trendLabel: '总计',
+      },
+      {
+        title: '资产管理',
+        value: formatCurrency(s?.assets_net_worth),
+        label: '总资产',
+        icon: TrendingUp,
+        color: 'text-green-500',
+        bgColor: 'bg-green-50',
+        trend: s?.assets_month_income ?? 0,
+        trendLabel: '月收入',
+      },
+      {
+        title: '健康打卡',
+        value: String(s?.health_today_calories ?? 0),
+        label: '今日卡路里',
+        icon: Heart,
+        color: 'text-red-500',
+        bgColor: 'bg-red-50',
+        trend: s?.health_exercise_minutes ?? 0,
+        trendLabel: '运动分钟',
+      },
+    ];
+  }, [data]);
+
+  // ── 从 API 数据映射最近活动 ──
+  const recentActivities: ActivityItem[] = useMemo(() => {
+    return (data?.recent_activities || []).map((a) => {
+      const { icon, color } = getActivityIconAndColor(a.target);
+      return {
+        id: a.id,
+        action: a.action,
+        module: a.target,
+        time: formatRelativeTime(a.time),
+        icon,
+        color,
+      };
+    });
+  }, [data]);
+
+  // ── 环形图数据（基于 stats 模块分布） ──
+  const ringChartData = useMemo(() => {
+    const s = data?.stats;
+    return [
+      { label: '购物', value: s?.shopping_pending ?? 0, color: '#f97316' },
+      { label: '藏书', value: s?.reading_in_progress ?? 0, color: '#d97706' },
+      { label: '影音', value: s?.media_watched ?? 0, color: '#a855f7' },
+      { label: '资产', value: 1, color: '#22c55e' },
+      { label: '健康', value: s?.health_exercise_minutes ?? 0, color: '#ef4444' },
+    ];
+  }, [data]);
+
+  // ── 当月有活动的日期（基于 API 数据中的时间戳） ──
   const calendarDays = useMemo(() => {
     const now = new Date();
     const todayDate = now.getDate();
-    // 模拟：今天、3天前、7天前、14天前、21天前有活动
-    const activityDays = [
-      todayDate,
-      Math.max(1, todayDate - 3),
-      Math.max(1, todayDate - 7),
-      Math.max(1, todayDate - 14),
-      Math.max(1, todayDate - 21),
-    ];
-    return getCalendarDays(activityDays);
-  }, []);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+    const activityDaysSet = new Set<number>();
+    activityDaysSet.add(todayDate);
+
+    // 从最近阅读记录提取活动日期
+    (data?.recent_reading || []).forEach((r) => {
+      if (isCurrentMonthDate(r.last_read)) {
+        activityDaysSet.add(new Date(r.last_read).getDate());
+      }
+    });
+
+    // 从最近活动记录提取活动日期
+    (data?.recent_activities || []).forEach((a) => {
+      if (isCurrentMonthDate(a.time)) {
+        activityDaysSet.add(new Date(a.time).getDate());
+      }
+    });
+
+    return getCalendarDays(Array.from(activityDaysSet));
+  }, [data]);
 
   // 首次渲染返回空，由 page.tsx 的 dynamic() loading 提供骨架屏
   if (!mounted) {
@@ -284,90 +387,118 @@ export default function PersonalDashboard() {
           bordered
         />
 
-        {/* ── 统计卡片（使用共享 StatCard） ── */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {statCards.map((stat) => (
-            <StatCard
-              key={stat.title}
-              title={stat.title}
-              value={stat.value}
-              unit={stat.label}
-              change={stat.trend}
-              changeLabel={stat.trendLabel}
-              icon={stat.icon}
-              iconColor={stat.color}
-              iconBg={stat.bgColor}
-            />
-          ))}
-        </div>
+        {/* ── 加载态 ── */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-sm text-text-secondary">{t('dashboard.personal.loading')}</p>
+          </div>
+        )}
 
-        {/* ── 快速入口区 ── */}
-        <div className="flex items-center gap-2">
-          <span className="mr-1 text-xs font-medium text-text-secondary">
-            {t('dashboard.personal.quickActions')}
-          </span>
-          {quickEntries.map((entry) => (
-            <Link
-              key={entry.href}
-              href={entry.href}
-              title={entry.title}
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-bg-card text-text-secondary transition-colors duration-200 hover:border-primary/30 hover:text-primary ${entry.color} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
-            >
-              <entry.icon className="h-4 w-4" />
-            </Link>
-          ))}
-        </div>
-
-        {/* ── 最近活动摘要 ── */}
-        <Card>
-          <CardHeader className="pb-3">
-            <h2 className="tracking-tight flex items-center gap-2 text-base font-semibold">
-              <Clock className="h-4 w-4 text-text-secondary" />
-              {t('dashboard.personal.recentActivity')}
-            </h2>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {recentActivities.length > 0 ? (
-              recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-bg-card p-3 transition-colors duration-150 hover:bg-muted/50"
-                >
-                  {/* 模块图标 */}
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                    <activity.icon className={`h-4 w-4 ${activity.color}`} />
-                  </div>
-                  {/* 活动描述 */}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-text-primary">
-                      {activity.action}
-                    </p>
-                    <p className="text-xs text-text-secondary">
-                      {activity.module}
-                    </p>
-                  </div>
-                  {/* 时间戳 */}
-                  <span className="shrink-0 text-xs text-text-secondary/60">
-                    {activity.time}
-                  </span>
-                </div>
-              ))
-            ) : (
-              /* 空态 */
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
-                  <Clock className="size-7 text-text-secondary/50" />
-                </div>
-                <p className="text-sm font-medium text-text-primary mb-1">
-                  {t("dashboard.empty.noActivity")}
-                </p>
-                <p className="text-xs text-text-secondary max-w-xs">
-                  {t("dashboard.empty.noActivityDesc")}
-                </p>
+        {/* ── 错误态 ── */}
+        {!loading && error && (
+          <Card className="border-destructive/30 bg-destructive/5">
+            <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 mb-4">
+                <AlertCircle className="size-7 text-destructive" />
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <p className="text-sm font-medium text-text-primary mb-1">
+                {t('dashboard.personal.error')}
+              </p>
+              <p className="text-xs text-text-secondary max-w-xs">{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── 数据就绪态 ── */}
+        {!loading && !error && (
+          <>
+            {/* ── 统计卡片（使用共享 StatCard） ── */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              {statCards.map((stat) => (
+                <StatCard
+                  key={stat.title}
+                  title={stat.title}
+                  value={stat.value}
+                  unit={stat.label}
+                  change={stat.trend}
+                  changeLabel={stat.trendLabel}
+                  icon={stat.icon}
+                  iconColor={stat.color}
+                  iconBg={stat.bgColor}
+                />
+              ))}
+            </div>
+
+            {/* ── 快速入口区 ── */}
+            <div className="flex items-center gap-2">
+              <span className="mr-1 text-xs font-medium text-text-secondary">
+                {t('dashboard.personal.quickActions')}
+              </span>
+              {quickEntries.map((entry) => (
+                <Link
+                  key={entry.href}
+                  href={entry.href}
+                  title={entry.title}
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-bg-card text-text-secondary transition-colors duration-200 hover:border-primary/30 hover:text-primary ${entry.color} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
+                >
+                  <entry.icon className="h-4 w-4" />
+                </Link>
+              ))}
+            </div>
+
+            {/* ── 最近活动摘要 ── */}
+            <Card>
+              <CardHeader className="pb-3">
+                <h2 className="tracking-tight flex items-center gap-2 text-base font-semibold">
+                  <Clock className="h-4 w-4 text-text-secondary" />
+                  {t('dashboard.personal.recentActivity')}
+                </h2>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {recentActivities.length > 0 ? (
+                  recentActivities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-center gap-3 rounded-lg border border-border bg-bg-card p-3 transition-colors duration-150 hover:bg-muted/50"
+                    >
+                      {/* 模块图标 */}
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                        <activity.icon className={`h-4 w-4 ${activity.color}`} />
+                      </div>
+                      {/* 活动描述 */}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm text-text-primary">
+                          {activity.action}
+                        </p>
+                        <p className="text-xs text-text-secondary">
+                          {activity.module}
+                        </p>
+                      </div>
+                      {/* 时间戳 */}
+                      <span className="shrink-0 text-xs text-text-secondary/60">
+                        {activity.time}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  /* 空态 */
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
+                      <Clock className="size-7 text-text-secondary/50" />
+                    </div>
+                    <p className="text-sm font-medium text-text-primary mb-1">
+                      {t("dashboard.empty.noActivity")}
+                    </p>
+                    <p className="text-xs text-text-secondary max-w-xs">
+                      {t("dashboard.empty.noActivityDesc")}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* ══════════════════════════════════════════════════
