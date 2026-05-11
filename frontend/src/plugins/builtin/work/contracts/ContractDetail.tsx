@@ -83,7 +83,7 @@ export default function ContractDetail() {
   const statusConfig = STATUS_MAP[c.status] || STATUS_MAP.draft;
 
   const handleDelete = async () => {
-    if (!confirm(`确定要删除合同「${c.title}」吗？此操作不可撤销。`)) return;
+    if (!confirm(`确定要删除合同「${c.contract_name}」吗？此操作不可撤销。`)) return;
     const ok = await deleteContract(c.id);
     if (ok) router.push("/work/contracts");
   };
@@ -108,7 +108,7 @@ export default function ContractDetail() {
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="size-4" />
           </Button>
-          <h1 className="text-2xl font-bold text-text-primary">{c.title}</h1>
+          <h1 className="text-2xl font-bold text-text-primary">{c.contract_name}</h1>
           <Badge variant="outline" className={statusConfig.className}>{statusConfig.label}</Badge>
         </div>
         <div className="flex items-center gap-2">
@@ -132,6 +132,10 @@ export default function ContractDetail() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <InfoItem label="合同编号" value={c.contract_no} />
+                <InfoItem label="需求编号" value={c.requirement_no} />
+                <InfoItem label="标的编号" value={c.subject_no} />
+                <InfoItem label="标的名称" value={c.subject_name} />
+                <InfoItem label="采购记录编号" value={c.procurement_no} />
                 <InfoItem label="全宗" value={c.fonds_name} />
                 <InfoItem label="分类" value={c.category_name} />
                 <InfoItem label="密级" value={c.classification_name} />
@@ -147,9 +151,9 @@ export default function ContractDetail() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                <InfoItem label="甲方" value={c.party_a} />
-                <InfoItem label="乙方" value={c.party_b} />
-                <InfoItem label="合同金额" value={c.amount != null ? `${c.currency || "CNY"} ${c.amount.toLocaleString()}` : "-"} />
+                <InfoItem label="采购方" value={c.buyer} />
+                <InfoItem label="供应商" value={c.supplier} />
+                <InfoItem label="采购金额" value={c.amount != null ? `${c.currency || "CNY"} ${c.amount.toLocaleString()}` : "-"} />
               </div>
             </CardContent>
           </Card>
@@ -161,8 +165,8 @@ export default function ContractDetail() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <InfoItem label="签署日期" value={c.sign_date} />
-                <InfoItem label="开始日期" value={c.start_date} />
-                <InfoItem label="结束日期" value={c.end_date} />
+                <InfoItem label="服务开始日期" value={c.start_date} />
+                <InfoItem label="服务结束日期" value={c.end_date} />
               </div>
             </CardContent>
           </Card>

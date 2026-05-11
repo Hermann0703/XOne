@@ -14,17 +14,21 @@ import { useContractStore, type Contract } from "./store";
 
 const INITIAL_FORM: Partial<Contract> = {
   contract_no: "",
-  title: "",
+  contract_name: "",
   fonds_id: undefined,
   category_id: undefined,
   classification_id: undefined,
-  party_a: "",
-  party_b: "",
+  buyer: "",
+  supplier: "",
   amount: undefined,
   currency: "CNY",
   sign_date: "",
   start_date: "",
   end_date: "",
+  requirement_no: "",
+  subject_no: "",
+  subject_name: "",
+  procurement_no: "",
   contract_type: "",
   description: "",
   keywords: [],
@@ -71,17 +75,21 @@ export default function ContractForm() {
         if (c) {
           setForm({
             contract_no: c.contract_no,
-            title: c.title,
+            contract_name: c.contract_name,
             fonds_id: c.fonds_id,
             category_id: c.category_id,
             classification_id: c.classification_id,
-            party_a: c.party_a || "",
-            party_b: c.party_b || "",
+            buyer: c.buyer || "",
+            supplier: c.supplier || "",
             amount: c.amount,
             currency: c.currency || "CNY",
             sign_date: c.sign_date || "",
             start_date: c.start_date || "",
             end_date: c.end_date || "",
+            requirement_no: c.requirement_no || "",
+            subject_no: c.subject_no || "",
+            subject_name: c.subject_name || "",
+            procurement_no: c.procurement_no || "",
             contract_type: c.contract_type || "",
             description: c.description || "",
             keywords: c.keywords || [],
@@ -104,7 +112,15 @@ export default function ContractForm() {
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
     if (!form.contract_no?.trim()) errors.contract_no = "请输入合同编号";
-    if (!form.title?.trim()) errors.title = "请输入合同标题";
+    if (!form.contract_name?.trim()) errors.contract_name = "请输入合同名称";
+    // 编码字段正则校验: 仅允许字母+数字+'-'，最长32字符
+    const codePattern = /^[a-zA-Z0-9-]{0,32}$/;
+    if (form.requirement_no && !codePattern.test(form.requirement_no))
+      errors.requirement_no = "仅允许字母、数字和 '-'，最长 32 字符";
+    if (form.subject_no && !codePattern.test(form.subject_no))
+      errors.subject_no = "仅允许字母、数字和 '-'，最长 32 字符";
+    if (form.procurement_no && !codePattern.test(form.procurement_no))
+      errors.procurement_no = "仅允许字母、数字和 '-'，最长 32 字符";
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -180,12 +196,37 @@ export default function ContractForm() {
             )}
           </div>
           <div>
-            <label htmlFor="field-contract-title" className="text-sm font-medium text-text-secondary block mb-1">
-              标题 <span className="text-destructive">*</span>
+            <label htmlFor="field-contract-name" className="text-sm font-medium text-text-secondary block mb-1">
+              合同名称 <span className="text-destructive">*</span>
             </label>
-            <Input id="field-contract-title" value={form.title || ""} onChange={(e) => setField("title", e.target.value)} placeholder="请输入合同标题" />
-            {fieldErrors.title && (
-              <p className="text-xs text-destructive mt-1">{fieldErrors.title}</p>
+            <Input id="field-contract-name" value={form.contract_name || ""} onChange={(e) => setField("contract_name", e.target.value)} placeholder="请输入合同名称" />
+            {fieldErrors.contract_name && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.contract_name}</p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="field-req-no" className="text-sm font-medium text-text-secondary block mb-1">需求编号</label>
+            <Input id="field-req-no" value={form.requirement_no || ""} onChange={(e) => setField("requirement_no", e.target.value)} placeholder="字母+数字+'-'" />
+            {fieldErrors.requirement_no && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.requirement_no}</p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="field-subject-no" className="text-sm font-medium text-text-secondary block mb-1">标的编号</label>
+            <Input id="field-subject-no" value={form.subject_no || ""} onChange={(e) => setField("subject_no", e.target.value)} placeholder="字母+数字+'-'" />
+            {fieldErrors.subject_no && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.subject_no}</p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="field-subject-name" className="text-sm font-medium text-text-secondary block mb-1">标的名称</label>
+            <Input id="field-subject-name" value={form.subject_name || ""} onChange={(e) => setField("subject_name", e.target.value)} placeholder="请输入标的名称" />
+          </div>
+          <div>
+            <label htmlFor="field-proc-no" className="text-sm font-medium text-text-secondary block mb-1">采购记录编号</label>
+            <Input id="field-proc-no" value={form.procurement_no || ""} onChange={(e) => setField("procurement_no", e.target.value)} placeholder="字母+数字+'-'" />
+            {fieldErrors.procurement_no && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.procurement_no}</p>
             )}
           </div>
           <div>
@@ -244,15 +285,15 @@ export default function ContractForm() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="field-contract-party-a" className="text-sm font-medium text-text-secondary block mb-1">甲方</label>
-            <Input id="field-contract-party-a" value={form.party_a || ""} onChange={(e) => setField("party_a", e.target.value)} placeholder="请输入甲方名称" />
+            <label htmlFor="field-contract-buyer" className="text-sm font-medium text-text-secondary block mb-1">采购方</label>
+            <Input id="field-contract-buyer" value={form.buyer || ""} onChange={(e) => setField("buyer", e.target.value)} placeholder="请输入采购方名称" />
           </div>
           <div>
-            <label htmlFor="field-contract-party-b" className="text-sm font-medium text-text-secondary block mb-1">乙方</label>
-            <Input id="field-contract-party-b" value={form.party_b || ""} onChange={(e) => setField("party_b", e.target.value)} placeholder="请输入乙方名称" />
+            <label htmlFor="field-contract-supplier" className="text-sm font-medium text-text-secondary block mb-1">供应商</label>
+            <Input id="field-contract-supplier" value={form.supplier || ""} onChange={(e) => setField("supplier", e.target.value)} placeholder="请输入供应商名称" />
           </div>
           <div>
-            <label htmlFor="field-contract-amount" className="text-sm font-medium text-text-secondary block mb-1">合同金额</label>
+            <label htmlFor="field-contract-amount" className="text-sm font-medium text-text-secondary block mb-1">采购金额</label>
             <Input id="field-contract-amount" type="number" value={form.amount ?? ""} onChange={(e) => setField("amount", e.target.value ? Number(e.target.value) : undefined)} placeholder="请输入金额" />
           </div>
           <div>
@@ -283,11 +324,11 @@ export default function ContractForm() {
             <Input id="field-contract-sign-date" type="date" value={form.sign_date || ""} onChange={(e) => setField("sign_date", e.target.value)} />
           </div>
           <div>
-            <label htmlFor="field-contract-start-date" className="text-sm font-medium text-text-secondary block mb-1">开始日期</label>
+            <label htmlFor="field-contract-start-date" className="text-sm font-medium text-text-secondary block mb-1">服务开始日期</label>
             <Input id="field-contract-start-date" type="date" value={form.start_date || ""} onChange={(e) => setField("start_date", e.target.value)} />
           </div>
           <div>
-            <label htmlFor="field-contract-end-date" className="text-sm font-medium text-text-secondary block mb-1">结束日期</label>
+            <label htmlFor="field-contract-end-date" className="text-sm font-medium text-text-secondary block mb-1">服务结束日期</label>
             <Input id="field-contract-end-date" type="date" value={form.end_date || ""} onChange={(e) => setField("end_date", e.target.value)} />
           </div>
         </CardContent>

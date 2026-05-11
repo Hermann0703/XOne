@@ -134,14 +134,14 @@ async def _reindex_contracts(client: MeilisearchClient, db: AsyncSession, stats:
     for c in contracts:
         doc = {
             "id": f"contract_{c.id}",
-            "title": c.title,
+            "title": c.contract_name,
             "content": c.description or "",
-            "summary": f"合同 {c.contract_no} - {c.party_a} / {c.party_b} - 金额 {c.amount} {c.currency}",
+            "summary": f"合同 {c.contract_no} - {c.buyer} / {c.supplier} - 金额 {c.amount} {c.currency}",
             "type": "contract",
             "contract_no": c.contract_no,
             "status": c.status,
-            "party_a": c.party_a,
-            "party_b": c.party_b,
+            "party_a": c.buyer,
+            "party_b": c.supplier,
             "amount": c.amount,
             "keywords": c.keywords or "",
         }

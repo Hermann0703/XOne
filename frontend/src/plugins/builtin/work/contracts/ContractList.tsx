@@ -173,7 +173,7 @@ export default function ContractList() {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-text-secondary" />
               <Input
-                placeholder="搜索合同编号或标题..."
+                placeholder="搜索合同编号或合同名称..."
                 className="pl-9"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -236,10 +236,12 @@ export default function ContractList() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[120px]">合同编号</TableHead>
-                    <TableHead>标题</TableHead>
-                    <TableHead className="w-[120px]">甲方</TableHead>
-                    <TableHead className="w-[120px]">乙方</TableHead>
-                    <TableHead className="w-[100px]">金额</TableHead>
+                    <TableHead>合同名称</TableHead>
+                    <TableHead className="w-[120px]">需求编号</TableHead>
+                    <TableHead className="w-[120px]">采购方</TableHead>
+                    <TableHead className="w-[120px]">供应商</TableHead>
+                    <TableHead>标的名称</TableHead>
+                    <TableHead className="w-[100px]">采购金额</TableHead>
                     <TableHead className="w-[80px]">状态</TableHead>
                     <TableHead className="w-[100px]">签署日期</TableHead>
                     <TableHead className="w-[80px]">类型</TableHead>
@@ -249,7 +251,7 @@ export default function ContractList() {
                 <TableBody>
                   {contracts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="py-10">
+                      <TableCell colSpan={11} className="py-10">
                         <div className="flex flex-col items-center justify-center gap-3 text-center">
                           <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
                             <FileText className="w-7 h-7 text-muted-foreground" />
@@ -269,9 +271,11 @@ export default function ContractList() {
                     contracts.map((c) => (
                       <TableRow key={c.id}>
                         <TableCell className="font-mono text-sm">{c.contract_no}</TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={c.title}>{c.title}</TableCell>
-                        <TableCell>{c.party_a || "-"}</TableCell>
-                        <TableCell>{c.party_b || "-"}</TableCell>
+                        <TableCell className="max-w-[200px] truncate" title={c.contract_name}>{c.contract_name}</TableCell>
+                        <TableCell className="font-mono text-sm">{c.requirement_no || "-"}</TableCell>
+                        <TableCell>{c.buyer || "-"}</TableCell>
+                        <TableCell>{c.supplier || "-"}</TableCell>
+                        <TableCell className="max-w-[150px] truncate" title={c.subject_name}>{c.subject_name || "-"}</TableCell>
                         <TableCell className="text-right">
                           {c.amount != null ? `${c.currency || "CNY"} ${c.amount.toLocaleString()}` : "-"}
                         </TableCell>
@@ -328,7 +332,7 @@ export default function ContractList() {
           <DialogHeader>
             <DialogTitle>确认删除</DialogTitle>
             <DialogDescription>
-              确定要删除合同「{deleteTarget?.title}」吗？此操作不可撤销。
+              确定要删除合同「{deleteTarget?.contract_name}」吗？此操作不可撤销。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

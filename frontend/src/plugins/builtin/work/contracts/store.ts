@@ -8,25 +8,29 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api/client';
 
 export interface Contract {
   id: number;
-  contract_no: string;     // 合同编号
-  title: string;           // 标题
-  fonds_id?: number;       // 全宗ID
+  contract_no: string;       // 合同编号
+  contract_name: string;     // 合同名称
+  fonds_id?: number;         // 全宗ID
   fonds_name?: string;
-  category_id?: number;    // 分类ID
+  category_id?: number;      // 分类ID
   category_name?: string;
   classification_id?: number; // 密级ID
   classification_name?: string;
-  party_a?: string;        // 甲方
-  party_b?: string;        // 乙方
-  amount?: number;         // 金额
-  currency?: string;       // 币种
-  sign_date?: string;      // 签署日期
-  start_date?: string;     // 开始日期
-  end_date?: string;       // 结束日期
-  contract_type?: string;  // 类型
-  status: string;          // 状态: draft/signed/in_progress/completed/terminated
-  description?: string;    // 描述
-  keywords?: string[];     // 关键词
+  buyer?: string;            // 采购方
+  supplier?: string;         // 供应商
+  amount?: number;           // 采购金额
+  currency?: string;         // 币种
+  sign_date?: string;        // 签署日期
+  start_date?: string;       // 服务开始日期
+  end_date?: string;         // 服务结束日期
+  contract_type?: string;    // 类型
+  status: string;            // 状态: draft/signed/in_progress/completed/terminated
+  description?: string;      // 描述
+  keywords?: string[];       // 关键词
+  requirement_no?: string;   // 需求编号
+  subject_no?: string;       // 标的编号
+  procurement_no?: string;   // 采购记录编号
+  subject_name?: string;     // 标的名称
   created_at?: string;
   updated_at?: string;
 }

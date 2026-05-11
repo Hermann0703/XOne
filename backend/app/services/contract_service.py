@@ -252,9 +252,9 @@ async def list_contracts(
         conditions.append(
             or_(
                 Contract.contract_no.ilike(search_term),
-                Contract.title.ilike(search_term),
-                Contract.party_a.ilike(search_term),
-                Contract.party_b.ilike(search_term),
+                Contract.contract_name.ilike(search_term),
+                Contract.buyer.ilike(search_term),
+                Contract.supplier.ilike(search_term),
                 Contract.keywords.ilike(search_term),
             )
         )
@@ -306,12 +306,12 @@ async def create_contract(db: AsyncSession, user_id: UUID, data: dict) -> Contra
     contract = Contract(
         user_id=user_id,
         contract_no=data["contract_no"],
-        title=data["title"],
+        contract_name=data["contract_name"],
         fonds_id=data["fonds_id"],
         category_id=data["category_id"],
         classification_id=data["classification_id"],
-        party_a=data["party_a"],
-        party_b=data["party_b"],
+        buyer=data["buyer"],
+        supplier=data["supplier"],
         amount=data["amount"],
         currency=data.get("currency", "CNY"),
         sign_date=data.get("sign_date"),
@@ -348,9 +348,10 @@ async def update_contract(
         return None
 
     updatable = (
-        "contract_no", "title", "fonds_id", "category_id", "classification_id",
-        "party_a", "party_b", "amount", "currency", "sign_date", "start_date",
+        "contract_no", "contract_name", "fonds_id", "category_id", "classification_id",
+        "buyer", "supplier", "amount", "currency", "sign_date", "start_date",
         "end_date", "status", "contract_type", "description", "keywords",
+        "requirement_no", "subject_no", "procurement_no", "subject_name",
     )
     for field in updatable:
         if field in data:

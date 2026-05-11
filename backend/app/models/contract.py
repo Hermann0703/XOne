@@ -88,7 +88,7 @@ class Contract(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True, comment="用户ID")
     contract_no: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, comment="合同编号")
-    title: Mapped[str] = mapped_column(String(256), nullable=False, comment="合同标题")
+    contract_name: Mapped[str] = mapped_column(String(256), nullable=False, comment="合同名称")
     fonds_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("fonds.id", ondelete="RESTRICT"), nullable=False, index=True, comment="所属全宗ID"
     )
@@ -98,8 +98,8 @@ class Contract(TimestampMixin, Base):
     classification_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("classifications.id", ondelete="RESTRICT"), nullable=False, comment="密级ID"
     )
-    party_a: Mapped[str] = mapped_column(String(256), nullable=False, comment="甲方")
-    party_b: Mapped[str] = mapped_column(String(256), nullable=False, comment="乙方")
+    buyer: Mapped[str] = mapped_column(String(256), nullable=False, comment="采购方")
+    supplier: Mapped[str] = mapped_column(String(256), nullable=False, comment="供应商")
     amount: Mapped[float] = mapped_column(Float, nullable=False, comment="合同金额")
     currency: Mapped[str] = mapped_column(String(8), nullable=False, default="CNY", comment="币种")
     sign_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="签订日期")
@@ -115,6 +115,10 @@ class Contract(TimestampMixin, Base):
     )
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="描述")
     keywords: Mapped[Optional[str]] = mapped_column(String(512), nullable=True, comment="关键词")
+    requirement_no: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, comment="需求编号")
+    subject_no: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, comment="标的编号")
+    procurement_no: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, comment="采购记录编号")
+    subject_name: Mapped[Optional[str]] = mapped_column(String(256), nullable=True, comment="标的名称")
 
     # ORM 关联
     fonds: Mapped["Fonds"] = relationship("Fonds", foreign_keys=[fonds_id])
@@ -132,7 +136,7 @@ class Contract(TimestampMixin, Base):
     def __repr__(self) -> str:
         return (
             f"<Contract(id={self.id}, contract_no={self.contract_no!r}, "
-            f"title={self.title!r}, status={self.status!r})>"
+            f"contract_name={self.contract_name!r}, status={self.status!r})>"
         )
 
 

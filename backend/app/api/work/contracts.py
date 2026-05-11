@@ -75,12 +75,12 @@ class ClassificationUpdate(BaseModel):
 class ContractCreate(BaseModel):
     """创建合同请求体"""
     contract_no: str = Field(..., min_length=1, max_length=64, description="合同编号")
-    title: str = Field(..., min_length=1, max_length=256, description="合同标题")
+    contract_name: str = Field(..., min_length=1, max_length=256, description="合同名称")
     fonds_id: int = Field(..., gt=0, description="所属全宗ID")
     category_id: int = Field(..., gt=0, description="所属分类ID")
     classification_id: int = Field(..., gt=0, description="密级ID")
-    party_a: str = Field(..., min_length=1, max_length=256, description="甲方")
-    party_b: str = Field(..., min_length=1, max_length=256, description="乙方")
+    buyer: str = Field(..., min_length=1, max_length=256, description="采购方")
+    supplier: str = Field(..., min_length=1, max_length=256, description="供应商")
     amount: float = Field(..., ge=0, description="合同金额")
     currency: str = Field(default="CNY", max_length=8, description="币种")
     sign_date: Optional[date] = Field(default=None, description="签订日期")
@@ -96,6 +96,22 @@ class ContractCreate(BaseModel):
         pattern="^(purchase|service|lease|loan|other)$",
         description="合同类型"
     )
+    requirement_no: Optional[str] = Field(
+        default=None, max_length=32,
+        pattern="^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
+        description="需求编号"
+    )
+    subject_no: Optional[str] = Field(
+        default=None, max_length=32,
+        pattern="^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
+        description="标的编号"
+    )
+    procurement_no: Optional[str] = Field(
+        default=None, max_length=32,
+        pattern="^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
+        description="采购记录编号"
+    )
+    subject_name: Optional[str] = Field(default=None, max_length=256, description="标的名称")
     description: Optional[str] = Field(default=None, description="描述")
     keywords: Optional[str] = Field(default=None, max_length=512, description="关键词")
 
@@ -103,12 +119,12 @@ class ContractCreate(BaseModel):
 class ContractUpdate(BaseModel):
     """更新合同请求体"""
     contract_no: Optional[str] = Field(default=None, min_length=1, max_length=64, description="合同编号")
-    title: Optional[str] = Field(default=None, min_length=1, max_length=256, description="合同标题")
+    contract_name: Optional[str] = Field(default=None, min_length=1, max_length=256, description="合同名称")
     fonds_id: Optional[int] = Field(default=None, gt=0, description="所属全宗ID")
     category_id: Optional[int] = Field(default=None, gt=0, description="所属分类ID")
     classification_id: Optional[int] = Field(default=None, gt=0, description="密级ID")
-    party_a: Optional[str] = Field(default=None, min_length=1, max_length=256, description="甲方")
-    party_b: Optional[str] = Field(default=None, min_length=1, max_length=256, description="乙方")
+    buyer: Optional[str] = Field(default=None, min_length=1, max_length=256, description="采购方")
+    supplier: Optional[str] = Field(default=None, min_length=1, max_length=256, description="供应商")
     amount: Optional[float] = Field(default=None, ge=0, description="合同金额")
     currency: Optional[str] = Field(default=None, max_length=8, description="币种")
     sign_date: Optional[date] = Field(default=None, description="签订日期")
@@ -124,6 +140,22 @@ class ContractUpdate(BaseModel):
         pattern="^(purchase|service|lease|loan|other)$",
         description="合同类型"
     )
+    requirement_no: Optional[str] = Field(
+        default=None, max_length=32,
+        pattern="^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
+        description="需求编号"
+    )
+    subject_no: Optional[str] = Field(
+        default=None, max_length=32,
+        pattern="^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
+        description="标的编号"
+    )
+    procurement_no: Optional[str] = Field(
+        default=None, max_length=32,
+        pattern="^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
+        description="采购记录编号"
+    )
+    subject_name: Optional[str] = Field(default=None, max_length=256, description="标的名称")
     description: Optional[str] = Field(default=None, description="描述")
     keywords: Optional[str] = Field(default=None, max_length=512, description="关键词")
 
@@ -206,12 +238,12 @@ def _contract_to_dict(ct) -> dict:
         "id": ct.id,
         "user_id": ct.user_id,
         "contract_no": ct.contract_no,
-        "title": ct.title,
+        "contract_name": ct.contract_name,
         "fonds_id": ct.fonds_id,
         "category_id": ct.category_id,
         "classification_id": ct.classification_id,
-        "party_a": ct.party_a,
-        "party_b": ct.party_b,
+        "buyer": ct.buyer,
+        "supplier": ct.supplier,
         "amount": ct.amount,
         "currency": ct.currency,
         "sign_date": ct.sign_date.isoformat() if ct.sign_date else None,
@@ -219,6 +251,10 @@ def _contract_to_dict(ct) -> dict:
         "end_date": ct.end_date.isoformat() if ct.end_date else None,
         "status": ct.status,
         "contract_type": ct.contract_type,
+        "requirement_no": ct.requirement_no,
+        "subject_no": ct.subject_no,
+        "procurement_no": ct.procurement_no,
+        "subject_name": ct.subject_name,
         "description": ct.description,
         "keywords": ct.keywords,
         "created_at": ct.created_at.isoformat() if ct.created_at else None,
