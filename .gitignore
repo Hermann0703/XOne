@@ -19,6 +19,8 @@ env/
 .env.local
 .env.*.local
 .env.dev
+.env.production
+.env.staging
 
 # Test artifacts
 frontend/test-results/
@@ -46,6 +48,10 @@ logs/
 .pytest_cache/
 .coverage
 htmlcov/
+backend/test_*.py
+
+# SSL (generated certs)
+docker/ssl/
 
 # Misc
 *.tsbuildinfo

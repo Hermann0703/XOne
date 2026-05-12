@@ -16,7 +16,17 @@ WORKDIR /app
 
 # 复制 requirements 并安装到 /install 前缀
 COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+# pip 安装依赖：阿里云镜像 + 长超时 + 重试，失败回退清华镜像
+RUN pip install --no-cache-dir --prefix=/install \
+    --timeout 300 --retries 10 \
+    -i https://mirrors.aliyun.com/pypi/simple/ \
+    --trusted-host mirrors.aliyun.com \
+    -r requirements.txt || \
+    pip install --no-cache-dir --prefix=/install \
+    --timeout 300 --retries 10 \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple \
+    --trusted-host pypi.tuna.tsinghua.edu.cn \
+    -r requirements.txt
 
 # ---- Runtime Stage: 最小化运行时 ----
 FROM python:3.12-slim AS runtime
@@ -24,6 +34,7 @@ FROM python:3.12-slim AS runtime
 # 仅安装运行时系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    postgresql-client \
     curl \
     && rm -rf /var/lib/apt/lists/*
 

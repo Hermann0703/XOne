@@ -8,7 +8,7 @@ from sqlalchemy import select, func, and_, or_, extract
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.contract import Fonds, Category, Classification, Contract, Milestone
+from app.models.contract import Fonds, Category, Classification, Contract, Milestone, LifecycleTemplate, LifecycleStage, ContractStageLog
 from app.models.supplier import Supplier
 
 
@@ -274,6 +274,8 @@ async def list_contracts(
             selectinload(Contract.category),
             selectinload(Contract.classification),
             selectinload(Contract.supplier_rel),
+            selectinload(Contract.lifecycle),
+            selectinload(Contract.lifecycle_stage),
         )
         .order_by(Contract.updated_at.desc())
         .offset((page - 1) * page_size)
@@ -296,6 +298,8 @@ async def get_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> Opt
             selectinload(Contract.classification),
             selectinload(Contract.supplier_rel),
             selectinload(Contract.milestones),
+            selectinload(Contract.lifecycle),
+            selectinload(Contract.lifecycle_stage),
         )
     )
     result = await db.execute(stmt)
@@ -321,11 +325,24 @@ async def create_contract(db: AsyncSession, user_id: UUID, data: dict) -> Contra
         contract_type=data.get("contract_type", "other"),
         description=data.get("description"),
         keywords=data.get("keywords"),
+        auto_renewal=data.get("auto_renewal", False),
+        renewal_remind_days=data.get("renewal_remind_days", 7),
     )
     db.add(contract)
     await db.flush()
     await db.refresh(contract)
     await db.refresh(contract, ["fonds", "category", "classification", "supplier_rel"])
+
+    # 如果指定了生命周期模板，自动绑定到第一个阶段
+    if data.get("lifecycle_id"):
+        tmpl = await get_lifecycle_template(db, data["lifecycle_id"], user_id)
+        if tmpl and tmpl.stages:
+            first_stage = sorted(tmpl.stages, key=lambda s: s.sort_order)[0]
+            contract.lifecycle_id = tmpl.id
+            contract.lifecycle_stage_id = first_stage.id
+            await db.flush()
+            await db.refresh(contract, ["lifecycle", "lifecycle_stage"])
+
     return contract
 
 
@@ -353,14 +370,39 @@ async def update_contract(
         "supplier_id", "amount", "currency", "sign_date", "start_date",
         "end_date", "status", "contract_type", "description", "keywords",
         "requirement_no", "subject_no", "procurement_no", "subject_name",
+        "lifecycle_id", "auto_renewal", "renewal_remind_days",
     )
     for field in updatable:
         if field in data:
             setattr(contract, field, data[field])
 
     await db.flush()
-    await db.refresh(contract, ["fonds", "category", "classification", "supplier_rel"])
-    return contract
+
+    # 如果首次设置了生命周期模板，自动绑定到第一个阶段
+    if "lifecycle_id" in data and data["lifecycle_id"]:
+        tmpl = await get_lifecycle_template(db, data["lifecycle_id"], user_id)
+        if tmpl and tmpl.stages:
+            first_stage = sorted(tmpl.stages, key=lambda s: s.sort_order)[0]
+            contract.lifecycle_stage_id = first_stage.id
+            await db.flush()
+
+    # 重新查询以确保所有关系已加载（避免 async session 中的 MissingGreenlet）
+    stmt = (
+        select(Contract)
+        .where(Contract.id == contract.id)
+        .options(
+            selectinload(Contract.fonds),
+            selectinload(Contract.category),
+            selectinload(Contract.classification),
+            selectinload(Contract.supplier_rel),
+            selectinload(Contract.lifecycle),
+            selectinload(Contract.lifecycle_stage),
+            selectinload(Contract.milestones),
+            selectinload(Contract.stage_logs),
+        )
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one()
 
 async def delete_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> bool:
     """删除合同（级联删除里程碑）"""
@@ -776,4 +818,313 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
         "monthly_trends": trends,
         "by_fonds": by_fonds,
         "expiring_soon": expiring_soon,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  生命周期模板 (LifecycleTemplate) CRUD
+# ══════════════════════════════════════════════════════════════════════
+
+async def list_lifecycle_templates(
+    db: AsyncSession, user_id: UUID
+) -> list[LifecycleTemplate]:
+    stmt = (
+        select(LifecycleTemplate)
+        .where(LifecycleTemplate.user_id == user_id)
+        .options(selectinload(LifecycleTemplate.stages))
+        .order_by(LifecycleTemplate.updated_at.desc())
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_lifecycle_template(
+    db: AsyncSession, template_id: int, user_id: UUID
+) -> Optional[LifecycleTemplate]:
+    stmt = (
+        select(LifecycleTemplate)
+        .where(LifecycleTemplate.id == template_id, LifecycleTemplate.user_id == user_id)
+        .options(selectinload(LifecycleTemplate.stages))
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def create_lifecycle_template(
+    db: AsyncSession, user_id: UUID, data: dict
+) -> LifecycleTemplate:
+    template = LifecycleTemplate(
+        user_id=user_id,
+        name=data["name"],
+        description=data.get("description"),
+        is_active=data.get("is_active", True),
+    )
+    db.add(template)
+    await db.flush()
+    await db.refresh(template)
+    return template
+
+
+async def update_lifecycle_template(
+    db: AsyncSession, template_id: int, user_id: UUID, data: dict
+) -> Optional[LifecycleTemplate]:
+    stmt = (
+        select(LifecycleTemplate)
+        .where(LifecycleTemplate.id == template_id, LifecycleTemplate.user_id == user_id)
+        .options(selectinload(LifecycleTemplate.stages))
+    )
+    result = await db.execute(stmt)
+    template = result.scalar_one_or_none()
+    if not template:
+        return None
+    for field in ("name", "description", "is_active"):
+        if field in data:
+            setattr(template, field, data[field])
+    await db.flush()
+    await db.refresh(template)
+    return template
+
+
+async def delete_lifecycle_template(
+    db: AsyncSession, template_id: int, user_id: UUID
+) -> bool:
+    stmt = select(LifecycleTemplate).where(
+        LifecycleTemplate.id == template_id, LifecycleTemplate.user_id == user_id
+    )
+    result = await db.execute(stmt)
+    template = result.scalar_one_or_none()
+    if not template:
+        return False
+    await db.delete(template)
+    await db.flush()
+    return True
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  生命周期阶段 (LifecycleStage) CRUD
+# ══════════════════════════════════════════════════════════════════════
+
+async def add_lifecycle_stage(
+    db: AsyncSession, template_id: int, user_id: UUID, data: dict
+) -> Optional[LifecycleStage]:
+    tmpl = await get_lifecycle_template(db, template_id, user_id)
+    if not tmpl:
+        return None
+    stage = LifecycleStage(
+        template_id=template_id,
+        name=data["name"],
+        stage_type=data.get("stage_type", "custom"),
+        sort_order=data.get("sort_order", 0),
+        description=data.get("description"),
+        color=data.get("color"),
+        is_required=data.get("is_required", True),
+        auto_transition_days=data.get("auto_transition_days", 0),
+    )
+    db.add(stage)
+    await db.flush()
+    await db.refresh(stage)
+    return stage
+
+
+async def update_lifecycle_stage(
+    db: AsyncSession, stage_id: int, user_id: UUID, data: dict
+) -> Optional[LifecycleStage]:
+    stmt = (
+        select(LifecycleStage)
+        .where(LifecycleStage.id == stage_id)
+        .options(selectinload(LifecycleStage.template))
+    )
+    result = await db.execute(stmt)
+    stage = result.scalar_one_or_none()
+    if not stage or stage.template.user_id != user_id:
+        return None
+    for field in (
+        "name", "stage_type", "sort_order", "description",
+        "color", "is_required", "auto_transition_days",
+    ):
+        if field in data:
+            setattr(stage, field, data[field])
+    await db.flush()
+    await db.refresh(stage)
+    return stage
+
+
+async def delete_lifecycle_stage(
+    db: AsyncSession, stage_id: int, user_id: UUID
+) -> bool:
+    stmt = (
+        select(LifecycleStage)
+        .where(LifecycleStage.id == stage_id)
+        .options(selectinload(LifecycleStage.template))
+    )
+    result = await db.execute(stmt)
+    stage = result.scalar_one_or_none()
+    if not stage or stage.template.user_id != user_id:
+        return False
+    await db.delete(stage)
+    await db.flush()
+    return True
+
+
+async def reorder_lifecycle_stages(
+    db: AsyncSession, template_id: int, user_id: UUID, stage_ids: list[int]
+) -> bool:
+    tmpl = await get_lifecycle_template(db, template_id, user_id)
+    if not tmpl:
+        return False
+    for idx, stage_id in enumerate(stage_ids):
+        stmt = select(LifecycleStage).where(
+            LifecycleStage.id == stage_id, LifecycleStage.template_id == template_id
+        )
+        result = await db.execute(stmt)
+        stage = result.scalar_one_or_none()
+        if stage:
+            stage.sort_order = idx + 1
+    await db.flush()
+    return True
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  合同生命周期流转
+# ══════════════════════════════════════════════════════════════════════
+
+async def get_contract_lifecycle(
+    db: AsyncSession, contract_id: int, user_id: UUID
+) -> Optional[dict]:
+    contract = await get_contract(db, contract_id, user_id)
+    if not contract:
+        return None
+    if not contract.lifecycle_id:
+        return {"contract_id": contract_id, "has_lifecycle": False}
+    tmpl = await get_lifecycle_template(db, contract.lifecycle_id, user_id)
+    history = await get_contract_stage_history(db, contract_id, user_id)
+    return {
+        "contract_id": contract_id,
+        "has_lifecycle": True,
+        "template": _lifecycle_template_to_dict(tmpl) if tmpl else None,
+        "current_stage": _lifecycle_stage_to_dict(contract.lifecycle_stage) if contract.lifecycle_stage else None,
+        "current_stage_id": contract.lifecycle_stage_id,
+        "history": [_stage_log_to_dict(log) for log in history],
+    }
+
+
+async def advance_contract_stage(
+    db: AsyncSession, contract_id: int, user_id: UUID, operator_id: UUID, notes: Optional[str] = None
+) -> Optional[dict]:
+    stmt = (
+        select(Contract)
+        .where(Contract.id == contract_id, Contract.user_id == user_id)
+        .options(
+            selectinload(Contract.lifecycle),
+            selectinload(Contract.lifecycle_stage),
+        )
+    )
+    result = await db.execute(stmt)
+    contract = result.scalar_one_or_none()
+    if not contract or not contract.lifecycle_id:
+        return None
+
+    tmpl = await get_lifecycle_template(db, contract.lifecycle_id, user_id)
+    if not tmpl or not tmpl.stages:
+        return None
+
+    stages = sorted(tmpl.stages, key=lambda s: s.sort_order)
+    current_idx = next(
+        (i for i, s in enumerate(stages) if s.id == contract.lifecycle_stage_id), -1
+    )
+
+    if current_idx == -1:
+        next_stage = stages[0]
+    elif current_idx + 1 >= len(stages):
+        return {"error": "already_at_final_stage", "message": "已到达最后一个阶段"}
+    else:
+        next_stage = stages[current_idx + 1]
+
+    log_rec = ContractStageLog(
+        contract_id=contract_id,
+        lifecycle_id=contract.lifecycle_id,
+        from_stage_id=contract.lifecycle_stage_id,
+        to_stage_id=next_stage.id,
+        from_stage_name=contract.lifecycle_stage.name if contract.lifecycle_stage else None,
+        to_stage_name=next_stage.name,
+        triggered_by="manual",
+        operator_id=operator_id,
+        notes=notes,
+    )
+    db.add(log_rec)
+
+    old_stage_id = contract.lifecycle_stage_id
+    contract.lifecycle_stage_id = next_stage.id
+
+    stage_to_status = {
+        "drafting": "draft", "review": "draft",
+        "signing": "signed", "execution": "in_progress",
+        "renewal": "in_progress", "termination": "terminated", "archived": "completed",
+    }
+    new_status = stage_to_status.get(next_stage.stage_type)
+    if new_status:
+        contract.status = new_status
+
+    await db.flush()
+    await db.refresh(contract, ["lifecycle_stage"])
+
+    return {
+        "from_stage_id": old_stage_id,
+        "to_stage_id": next_stage.id,
+        "to_stage_name": next_stage.name,
+        "current_stage": _lifecycle_stage_to_dict(contract.lifecycle_stage) if contract.lifecycle_stage else None,
+        "log": _stage_log_to_dict(log_rec),
+    }
+
+
+async def get_contract_stage_history(
+    db: AsyncSession, contract_id: int, user_id: UUID
+) -> list[ContractStageLog]:
+    contract = await get_contract(db, contract_id, user_id)
+    if not contract:
+        return []
+    stmt = (
+        select(ContractStageLog)
+        .where(ContractStageLog.contract_id == contract_id)
+        .order_by(ContractStageLog.created_at.desc())
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+# ── 序列化辅助 ──
+
+def _lifecycle_template_to_dict(t) -> dict:
+    return {
+        "id": t.id, "user_id": str(t.user_id),
+        "name": t.name, "description": t.description,
+        "is_active": t.is_active,
+        "stages": [_lifecycle_stage_to_dict(s) for s in (t.stages or [])],
+        "created_at": t.created_at.isoformat() if t.created_at else None,
+        "updated_at": t.updated_at.isoformat() if t.updated_at else None,
+    }
+
+
+def _lifecycle_stage_to_dict(s) -> dict:
+    return {
+        "id": s.id, "template_id": s.template_id,
+        "name": s.name, "stage_type": s.stage_type,
+        "sort_order": s.sort_order, "description": s.description,
+        "color": s.color, "is_required": s.is_required,
+        "auto_transition_days": s.auto_transition_days,
+        "created_at": s.created_at.isoformat() if s.created_at else None,
+        "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+    }
+
+
+def _stage_log_to_dict(log) -> dict:
+    return {
+        "id": log.id, "contract_id": log.contract_id,
+        "lifecycle_id": log.lifecycle_id,
+        "from_stage_id": log.from_stage_id, "to_stage_id": log.to_stage_id,
+        "from_stage_name": log.from_stage_name, "to_stage_name": log.to_stage_name,
+        "triggered_by": log.triggered_by,
+        "operator_id": str(log.operator_id) if log.operator_id else None,
+        "notes": log.notes,
+        "created_at": log.created_at.isoformat() if log.created_at else None,
     }

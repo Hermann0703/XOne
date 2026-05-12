@@ -23,6 +23,8 @@ class Supplier(Base, TimestampMixin):
     tax_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, comment="税号")
     bank_name: Mapped[Optional[str]] = mapped_column(String(256), nullable=True, comment="开户行")
     bank_account: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, comment="银行账号")
+    dc_bank_name: Mapped[Optional[str]] = mapped_column(String(256), nullable=True, comment="数字人民币开户行")
+    dc_bank_account: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, comment="数字人民币账号")
     rating: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, comment="评级")
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active", comment="状态")
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="备注")

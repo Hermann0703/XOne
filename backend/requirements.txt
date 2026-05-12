@@ -16,4 +16,5 @@ passlib[bcrypt]==1.7.4
 qdrant-client>=1.9.0
 meilisearch>=0.31.0
 markitdown>=0.0.1a1
-sentence-transformers>=2.7.0
+# sentence-transformers 移除：生产环境用远程 API，本地构建太重（torch ~3GB）
+# sentence-transformers>=2.7.0

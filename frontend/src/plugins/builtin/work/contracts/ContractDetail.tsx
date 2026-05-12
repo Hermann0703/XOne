@@ -27,6 +27,14 @@ const Timeline = dynamic(() => import("./Timeline"), {
   ),
 });
 
+const LifecyclePanel = dynamic(() => import("./LifecyclePanel"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="size-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+});
+
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   draft:      { label: "草稿",   className: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" },
   signed:     { label: "已签署", className: "bg-blue-100 text-blue-700 border-blue-300" },
@@ -203,12 +211,16 @@ export default function ContractDetail() {
                 <TabsList className="mb-4">
                   <TabsTrigger value="milestones">里程碑列表</TabsTrigger>
                   <TabsTrigger value="timeline-tab">时间轴</TabsTrigger>
+                  <TabsTrigger value="lifecycle">生命周期</TabsTrigger>
                 </TabsList>
                 <TabsContent value="milestones">
                   <MilestoneTable contractId={c.id} />
                 </TabsContent>
                 <TabsContent value="timeline-tab">
                   <Timeline contract={c} />
+                </TabsContent>
+                <TabsContent value="lifecycle">
+                  <LifecyclePanel contractId={c.id} lifecycleId={c.lifecycle_id} />
                 </TabsContent>
               </Tabs>
             </CardContent>

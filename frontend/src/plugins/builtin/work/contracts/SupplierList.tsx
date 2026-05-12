@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   Search,
@@ -12,7 +13,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import {
   Table,
@@ -49,22 +49,6 @@ const RATING_LABELS: Record<string, string> = {
   D: "D 级",
 };
 
-// ─── 初始表单 ────────────────────────────────────────
-
-const INITIAL_FORM: Partial<Supplier> = {
-  name: "",
-  contact_person: "",
-  contact_phone: "",
-  address: "",
-  business_license: "",
-  tax_id: "",
-  bank_name: "",
-  bank_account: "",
-  rating: "B",
-  status: "active",
-  notes: "",
-};
-
 // ─── 主组件 ──────────────────────────────────────────
 
 export default function SupplierList() {
@@ -78,18 +62,13 @@ export default function SupplierList() {
     updateSupplier,
     deleteSupplier,
   } = useContractStore();
+  const router = useRouter();
 
   // 筛选
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 15;
-
-  // 弹窗
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Partial<Supplier>>({ ...INITIAL_FORM });
-  const [isEdit, setIsEdit] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   // 删除确认
   const [deleteTarget, setDeleteTarget] = useState<Supplier | null>(null);
@@ -102,39 +81,6 @@ export default function SupplierList() {
   useEffect(() => {
     loadSuppliers();
   }, [loadSuppliers]);
-
-  // ── 弹窗操作 ──
-
-  const openCreate = () => {
-    setIsEdit(false);
-    setEditing({ ...INITIAL_FORM });
-    setDialogOpen(true);
-  };
-
-  const openEdit = (s: Supplier) => {
-    setIsEdit(true);
-    setEditing({
-      ...s,
-    });
-    setDialogOpen(true);
-  };
-
-  const setField = (field: string, value: unknown) => {
-    setEditing((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async () => {
-    if (!editing.name?.trim()) return;
-    setSubmitting(true);
-    if (isEdit && editing.id) {
-      await updateSupplier(editing.id, editing);
-    } else {
-      await createSupplier(editing);
-    }
-    setSubmitting(false);
-    setDialogOpen(false);
-    loadSuppliers();
-  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -155,8 +101,7 @@ export default function SupplierList() {
     <div className="space-y-6 p-6">
       {/* 操作栏 */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">供应商管理</h1>
-        <Button onClick={openCreate}>
+        <Button onClick={() => router.push('/work/contracts/suppliers/new')}>
           <Plus className="size-4 mr-1" />
           新增供应商
         </Button>
@@ -234,7 +179,7 @@ export default function SupplierList() {
                               点击「新增供应商」按钮添加第一个供应商
                             </p>
                           </div>
-                          <Button onClick={openCreate} className="gap-1.5">
+                          <Button onClick={() => router.push('/work/contracts/suppliers/new')} className="gap-1.5">
                             <Plus className="w-4 h-4" />
                             新增供应商
                           </Button>
@@ -287,7 +232,7 @@ export default function SupplierList() {
                                 size="icon-xs"
                                 title="编辑"
                                 aria-label="编辑供应商"
-                                onClick={() => openEdit(s)}
+                                onClick={() => router.push(`/work/contracts/suppliers/${s.id}/edit`)}
                               >
                                 <Pencil className="size-3.5" />
                               </Button>
@@ -343,174 +288,6 @@ export default function SupplierList() {
         </CardContent>
       </Card>
 
-      {/* 新建/编辑弹窗 */}
-      <Dialog
-        open={dialogOpen}
-        onOpenChange={(open) => {
-          if (!open) setDialogOpen(false);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {isEdit ? "编辑供应商" : "新增供应商"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-            {/* 基本信息 */}
-            <div>
-              <label className="text-sm font-medium text-text-secondary block mb-1">
-                名称 <span className="text-destructive">*</span>
-              </label>
-              <Input
-                value={editing.name || ""}
-                onChange={(e) => setField("name", e.target.value)}
-                placeholder="请输入供应商名称"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-text-secondary block mb-1">
-                  联系人
-                </label>
-                <Input
-                  value={editing.contact_person || ""}
-                  onChange={(e) => setField("contact_person", e.target.value)}
-                  placeholder="联系人姓名"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-text-secondary block mb-1">
-                  电话
-                </label>
-                <Input
-                  value={editing.contact_phone || ""}
-                  onChange={(e) => setField("contact_phone", e.target.value)}
-                  placeholder="联系电话"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-text-secondary block mb-1">
-                地址
-              </label>
-              <Input
-                value={editing.address || ""}
-                onChange={(e) => setField("address", e.target.value)}
-                placeholder="供应商地址"
-              />
-            </div>
-
-            {/* 资质信息 */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-text-secondary block mb-1">
-                  营业执照号
-                </label>
-                <Input
-                  value={editing.business_license || ""}
-                  onChange={(e) =>
-                    setField("business_license", e.target.value)
-                  }
-                  placeholder="营业执照号"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-text-secondary block mb-1">
-                  税号
-                </label>
-                <Input
-                  value={editing.tax_id || ""}
-                  onChange={(e) => setField("tax_id", e.target.value)}
-                  placeholder="纳税人识别号"
-                />
-              </div>
-            </div>
-
-            {/* 银行信息 */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-text-secondary block mb-1">
-                  开户行
-                </label>
-                <Input
-                  value={editing.bank_name || ""}
-                  onChange={(e) => setField("bank_name", e.target.value)}
-                  placeholder="开户银行名称"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-text-secondary block mb-1">
-                  银行账号
-                </label>
-                <Input
-                  value={editing.bank_account || ""}
-                  onChange={(e) => setField("bank_account", e.target.value)}
-                  placeholder="银行账号"
-                />
-              </div>
-            </div>
-
-            {/* 评级与状态 */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-text-secondary block mb-1">
-                  评级
-                </label>
-                <Select
-                  options={[
-                    { value: "A", label: "A 级" },
-                    { value: "B", label: "B 级" },
-                    { value: "C", label: "C 级" },
-                    { value: "D", label: "D 级" },
-                  ]}
-                  value={editing.rating || "B"}
-                  onChange={(e) => setField("rating", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-text-secondary block mb-1">
-                  状态
-                </label>
-                <Select
-                  options={[
-                    { value: "active", label: "启用" },
-                    { value: "inactive", label: "停用" },
-                    { value: "blacklisted", label: "黑名单" },
-                  ]}
-                  value={editing.status || "active"}
-                  onChange={(e) => setField("status", e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* 备注 */}
-            <div>
-              <label className="text-sm font-medium text-text-secondary block mb-1">
-                备注
-              </label>
-              <Textarea
-                value={editing.notes || ""}
-                onChange={(e) => setField("notes", e.target.value)}
-                placeholder="备注信息"
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              取消
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={submitting || !editing.name?.trim()}
-            >
-              {submitting ? "保存中..." : isEdit ? "更新" : "创建"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* 删除确认弹窗 */}
       <Dialog
         open={!!deleteTarget}
@@ -525,7 +302,7 @@ export default function SupplierList() {
               确定要删除供应商「{deleteTarget?.name}」吗？此操作不可撤销。
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="border-t pt-4">
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               取消
             </Button>

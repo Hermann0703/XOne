@@ -38,6 +38,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useContractStore, type Contract } from "./store";
 
+// ─── 类型映射 ────────────────────────────────────────
+
+const CONTRACT_TYPE_LABELS: Record<string, string> = {
+  purchase: '采购合同',
+  sale: '销售合同',
+  service: '服务合同',
+  lease: '租赁合同',
+  loan: '借款合同',
+  other: '其他',
+};
+
 // ─── 状态映射 ────────────────────────────────────────
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
@@ -243,6 +254,7 @@ export default function ContractList() {
                     <TableHead>标的名称</TableHead>
                     <TableHead className="w-[100px]">采购金额</TableHead>
                     <TableHead className="w-[80px]">状态</TableHead>
+                    <TableHead className="w-[120px]">生命周期</TableHead>
                     <TableHead className="w-[100px]">签署日期</TableHead>
                     <TableHead className="w-[80px]">类型</TableHead>
                     <TableHead className="w-[120px]">操作</TableHead>
@@ -251,7 +263,7 @@ export default function ContractList() {
                 <TableBody>
                   {contracts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="py-10">
+                      <TableCell colSpan={11} className="py-10">
                         <div className="flex flex-col items-center justify-center gap-3 text-center">
                           <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
                             <FileText className="w-7 h-7 text-muted-foreground" />
@@ -279,8 +291,22 @@ export default function ContractList() {
                           {c.amount != null ? `${c.currency || "CNY"} ${c.amount.toLocaleString()}` : "-"}
                         </TableCell>
                         <TableCell><StatusBadge status={c.status} /></TableCell>
+                        <TableCell>
+                          {c.lifecycle_template_name ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-xs font-medium leading-tight">{c.lifecycle_template_name}</span>
+                              {c.lifecycle_stage_name && (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 leading-tight h-auto">
+                                  {c.lifecycle_stage_name}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm">{c.sign_date || "-"}</TableCell>
-                        <TableCell className="text-sm">{c.contract_type || "-"}</TableCell>
+                        <TableCell className="text-sm">{c.contract_type ? (CONTRACT_TYPE_LABELS[c.contract_type] || c.contract_type) : "-"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon-xs" title="查看详情" aria-label="查看合同详情"

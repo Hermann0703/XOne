@@ -31,6 +31,12 @@ export interface Contract {
   subject_no?: string;       // 标的编号
   procurement_no?: string;   // 采购记录编号
   subject_name?: string;     // 标的名称
+  lifecycle_id?: number | null;       // 生命周期模板ID
+  lifecycle_stage_id?: number | null; // 当前阶段ID
+  lifecycle_stage_name?: string | null; // 当前阶段名称
+  lifecycle_template_name?: string | null; // 模板名称
+  auto_renewal?: boolean;        // 是否启用自动续约
+  renewal_remind_days?: number;  // 续约提醒天数
   created_at?: string;
   updated_at?: string;
 }
@@ -119,6 +125,8 @@ export interface Supplier {
   tax_id?: string;
   bank_name?: string;
   bank_account?: string;
+  dc_bank_name?: string;
+  dc_bank_account?: string;
   rating?: string;
   status?: string;
   notes?: string;
@@ -218,7 +226,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
   fetchContracts: async (params = {}) => {
     set({ loading: true });
     try {
-      const res = await apiGet<Contract[]>('/work/contracts/contracts', params);
+      const res = await apiGet<Contract[]>('/work/contracts', params);
       if (res.code === 0) {
         set({ contracts: res.data, paging: res.paging || null });
       }
@@ -231,7 +239,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   fetchContract: async (id) => {
     try {
-      const res = await apiGet<Contract>(`/work/contracts/contracts/${id}`);
+      const res = await apiGet<Contract>(`/work/contracts/${id}`);
       if (res.code === 0) {
         set({ selectedContract: res.data });
         return res.data;
@@ -258,7 +266,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   updateContract: async (id, data) => {
     try {
-      const res = await apiPatch<Contract>(`/work/contracts/contracts/${id}`, data);
+      const res = await apiPatch<Contract>(`/work/contracts/${id}`, data);
       if (res.code === 0) {
         const { contracts, selectedContract } = get();
         set({
@@ -275,7 +283,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
 
   deleteContract: async (id) => {
     try {
-      const res = await apiDelete(`/work/contracts/contracts/${id}`);
+      const res = await apiDelete(`/work/contracts/${id}`);
       if (res.code === 0) {
         const { contracts } = get();
         set({ contracts: contracts.filter((c) => c.id !== id) });
@@ -494,7 +502,10 @@ export const useContractStore = create<ContractStore>((set, get) => ({
         set({ suppliers: [res.data, ...suppliers] });
         return res.data;
       }
-    } catch { /* 静默处理 */ }
+      console.error('[Store] createSupplier 业务错误:', res.message);
+    } catch (e: unknown) {
+      console.error('[Store] createSupplier 请求失败:', e);
+    }
     return null;
   },
 
@@ -506,7 +517,10 @@ export const useContractStore = create<ContractStore>((set, get) => ({
         set({ suppliers: suppliers.map((s) => (s.id === id ? res.data : s)) });
         return res.data;
       }
-    } catch { /* 静默处理 */ }
+      console.error('[Store] updateSupplier 业务错误:', res.message);
+    } catch (e: unknown) {
+      console.error('[Store] updateSupplier 请求失败:', e);
+    }
     return null;
   },
 
@@ -518,7 +532,10 @@ export const useContractStore = create<ContractStore>((set, get) => ({
         set({ suppliers: suppliers.filter((s) => s.id !== id) });
         return true;
       }
-    } catch { /* 静默处理 */ }
+      console.error('[Store] deleteSupplier 业务错误:', res.message);
+    } catch (e: unknown) {
+      console.error('[Store] deleteSupplier 请求失败:', e);
+    }
     return false;
   },
 }));

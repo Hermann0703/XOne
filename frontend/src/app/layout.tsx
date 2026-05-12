@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN" data-mode="personal" data-theme="light" className={`${inter.variable} ${notoSansSC.variable} font-sans`}>
+    <html lang="zh-CN" data-mode="personal" data-theme="light" suppressHydrationWarning className={`${inter.variable} ${notoSansSC.variable} font-sans`}>
       <head>
         {/* Preconnect to Google Fonts for faster font loading */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

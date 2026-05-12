@@ -12,7 +12,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.services import contract_service
 
-router = APIRouter(prefix="/contracts", tags=["工作-合同"])
+router = APIRouter(prefix="/contracts", tags=["工作-合同"], redirect_slashes=False)
 
 
 # ── Pydantic Schemas ──────────────────────────────────────────────────
@@ -113,6 +113,9 @@ class ContractCreate(BaseModel):
     subject_name: Optional[str] = Field(default=None, max_length=256, description="标的名称")
     description: Optional[str] = Field(default=None, description="描述")
     keywords: Optional[str] = Field(default=None, max_length=512, description="关键词")
+    lifecycle_id: Optional[int] = Field(default=None, gt=0, description="生命周期模板ID")
+    auto_renewal: bool = Field(default=False, description="是否启用自动续约")
+    renewal_remind_days: int = Field(default=7, ge=1, le=90, description="续约提醒天数(到期前N天触发)")
 
     @field_validator('keywords', mode='before')
     @classmethod
@@ -165,6 +168,9 @@ class ContractUpdate(BaseModel):
     subject_name: Optional[str] = Field(default=None, max_length=256, description="标的名称")
     description: Optional[str] = Field(default=None, description="描述")
     keywords: Optional[str] = Field(default=None, max_length=512, description="关键词")
+    lifecycle_id: Optional[int] = Field(default=None, gt=0, description="生命周期模板ID")
+    auto_renewal: bool = Field(default=False, description="是否启用自动续约")
+    renewal_remind_days: int = Field(default=7, ge=1, le=90, description="续约提醒天数(到期前N天触发)")
 
     @field_validator('keywords', mode='before')
     @classmethod
@@ -206,6 +212,60 @@ class MilestoneUpdate(BaseModel):
     description: Optional[str] = Field(default=None, description="描述")
 
 
+class LifecycleTemplateCreate(BaseModel):
+    """创建生命周期模板请求体"""
+    name: str = Field(..., min_length=1, max_length=128, description="模板名称")
+    description: Optional[str] = Field(default=None, description="描述")
+    is_active: bool = Field(default=True, description="是否启用")
+
+
+class LifecycleTemplateUpdate(BaseModel):
+    """更新生命周期模板请求体"""
+    name: Optional[str] = Field(default=None, min_length=1, max_length=128, description="模板名称")
+    description: Optional[str] = Field(default=None, description="描述")
+    is_active: Optional[bool] = Field(default=None, description="是否启用")
+
+
+class LifecycleStageCreate(BaseModel):
+    """创建生命周期阶段请求体"""
+    name: str = Field(..., min_length=1, max_length=128, description="阶段名称")
+    stage_type: str = Field(
+        default="custom",
+        pattern="^(drafting|review|signing|execution|renewal|termination|archived|custom)$",
+        description="阶段类型"
+    )
+    sort_order: int = Field(default=0, ge=0, description="排序")
+    description: Optional[str] = Field(default=None, description="描述")
+    color: Optional[str] = Field(default=None, max_length=16, description="颜色")
+    is_required: bool = Field(default=True, description="是否必经阶段")
+    auto_transition_days: int = Field(default=0, ge=0, description="自动流转天数")
+
+
+class LifecycleStageUpdate(BaseModel):
+    """更新生命周期阶段请求体"""
+    name: Optional[str] = Field(default=None, min_length=1, max_length=128, description="阶段名称")
+    stage_type: Optional[str] = Field(
+        default=None,
+        pattern="^(drafting|review|signing|execution|renewal|termination|archived|custom)$",
+        description="阶段类型"
+    )
+    sort_order: Optional[int] = Field(default=None, ge=0, description="排序")
+    description: Optional[str] = Field(default=None, description="描述")
+    color: Optional[str] = Field(default=None, max_length=16, description="颜色")
+    is_required: Optional[bool] = Field(default=None, description="是否必经阶段")
+    auto_transition_days: Optional[int] = Field(default=None, ge=0, description="自动流转天数")
+
+
+class StageReorderRequest(BaseModel):
+    """重排阶段请求体"""
+    stage_ids: list[int] = Field(..., min_length=1, description="阶段ID列表（按新顺序排列）")
+
+
+class AdvanceStageRequest(BaseModel):
+    """推进阶段请求体"""
+    notes: Optional[str] = Field(default=None, description="备注")
+
+
 class SupplierCreate(BaseModel):
     """创建供应商请求体"""
     name: str = Field(..., min_length=1, max_length=256, description="供应商名称")
@@ -216,6 +276,8 @@ class SupplierCreate(BaseModel):
     tax_id: Optional[str] = Field(default=None, max_length=64, description="税号")
     bank_name: Optional[str] = Field(default=None, max_length=256, description="开户银行")
     bank_account: Optional[str] = Field(default=None, max_length=64, description="银行账号")
+    dc_bank_name: Optional[str] = Field(default=None, max_length=256, description="数字人民币开户行")
+    dc_bank_account: Optional[str] = Field(default=None, max_length=64, description="数字人民币账号")
     rating: Optional[str] = Field(default=None, max_length=32, description="评级")
     status: Optional[str] = Field(default="active", max_length=32, description="状态: active/inactive")
     notes: Optional[str] = Field(default=None, description="备注")
@@ -231,12 +293,36 @@ class SupplierUpdate(BaseModel):
     tax_id: Optional[str] = Field(default=None, max_length=64, description="税号")
     bank_name: Optional[str] = Field(default=None, max_length=256, description="开户银行")
     bank_account: Optional[str] = Field(default=None, max_length=64, description="银行账号")
+    dc_bank_name: Optional[str] = Field(default=None, max_length=256, description="数字人民币开户行")
+    dc_bank_account: Optional[str] = Field(default=None, max_length=64, description="数字人民币账号")
     rating: Optional[str] = Field(default=None, max_length=32, description="评级")
     status: Optional[str] = Field(default=None, max_length=32, description="状态")
     notes: Optional[str] = Field(default=None, description="备注")
 
 
 # ── 辅助序列化函数 ────────────────────────────────────────────────────
+
+
+from sqlalchemy.exc import MissingGreenlet  # 异步懒加载异常
+
+
+def _safe_fonds_to_dict(f) -> dict:
+    """安全序列化 Fonds：MissingGreenlet 时返回 None"""
+    try:
+        return _fonds_to_dict(f)
+    except (MissingGreenlet, Exception):
+        return None
+
+
+def _safe_category_to_dict(c) -> dict:
+    """安全序列化 Category：嵌套 fonds 懒加载失败时返回 None"""
+    d = _category_to_dict(c)
+    # 尝试填充 fonds；若未预加载且异步上下文已退出，catch MissingGreenlet
+    try:
+        d["fonds"] = _fonds_to_dict(c.fonds) if c.fonds else None
+    except (MissingGreenlet, Exception):
+        d["fonds"] = None
+    return d
 
 
 def _fonds_to_dict(f) -> dict:
@@ -262,7 +348,6 @@ def _category_to_dict(c) -> dict:
         "sort_order": c.sort_order,
         "created_at": c.created_at.isoformat() if c.created_at else None,
         "updated_at": c.updated_at.isoformat() if c.updated_at else None,
-        "fonds": _fonds_to_dict(c.fonds) if hasattr(c, "fonds") and c.fonds else None,
     }
 
 
@@ -305,9 +390,15 @@ def _contract_to_dict(ct) -> dict:
         "keywords": ct.keywords,
         "created_at": ct.created_at.isoformat() if ct.created_at else None,
         "updated_at": ct.updated_at.isoformat() if ct.updated_at else None,
-        "fonds": _fonds_to_dict(ct.fonds) if hasattr(ct, "fonds") and ct.fonds else None,
-        "category": _category_to_dict(ct.category) if hasattr(ct, "category") and ct.category else None,
+        "fonds": _safe_fonds_to_dict(ct.fonds) if hasattr(ct, "fonds") and ct.fonds else None,
+        "category": _safe_category_to_dict(ct.category) if hasattr(ct, "category") and ct.category else None,
         "classification": _classification_to_dict(ct.classification) if hasattr(ct, "classification") and ct.classification else None,
+        "lifecycle_id": ct.lifecycle_id,
+        "lifecycle_stage_id": ct.lifecycle_stage_id,
+        "lifecycle_stage_name": ct.lifecycle_stage.name if ct.lifecycle_stage else None,
+        "lifecycle_template_name": ct.lifecycle.name if ct.lifecycle else None,
+        "auto_renewal": ct.auto_renewal,
+        "renewal_remind_days": ct.renewal_remind_days,
     }
 
 
@@ -339,6 +430,8 @@ def _supplier_to_dict(s) -> dict:
         "tax_id": s.tax_id,
         "bank_name": s.bank_name,
         "bank_account": s.bank_account,
+        "dc_bank_name": s.dc_bank_name,
+        "dc_bank_account": s.dc_bank_account,
         "rating": s.rating,
         "status": s.status,
         "notes": s.notes,
@@ -602,7 +695,7 @@ async def delete_classification(
 # ═══════════════════════════════════════════════════════════════════════
 
 
-@router.get("/", summary="获取合同列表")
+@router.get("", summary="获取合同列表")
 async def get_contracts_list(
     current_user: User = Depends(get_current_user),
     fonds_id: Optional[int] = Query(default=None, description="按全宗ID筛选"),
@@ -639,7 +732,7 @@ async def get_contracts_list(
     }
 
 
-@router.post("/", summary="创建合同")
+@router.post("", summary="创建合同")
 async def create_contract(
     body: ContractCreate,
     current_user: User = Depends(get_current_user),
@@ -651,6 +744,335 @@ async def create_contract(
         "code": 0,
         "message": "合同创建成功",
         "data": _contract_to_dict(contract),
+    }
+
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  供应商 (Supplier) 端点
+# ═══════════════════════════════════════════════════════════════════════
+
+
+@router.get("/suppliers", summary="获取供应商列表")
+async def get_suppliers_list(
+    current_user: User = Depends(get_current_user),
+    search: Optional[str] = Query(default=None, description="搜索关键词"),
+    status: Optional[str] = Query(default=None, description="按状态筛选"),
+    page: int = Query(default=1, ge=1, description="页码"),
+    page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取供应商列表，支持分页+搜索+状态筛选"""
+    items, total = await contract_service.list_suppliers(
+        db,
+        user_id=current_user.id,
+        search=search,
+        status=status,
+        page=page,
+        page_size=page_size,
+    )
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": [_supplier_to_dict(s) for s in items],
+        "paging": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size if total > 0 else 0,
+        },
+    }
+
+
+@router.post("/suppliers", summary="创建供应商")
+async def create_supplier(
+    body: SupplierCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """创建新的供应商"""
+    supplier = await contract_service.create_supplier(db, current_user.id, body.model_dump())
+    return {
+        "code": 0,
+        "message": "供应商创建成功",
+        "data": _supplier_to_dict(supplier),
+    }
+
+
+@router.get("/suppliers/{supplier_id}", summary="获取供应商详情")
+async def get_supplier(
+    supplier_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取单个供应商详情"""
+    supplier = await contract_service.get_supplier(db, supplier_id, current_user.id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": _supplier_to_dict(supplier),
+    }
+
+
+@router.patch("/suppliers/{supplier_id}", summary="更新供应商")
+async def update_supplier(
+    supplier_id: str,
+    body: SupplierUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """更新供应商信息"""
+    supplier = await contract_service.update_supplier(
+        db, supplier_id, current_user.id, body.model_dump(exclude_none=True)
+    )
+    if not supplier:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    return {
+        "code": 0,
+        "message": "供应商更新成功",
+        "data": _supplier_to_dict(supplier),
+    }
+
+
+@router.delete("/suppliers/{supplier_id}", summary="删除供应商")
+async def delete_supplier(
+    supplier_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除供应商"""
+    success = await contract_service.delete_supplier(db, supplier_id, current_user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    return {
+        "code": 0,
+        "message": "供应商删除成功",
+        "data": None,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  仪表盘
+# ═══════════════════════════════════════════════════════════════════════
+
+
+@router.get("/dashboard", summary="合同仪表盘")
+async def dashboard(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取合同仪表盘聚合数据"""
+    data = await contract_service.get_contract_dashboard(db, current_user.id)
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": data,
+    }
+
+# ═══════════════════════════════════════════════════════════════════════
+#  生命周期模板端点
+# ═══════════════════════════════════════════════════════════════════════
+
+
+@router.get("/lifecycle/templates", summary="获取生命周期模板列表")
+async def get_lifecycle_templates(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取当前用户的所有生命周期模板"""
+    items = await contract_service.list_lifecycle_templates(db, user.id)
+    return {
+        "code": 0, "message": "查询成功",
+        "data": [contract_service._lifecycle_template_to_dict(t) for t in items],
+    }
+
+
+@router.post("/lifecycle/templates", summary="创建生命周期模板")
+async def create_lifecycle_template_endpoint(
+    body: LifecycleTemplateCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """创建新的生命周期模板"""
+    template = await contract_service.create_lifecycle_template(db, user.id, body.model_dump())
+    return {
+        "code": 0, "message": "模板创建成功",
+        "data": contract_service._lifecycle_template_to_dict(template),
+    }
+
+
+@router.get("/lifecycle/templates/{template_id}", summary="获取模板详情")
+async def get_lifecycle_template_endpoint(
+    template_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取单个生命周期模板详情（含阶段列表）"""
+    template = await contract_service.get_lifecycle_template(db, template_id, user.id)
+    if not template:
+        raise HTTPException(status_code=404, detail="模板不存在")
+    return {
+        "code": 0, "message": "查询成功",
+        "data": contract_service._lifecycle_template_to_dict(template),
+    }
+
+
+@router.patch("/lifecycle/templates/{template_id}", summary="更新模板")
+async def update_lifecycle_template_endpoint(
+    template_id: int,
+    body: LifecycleTemplateUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """更新生命周期模板"""
+    template = await contract_service.update_lifecycle_template(
+        db, template_id, user.id, body.model_dump(exclude_none=True)
+    )
+    if not template:
+        raise HTTPException(status_code=404, detail="模板不存在")
+    return {
+        "code": 0, "message": "模板更新成功",
+        "data": contract_service._lifecycle_template_to_dict(template),
+    }
+
+
+@router.delete("/lifecycle/templates/{template_id}", summary="删除模板")
+async def delete_lifecycle_template_endpoint(
+    template_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除生命周期模板（级联删除阶段）"""
+    success = await contract_service.delete_lifecycle_template(db, template_id, user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="模板不存在")
+    return {"code": 0, "message": "模板删除成功", "data": None}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  生命周期阶段端点
+# ═══════════════════════════════════════════════════════════════════════
+
+
+@router.post("/lifecycle/templates/{template_id}/stages", summary="添加阶段")
+async def add_lifecycle_stage_endpoint(
+    template_id: int,
+    body: LifecycleStageCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """为模板添加生命周期阶段"""
+    stage = await contract_service.add_lifecycle_stage(
+        db, template_id, user.id, body.model_dump()
+    )
+    if not stage:
+        raise HTTPException(status_code=404, detail="模板不存在")
+    return {
+        "code": 0, "message": "阶段添加成功",
+        "data": contract_service._lifecycle_stage_to_dict(stage),
+    }
+
+
+@router.patch("/lifecycle/templates/{template_id}/stages/{stage_id}", summary="更新阶段")
+async def update_lifecycle_stage_endpoint(
+    template_id: int,
+    stage_id: int,
+    body: LifecycleStageUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """更新生命周期阶段"""
+    stage = await contract_service.update_lifecycle_stage(
+        db, stage_id, user.id, body.model_dump(exclude_none=True)
+    )
+    if not stage:
+        raise HTTPException(status_code=404, detail="阶段不存在")
+    return {
+        "code": 0, "message": "阶段更新成功",
+        "data": contract_service._lifecycle_stage_to_dict(stage),
+    }
+
+
+@router.delete("/lifecycle/templates/{template_id}/stages/{stage_id}", summary="删除阶段")
+async def delete_lifecycle_stage_endpoint(
+    template_id: int,
+    stage_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除生命周期阶段"""
+    success = await contract_service.delete_lifecycle_stage(db, stage_id, user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="阶段不存在")
+    return {"code": 0, "message": "阶段删除成功", "data": None}
+
+
+@router.put("/lifecycle/templates/{template_id}/stages/reorder", summary="重排阶段")
+async def reorder_lifecycle_stages_endpoint(
+    template_id: int,
+    body: StageReorderRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """重排生命周期阶段顺序"""
+    success = await contract_service.reorder_lifecycle_stages(
+        db, template_id, user.id, body.stage_ids
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="模板不存在")
+    return {"code": 0, "message": "排序更新成功", "data": None}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  合同生命周期流转端点
+# ═══════════════════════════════════════════════════════════════════════
+
+
+@router.get("/{contract_id}/lifecycle", summary="查看合同生命周期")
+async def get_contract_lifecycle_endpoint(
+    contract_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """查看合同的当前生命周期状态"""
+    data = await contract_service.get_contract_lifecycle(db, contract_id, user.id)
+    if data is None:
+        raise HTTPException(status_code=404, detail="合同不存在")
+    return {"code": 0, "message": "查询成功", "data": data}
+
+
+@router.post("/{contract_id}/lifecycle/advance", summary="推进阶段")
+async def advance_contract_stage_endpoint(
+    contract_id: int,
+    body: Optional[AdvanceStageRequest] = None,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """推进合同到下一生命周期阶段"""
+    result = await contract_service.advance_contract_stage(
+        db, contract_id, user.id, user.id,
+        notes=body.notes if body else None,
+    )
+    if result is None:
+        raise HTTPException(status_code=404, detail="合同不存在或未绑定生命周期")
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["message"])
+    return {"code": 0, "message": "阶段推进成功", "data": result}
+
+
+@router.get("/{contract_id}/lifecycle/history", summary="流转历史")
+async def get_contract_stage_history_endpoint(
+    contract_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取合同阶段流转历史记录"""
+    logs = await contract_service.get_contract_stage_history(db, contract_id, user.id)
+    return {
+        "code": 0, "message": "查询成功",
+        "data": [contract_service._stage_log_to_dict(l) for l in logs],
     }
 
 
@@ -792,126 +1214,3 @@ async def delete_milestone(
         "data": None,
     }
 
-
-# ═══════════════════════════════════════════════════════════════════════
-#  供应商 (Supplier) 端点
-# ═══════════════════════════════════════════════════════════════════════
-
-
-@router.get("/suppliers", summary="获取供应商列表")
-async def get_suppliers_list(
-    current_user: User = Depends(get_current_user),
-    search: Optional[str] = Query(default=None, description="搜索关键词"),
-    status: Optional[str] = Query(default=None, description="按状态筛选"),
-    page: int = Query(default=1, ge=1, description="页码"),
-    page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
-    db: AsyncSession = Depends(get_db),
-):
-    """获取供应商列表，支持分页+搜索+状态筛选"""
-    items, total = await contract_service.list_suppliers(
-        db,
-        user_id=current_user.id,
-        search=search,
-        status=status,
-        page=page,
-        page_size=page_size,
-    )
-    return {
-        "code": 0,
-        "message": "查询成功",
-        "data": [_supplier_to_dict(s) for s in items],
-        "paging": {
-            "page": page,
-            "page_size": page_size,
-            "total": total,
-            "total_pages": (total + page_size - 1) // page_size if total > 0 else 0,
-        },
-    }
-
-
-@router.post("/suppliers", summary="创建供应商")
-async def create_supplier(
-    body: SupplierCreate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """创建新的供应商"""
-    supplier = await contract_service.create_supplier(db, current_user.id, body.model_dump())
-    return {
-        "code": 0,
-        "message": "供应商创建成功",
-        "data": _supplier_to_dict(supplier),
-    }
-
-
-@router.get("/suppliers/{supplier_id}", summary="获取供应商详情")
-async def get_supplier(
-    supplier_id: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """获取单个供应商详情"""
-    supplier = await contract_service.get_supplier(db, supplier_id, current_user.id)
-    if not supplier:
-        raise HTTPException(status_code=404, detail="供应商不存在")
-    return {
-        "code": 0,
-        "message": "查询成功",
-        "data": _supplier_to_dict(supplier),
-    }
-
-
-@router.patch("/suppliers/{supplier_id}", summary="更新供应商")
-async def update_supplier(
-    supplier_id: str,
-    body: SupplierUpdate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """更新供应商信息"""
-    supplier = await contract_service.update_supplier(
-        db, supplier_id, current_user.id, body.model_dump(exclude_none=True)
-    )
-    if not supplier:
-        raise HTTPException(status_code=404, detail="供应商不存在")
-    return {
-        "code": 0,
-        "message": "供应商更新成功",
-        "data": _supplier_to_dict(supplier),
-    }
-
-
-@router.delete("/suppliers/{supplier_id}", summary="删除供应商")
-async def delete_supplier(
-    supplier_id: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """删除供应商"""
-    success = await contract_service.delete_supplier(db, supplier_id, current_user.id)
-    if not success:
-        raise HTTPException(status_code=404, detail="供应商不存在")
-    return {
-        "code": 0,
-        "message": "供应商删除成功",
-        "data": None,
-    }
-
-
-# ═══════════════════════════════════════════════════════════════════════
-#  仪表盘
-# ═══════════════════════════════════════════════════════════════════════
-
-
-@router.get("/dashboard", summary="合同仪表盘")
-async def dashboard(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """获取合同仪表盘聚合数据"""
-    data = await contract_service.get_contract_dashboard(db, current_user.id)
-    return {
-        "code": 0,
-        "message": "查询成功",
-        "data": data,
-    }

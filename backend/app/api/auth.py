@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from uuid import UUID
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,6 +54,13 @@ class UserOut(BaseModel):
     is_active: bool
 
     model_config = {"from_attributes": True}
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def coerce_uuid_to_str(cls, v: object) -> str:
+        if isinstance(v, UUID):
+            return str(v)
+        return v
 
 
 class AuthResponse(BaseModel):

@@ -157,7 +157,7 @@ function Dialog({ open, onOpenChange, children, titleId, descriptionId }: Dialog
           tabIndex={-1}
           className={cn(
             "w-full max-w-lg rounded-card bg-bg-card shadow-xl border border-border",
-            "transition-all duration-200 ease-out",
+            "transition-[transform,opacity] duration-200 ease-out",
             animating
               ? "scale-100 opacity-100"
               : "scale-95 opacity-0"
