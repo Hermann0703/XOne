@@ -37,17 +37,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useContractStore, type Contract } from "./store";
-
-// ─── 类型映射 ────────────────────────────────────────
-
-const CONTRACT_TYPE_LABELS: Record<string, string> = {
-  purchase: '采购合同',
-  sale: '销售合同',
-  service: '服务合同',
-  lease: '租赁合同',
-  loan: '借款合同',
-  other: '其他',
-};
+import { apiGet } from "@/lib/api/client";
 
 // ─── 状态映射 ────────────────────────────────────────
 
@@ -122,7 +112,9 @@ export default function ContractList() {
     paging,
     loading,
     fonds,
+    categories,
     fetchContracts,
+    fetchCategories,
     deleteContract,
   } = useContractStore();
 
@@ -131,6 +123,7 @@ export default function ContractList() {
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [fondsFilter, setFondsFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 15;
 
@@ -138,14 +131,30 @@ export default function ContractList() {
   const [deleteTarget, setDeleteTarget] = useState<Contract | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // 合同类型映射
+  const [contractTypeList, setContractTypeList] = useState<{ id: number; code: string; name: string }[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+    apiGet<{ id: number; name: string; code: string }[]>("/work/contracts/contract-types", { include_inactive: "true" })
+      .then((res) => {
+        if (res.code === 0 && res.data) {
+          setContractTypeList(res.data.map(item => ({ id: item.id, code: item.code, name: item.name })));
+        }
+      })
+      .finally(() => setLoadingTypes(false));
+  }, []);
+
   const loadContracts = useCallback(() => {
-    const params: Record<string, unknown> = { page, size: pageSize };
+    const params: Record<string, unknown> = { page, page_size: pageSize };
     if (search) params.search = search;
     if (statusFilter) params.status = statusFilter;
-    if (typeFilter) params.contract_type = typeFilter;
+    if (typeFilter) params.contract_type_id = Number(typeFilter);
     if (fondsFilter) params.fonds_id = fondsFilter;
+    if (categoryFilter) params.category_id = categoryFilter;
     fetchContracts(params);
-  }, [page, search, statusFilter, typeFilter, fondsFilter, fetchContracts]);
+  }, [page, search, statusFilter, typeFilter, fondsFilter, categoryFilter, fetchContracts]);
 
   useEffect(() => {
     loadContracts();
@@ -203,6 +212,16 @@ export default function ContractList() {
 
             <Select
               options={[
+                { value: "", label: "全部分类" },
+                ...categories.map((c) => ({ value: String(c.id), label: c.name })),
+              ]}
+              value={categoryFilter}
+              onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+              placeholder="分类筛选"
+            />
+
+            <Select
+              options={[
                 { value: "", label: "全部状态" },
                 { value: "draft", label: "草稿" },
                 { value: "signed", label: "已签署" },
@@ -218,16 +237,12 @@ export default function ContractList() {
             <Select
               options={[
                 { value: "", label: "全部类型" },
-                { value: "purchase", label: "采购合同" },
-                { value: "sale", label: "销售合同" },
-                { value: "service", label: "服务合同" },
-                { value: "lease", label: "租赁合同" },
-                { value: "loan", label: "借款合同" },
-                { value: "other", label: "其他" },
+                ...contractTypeList.map((t) => ({ value: String(t.id), label: t.name })),
               ]}
               value={typeFilter}
               onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
               placeholder="类型筛选"
+              disabled={loadingTypes}
             />
           </div>
         </CardContent>
@@ -249,6 +264,9 @@ export default function ContractList() {
                   <TableRow>
                     <TableHead className="w-[120px]">合同编号</TableHead>
                     <TableHead>合同名称</TableHead>
+                    <TableHead className="w-[80px]">全宗</TableHead>
+                    <TableHead className="w-[80px]">分类</TableHead>
+                    <TableHead className="w-[80px]">密级</TableHead>
                     <TableHead className="w-[120px]">需求编号</TableHead>
                     <TableHead className="w-[120px]">供应商</TableHead>
                     <TableHead>标的名称</TableHead>
@@ -263,7 +281,7 @@ export default function ContractList() {
                 <TableBody>
                   {contracts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="py-10">
+                      <TableCell colSpan={14} className="py-10">
                         <div className="flex flex-col items-center justify-center gap-3 text-center">
                           <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
                             <FileText className="w-7 h-7 text-muted-foreground" />
@@ -284,6 +302,9 @@ export default function ContractList() {
                       <TableRow key={c.id}>
                         <TableCell className="font-mono text-sm">{c.contract_no}</TableCell>
                         <TableCell className="max-w-[200px] truncate" title={c.contract_name}>{c.contract_name}</TableCell>
+                        <TableCell className="text-sm">{c.fonds_name || "-"}</TableCell>
+                        <TableCell className="text-sm">{c.category_name || "-"}</TableCell>
+                        <TableCell className="text-sm">{c.classification_name || "-"}</TableCell>
                         <TableCell className="font-mono text-sm">{c.requirement_no || "-"}</TableCell>
                         <TableCell>{c.supplier || "-"}</TableCell>
                         <TableCell className="max-w-[150px] truncate" title={c.subject_name}>{c.subject_name || "-"}</TableCell>
@@ -306,7 +327,7 @@ export default function ContractList() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm">{c.sign_date || "-"}</TableCell>
-                        <TableCell className="text-sm">{c.contract_type ? (CONTRACT_TYPE_LABELS[c.contract_type] || c.contract_type) : "-"}</TableCell>
+                        <TableCell className="text-sm">{c.contract_type_name || c.contract_type || "-"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon-xs" title="查看详情" aria-label="查看合同详情"

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useContractStore, type Contract } from "./store";
 import { useLifecycleStore } from "./lifecycleStore";
+import { apiGet } from "@/lib/api/client";
 
 const INITIAL_FORM: Partial<Contract> = {
   contract_no: "",
@@ -30,7 +31,7 @@ const INITIAL_FORM: Partial<Contract> = {
   subject_no: "",
   subject_name: "",
   procurement_no: "",
-  contract_type: "",
+  contract_type_id: undefined as number | undefined,
   description: "",
   keywords: [],
   status: "draft",
@@ -67,6 +68,19 @@ export default function ContractForm() {
   const [submitting, setSubmitting] = useState(false);
   const [loadingContract, setLoadingContract] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [contractTypes, setContractTypes] = useState<{ id: number; code: string; name: string }[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(true);
+
+  // 加载合同类型
+  useEffect(() => {
+    apiGet<{ id: number; name: string; code: string }[]>("/work/contracts/contract-types", { include_inactive: "true" })
+      .then((res) => {
+        if (res.code === 0 && res.data) {
+          setContractTypes(res.data.map((item: any) => ({ id: item.id, code: item.code, name: item.name })));
+        }
+      })
+      .finally(() => setLoadingTypes(false));
+  }, []);
 
   // 加载基础数据
   useEffect(() => {
@@ -99,7 +113,7 @@ export default function ContractForm() {
             subject_no: c.subject_no || "",
             subject_name: c.subject_name || "",
             procurement_no: c.procurement_no || "",
-            contract_type: c.contract_type || "",
+            contract_type_id: c.contract_type_id || undefined,
             description: c.description || "",
             keywords: c.keywords || [],
             lifecycle_id: c.lifecycle_id || undefined,
@@ -128,16 +142,20 @@ export default function ContractForm() {
     if (!form.fonds_id) errors.fonds_id = "请选择全宗";
     if (!form.category_id) errors.category_id = "请选择分类";
     if (!form.classification_id) errors.classification_id = "请选择密级";
-    if (!form.supplier_id) errors.supplier_id = "请选择供应商";
     if (form.amount == null || form.amount === undefined) errors.amount = "请输入采购金额";
-    // 编码字段正则校验: 仅允许字母+数字+'-'，最长32字符
-    const codePattern = /^[a-zA-Z0-9-]{0,32}$/;
-    if (form.requirement_no && !codePattern.test(form.requirement_no))
-      errors.requirement_no = "仅允许字母、数字和 '-'，最长 32 字符";
-    if (form.subject_no && !codePattern.test(form.subject_no))
-      errors.subject_no = "仅允许字母、数字和 '-'，最长 32 字符";
-    if (form.procurement_no && !codePattern.test(form.procurement_no))
-      errors.procurement_no = "仅允许字母、数字和 '-'，最长 32 字符";
+    else if (Number.isNaN(form.amount) || Number(form.amount) <= 0) errors.amount = "请输入有效的采购金额（需大于0）";
+    // keywords 序列化后最大长度 512
+    if ((form.keywords || []).join(',').length > 512) errors.keywords = "关键词总长度不能超过512字符";
+    // 编码字段正则校验: 大写/小写字母+数字开头，后续可用 '-' 分隔，不允许开头/结尾/连续 '-'
+    // 后端: ^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$，长度 1-32
+    const codePattern = /^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$/;
+    const codeMaxLen = 32;
+    if (form.requirement_no && (!codePattern.test(form.requirement_no) || form.requirement_no.length > codeMaxLen))
+      errors.requirement_no = "仅允许字母、数字和 '-'，不允许开头/结尾/连续 '-'，最长 32 字符";
+    if (form.subject_no && (!codePattern.test(form.subject_no) || form.subject_no.length > codeMaxLen))
+      errors.subject_no = "仅允许字母、数字和 '-'，不允许开头/结尾/连续 '-'，最长 32 字符";
+    if (form.procurement_no && (!codePattern.test(form.procurement_no) || form.procurement_no.length > codeMaxLen))
+      errors.procurement_no = "仅允许字母、数字和 '-'，不允许开头/结尾/连续 '-'，最长 32 字符";
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -155,26 +173,36 @@ export default function ContractForm() {
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    if (!validate()) {
+      return;
+    }
     setSubmitting(true);
     try {
       // keywords 序列化为逗号分隔字符串后 as any（API 接口接收字符串，类型定义使用 string[]）
-      const data = {
+      const raw = {
         ...form,
         keywords: form.keywords?.length ? form.keywords.join(",") : undefined,
-      } as Partial<Contract>;
+      };
+      // 剥离空字符串 → undefined，避免后端 Pydantic 对 Optional[date]/pattern 字段报 422
+      const data: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(raw)) {
+        data[k] = v === "" ? undefined : v;
+      }
       let result: Contract | null;
       if (isEdit && id) {
-        result = await updateContract(Number(id), data);
+        result = await updateContract(Number(id), data as Partial<Contract>);
       } else {
-        result = await createContract(data);
+        result = await createContract(data as Partial<Contract>);
       }
       if (result) {
         router.push(`/work/contracts/${result.id}`);
+      } else {
+        // 优先显示后端返回的错误消息
+        const storeError = useContractStore.getState().error;
+        toast(storeError || "保存失败，请检查必填字段是否填写完整");
       }
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "未知错误";
-      toast(message);
+      toast("网络错误，请稍后重试");
     } finally {
       setSubmitting(false);
     }
@@ -300,17 +328,11 @@ export default function ContractForm() {
             <label htmlFor="field-contract-type" className="text-sm font-medium text-text-secondary block mb-1">合同类型</label>
             <Select
               id="field-contract-type"
-              options={[
-                { value: "purchase", label: "采购合同" },
-                { value: "sale", label: "销售合同" },
-                { value: "service", label: "服务合同" },
-                { value: "lease", label: "租赁合同" },
-                { value: "loan", label: "借款合同" },
-                { value: "other", label: "其他" },
-              ]}
-              value={form.contract_type || ""}
-              onChange={(e) => setField("contract_type", e.target.value || undefined)}
+              options={contractTypes.map((t) => ({ value: String(t.id), label: t.name }))}
+              value={form.contract_type_id ? String(form.contract_type_id) : ""}
+              onChange={(e) => setField("contract_type_id", e.target.value ? Number(e.target.value) : undefined)}
               placeholder="选择类型"
+              disabled={loadingTypes}
             />
           </div>
         </CardContent>
@@ -323,7 +345,7 @@ export default function ContractForm() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="field-contract-supplier" className="text-sm font-medium text-text-secondary block mb-1">供应商 <span className="text-destructive">*</span></label>
+            <label htmlFor="field-contract-supplier" className="text-sm font-medium text-text-secondary block mb-1">供应商</label>
             <Select
               id="field-contract-supplier"
               options={suppliers.map(s => ({ value: s.id, label: s.name }))}
@@ -331,13 +353,10 @@ export default function ContractForm() {
               onChange={(e) => setField("supplier_id", e.target.value || undefined)}
               placeholder="选择供应商"
             />
-            {fieldErrors.supplier_id && (
-              <p className="text-xs text-destructive mt-1">{fieldErrors.supplier_id}</p>
-            )}
           </div>
           <div>
             <label htmlFor="field-contract-amount" className="text-sm font-medium text-text-secondary block mb-1">采购金额 <span className="text-destructive">*</span></label>
-            <Input id="field-contract-amount" type="number" required value={form.amount ?? ""} onChange={(e) => setField("amount", e.target.value ? Number(e.target.value) : undefined)} placeholder="请输入金额" />
+            <Input id="field-contract-amount" type="number" required value={form.amount ?? ""} onChange={(e) => { const n = Number(e.target.value); setField("amount", e.target.value === "" || Number.isNaN(n) ? undefined : n); }} placeholder="请输入金额" />
             {fieldErrors.amount && (
               <p className="text-xs text-destructive mt-1">{fieldErrors.amount}</p>
             )}
@@ -466,6 +485,9 @@ export default function ContractForm() {
                 <Plus className="size-3.5" />
               </Button>
             </div>
+            {fieldErrors.keywords && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.keywords}</p>
+            )}
             {(form.keywords || []).length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {(form.keywords || []).map((kw) => (

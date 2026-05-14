@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Plus, Search, Eye, Pencil, Trash2, Archive as ArchiveIcon, BookOpen, BookCheck, Trash } from 'lucide-react'
 import { useArchiveStore, type Archive } from './store'
+import { apiGet } from '@/lib/api/client'
 import { useRouter } from 'next/navigation'
 
 const PAGE_SIZE = 15
@@ -29,19 +30,14 @@ const STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondar
   active: { label: '在库', variant: 'default' },
 }
 
-const SECURITY_MAP: Record<string, string> = {
-  public: '公开',
-  internal: '内部',
-  secret: '秘密',
-  confidential: '机密',
-}
+// ─── 查找表类型（API 动态加载） ──────────────────────────
 
-const RETENTION_MAP: Record<string, string> = {
-  permanent: '永久',
-  long_term: '长期',
-  short_term: '短期',
-  '30_years': '30年',
-  '10_years': '10年',
+interface LookupItem {
+  id: number
+  category: string
+  code: string
+  name: string
+  sort_order: number
 }
 
 export default function ArchiveList() {
@@ -54,6 +50,36 @@ export default function ArchiveList() {
   const [page, setPage] = useState(1)
   const [deleteTarget, setDeleteTarget] = useState<Archive | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // ── 查找表（API 动态加载） ──
+  const [securityItems, setSecurityItems] = useState<LookupItem[]>([])
+  const [retentionItems, setRetentionItems] = useState<LookupItem[]>([])
+
+  useEffect(() => {
+    apiGet<LookupItem[]>('/work/lookup/security_level/active')
+      .then((res) => {
+        if (res.code === 0 && Array.isArray(res.data)) setSecurityItems(res.data)
+      })
+      .catch((err) => console.error('获取密级查找表失败:', err))
+  }, [])
+
+  useEffect(() => {
+    apiGet<LookupItem[]>('/work/lookup/retention_period/active')
+      .then((res) => {
+        if (res.code === 0 && Array.isArray(res.data)) setRetentionItems(res.data)
+      })
+      .catch((err) => console.error('获取保管期限查找表失败:', err))
+  }, [])
+
+  // 派生映射 — code → name
+  const securityMap = useMemo<Record<string, string>>(
+    () => Object.fromEntries(securityItems.map((item) => [item.code, item.name])),
+    [securityItems],
+  )
+  const retentionMap = useMemo<Record<string, string>>(
+    () => Object.fromEntries(retentionItems.map((item) => [item.code, item.name])),
+    [retentionItems],
+  )
 
   const load = useCallback(() => {
     fetchArchives({ page, size: PAGE_SIZE, search, fonds_id: fondsId, security_level: securityLevel, status })
@@ -168,10 +194,7 @@ export default function ArchiveList() {
           onChange={(e) => { setSecurityLevel(e.target.value); setPage(1) }}
           options={[
             { value: '', label: '全部密级' },
-            { value: 'public', label: '公开' },
-            { value: 'internal', label: '内部' },
-            { value: 'secret', label: '秘密' },
-            { value: 'confidential', label: '机密' },
+            ...securityItems.map((item) => ({ value: item.code, label: item.name })),
           ]}
           placeholder="密级"
         />
@@ -223,7 +246,7 @@ export default function ArchiveList() {
                     <TableCell className="font-mono text-xs">{a.archive_no}</TableCell>
                     <TableCell className="font-medium max-w-[200px] truncate" title={a.title}>{a.title}</TableCell>
                     <TableCell className="text-sm text-text-secondary">{a.fonds_name || '-'}</TableCell>
-                    <TableCell>{a.security_level ? <Badge variant="outline">{SECURITY_MAP[a.security_level] ?? a.security_level}</Badge> : '-'}</TableCell>
+                    <TableCell>{a.security_level ? <Badge variant="outline">{securityMap[a.security_level] ?? a.security_level}</Badge> : '-'}</TableCell>
                     <TableCell>{statusBadge(a.status)}</TableCell>
                     <TableCell className="text-sm text-text-secondary">{a.doc_date ?? '-'}</TableCell>
                     <TableCell>

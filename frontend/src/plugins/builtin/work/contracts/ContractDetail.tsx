@@ -9,15 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useContractStore } from "./store";
+import { apiGet } from "@/lib/api/client";
 import dynamic from "next/dynamic";
-
-const MilestoneTable = dynamic(() => import("./MilestoneTable"), {
-  loading: () => (
-    <div className="flex items-center justify-center py-12">
-      <Loader2 className="size-5 animate-spin text-muted-foreground" />
-    </div>
-  ),
-});
 
 const Timeline = dynamic(() => import("./Timeline"), {
   loading: () => (
@@ -43,28 +36,31 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
   terminated: { label: "已终止", className: "bg-red-100 text-red-700 border-red-300" },
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  purchase: "采购合同",
-  sale:     "销售合同",
-  service:  "服务合同",
-  lease:    "租赁合同",
-  other:    "其他",
-};
-
 export default function ContractDetail() {
   const router = useRouter();
   const params = useParams();
   const id = Number(params?.id as string);
-  const { selectedContract, fetchContract, deleteContract, fetchMilestones } = useContractStore();
+  const { selectedContract, fetchContract, deleteContract } = useContractStore();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("milestones");
+  const [activeTab, setActiveTab] = useState("lifecycle");
+  const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    apiGet<{ id: number; name: string; code: string }[]>("/work/contracts/contract-types", { include_inactive: "true" })
+      .then((res) => {
+        if (res.code === 0 && res.data) {
+          const map: Record<string, string> = {};
+          res.data.forEach((item) => { map[item.code] = item.name; });
+          setTypeLabels(map);
+        }
+      });
+  }, []);
 
   useEffect(() => {
     if (id) {
       fetchContract(id).then(() => setLoading(false));
-      fetchMilestones(id);
     }
-  }, [id, fetchContract, fetchMilestones]);
+  }, [id, fetchContract]);
 
   if (loading) {
     return (
@@ -147,7 +143,7 @@ export default function ContractDetail() {
                 <InfoItem label="全宗" value={c.fonds_name} />
                 <InfoItem label="分类" value={c.category_name} />
                 <InfoItem label="密级" value={c.classification_name} />
-                <InfoItem label="合同类型" value={c.contract_type ? TYPE_LABELS[c.contract_type] || c.contract_type : "-"} />
+                <InfoItem label="合同类型" value={c.contract_type_name || c.contract_type || "-"} />
                 <InfoItem label="状态" value={statusConfig.label} />
               </div>
             </CardContent>
@@ -204,18 +200,14 @@ export default function ContractDetail() {
             </Card>
           )}
 
-          {/* 里程碑标签页 */}
+          {/* 生命周期标签页 */}
           <Card>
             <CardContent className="pt-6">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-4">
-                  <TabsTrigger value="milestones">里程碑列表</TabsTrigger>
                   <TabsTrigger value="timeline-tab">时间轴</TabsTrigger>
                   <TabsTrigger value="lifecycle">生命周期</TabsTrigger>
                 </TabsList>
-                <TabsContent value="milestones">
-                  <MilestoneTable contractId={c.id} />
-                </TabsContent>
                 <TabsContent value="timeline-tab">
                   <Timeline contract={c} />
                 </TabsContent>

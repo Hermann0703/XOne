@@ -484,6 +484,49 @@
       "searchPlaceholder": "Search suppliers...",
       "noData": "No suppliers"
     },
+    "types": {
+      "title": "Contract Types",
+      "addType": "Add Type",
+      "editType": "Edit Type",
+      "name": "Type Name",
+      "code": "Type Code",
+      "description": "Description",
+      "sortOrder": "Sort Order",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "deleteConfirm": "Are you sure to delete this contract type?",
+      "noData": "No contract types",
+      "codeExists": "Code already exists"
+    },
+    "stageTypes": {
+      "title": "Stage Type Management",
+      "addType": "Add Stage Type",
+      "editType": "Edit Stage Type",
+      "name": "Name",
+      "code": "Code",
+      "color": "Color",
+      "defaultStatus": "Default Status",
+      "sortOrder": "Sort Order",
+      "description": "Description",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "deleteConfirm": "Are you sure you want to delete this stage type?",
+      "noData": "No stage types"
+    },
+    "classifications": {
+      "title": "Classification Management",
+      "addType": "Add Classification",
+      "editType": "Edit Classification",
+      "name": "Name",
+      "code": "Code",
+      "level": "Level",
+      "color": "Color",
+      "description": "Description",
+      "deleteConfirm": "Are you sure you want to delete this classification?",
+      "noData": "No classifications"
+    },
     "lifecycle": {
       "title": "Lifecycle Management",
       "description": "Manage contract lifecycle templates and transition rules",
@@ -566,6 +609,34 @@
       "historyTruncated": "Only showing last {count} of {total} records",
       "start": "Start",
       "fallbackLabel": "Lifecycle"
+    },
+    "catalog": {
+      "title": "Catalog Management",
+      "contractTypes": "Contract Types",
+      "stageTypes": "Stage Types",
+      "classifications": "Classifications",
+      "lookup": "Lookup Dictionary"
+    },
+    "timelineTemplates": {
+      "addTemplate": "Add Timeline Template",
+      "name": "Template Name",
+      "nodeCount": "Node Count",
+      "status": "Status",
+      "noData": "No Timeline Templates",
+      "deleteConfirm": "Are you sure you want to delete this timeline template?",
+      "nodes": "Template Nodes",
+      "active": "Active",
+      "description": "Description"
+    },
+    "timeline": {
+      "title": "Timeline",
+      "selectTemplate": "Select Template...",
+      "addNode": "Add Custom Node",
+      "nodeLabel": "Node Label",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "noTemplate": "Please select a timeline template to view nodes",
+      "currentStatus": "Current Status"
     }
   },
   "work": {
@@ -650,6 +721,21 @@
         "searchPlaceholder": "Search suppliers...",
         "noData": "No suppliers"
       },
+      "types": {
+        "title": "Contract Types",
+        "addType": "Add Type",
+        "editType": "Edit Type",
+        "name": "Type Name",
+        "code": "Type Code",
+        "description": "Description",
+        "sortOrder": "Sort Order",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive",
+        "deleteConfirm": "Are you sure to delete this contract type?",
+        "noData": "No contract types",
+        "codeExists": "Code already exists"
+      },
       "lifecycle": {
         "title": "Lifecycle Management",
         "description": "Manage contract lifecycle templates and transition rules",
@@ -669,73 +755,73 @@
         "history": "Transition History",
         "currentStage": "Current Stage",
         "bindTemplate": "Bind Lifecycle Template",
-          "noTemplate": "No Lifecycle Template",
-          "stageTypes": {
-            "drafting": "Drafting",
-            "review": "Legal Review",
-            "signing": "Signing",
-            "execution": "Execution",
-            "renewal": "Renewal",
-            "termination": "Termination",
-            "archived": "Archived",
-            "custom": "Custom"
-          },
-          "stageLabels": {
-            "drafting": "Draft",
-            "review": "Review",
-            "signing": "Sign",
-            "execution": "Execute",
-            "renewal": "Renew",
-            "termination": "Terminate",
-            "archived": "Archive",
-            "custom": "Custom"
-          },
-          "stagesCount": "{count} stages",
-          "required": "Required",
-          "days": "{days} days",
-          "noStages": "No stages yet, click the button below to add",
-          "emptyHint": "Click \"New Template\" to create your first lifecycle template",
-          "newTemplate": "New Template",
-          "deleteTemplate": "Delete Template",
-          "editTemplateTitle": "Edit Template",
-          "newTemplateTitle": "New Template",
-          "saveChanges": "Save Changes",
-          "createTemplate": "Create Template",
-          "confirmDelete": "Confirm Deletion",
-          "confirmDeleteTemplate": "Are you sure you want to delete template \"{name}\"? All stages under it will also be deleted. This action cannot be undone.",
-          "confirmDeleteStage": "Are you sure you want to delete stage \"{name}\"? This action cannot be undone.",
-          "deleting": "Deleting...",
-          "saving": "Saving...",
-          "stageType": "Stage Type",
-          "stageColor": "Stage Color",
-          "isRequired": "Required Stage",
-          "autoTransitionDays": "Auto Transition (Days)",
-          "autoTransitionHint": "Auto-advance to the next stage after the specified number of days. Set to 0 to disable.",
-          "autoTransitionPlaceholder": "0 means no auto-transition",
-          "stageDescription": "Stage Description",
-          "descriptionLabel": "Description",
-          "templateDescriptionPlaceholder": "Template usage description (optional)",
-          "templateNamePlaceholder": "e.g. Standard Procurement Contract Flow",
-          "stageNamePlaceholder": "e.g. Contract Drafting",
-          "stageDescriptionPlaceholder": "Stage description (optional)",
-          "editTemplateDesc": "Modify the basic information of the lifecycle template",
-          "createTemplateDesc": "Create a new contract lifecycle template",
-          "editStageDesc": "Modify the lifecycle stage information",
-          "createStageDesc": "Add a new lifecycle stage to the template",
-          "noBinding": "This contract is not bound to a lifecycle template",
-          "noBindingHint": "Please select a lifecycle template on the edit contract page to enable stage management",
-          "noStagesInTemplate": "This lifecycle template has no stages configured. Please set them up in template management first.",
-          "advanceButton": "Advance",
-          "advanceSuccess": "Advanced to next stage",
-          "advanceFailed": "Advance failed, please retry",
-          "noHistory": "No transition records",
-          "historyTruncated": "Only showing last {count} of {total} records",
-          "start": "Start",
-          "fallbackLabel": "Lifecycle"
-        }
+        "noTemplate": "No Lifecycle Template",
+        "stageTypes": {
+          "drafting": "Drafting",
+          "review": "Legal Review",
+          "signing": "Signing",
+          "execution": "Execution",
+          "renewal": "Renewal",
+          "termination": "Termination",
+          "archived": "Archived",
+          "custom": "Custom"
+        },
+        "stageLabels": {
+          "drafting": "Draft",
+          "review": "Review",
+          "signing": "Sign",
+          "execution": "Execute",
+          "renewal": "Renew",
+          "termination": "Terminate",
+          "archived": "Archive",
+          "custom": "Custom"
+        },
+        "stagesCount": "{count} stages",
+        "required": "Required",
+        "days": "{days} days",
+        "noStages": "No stages yet, click the button below to add",
+        "emptyHint": "Click \"New Template\" to create your first lifecycle template",
+        "newTemplate": "New Template",
+        "deleteTemplate": "Delete Template",
+        "editTemplateTitle": "Edit Template",
+        "newTemplateTitle": "New Template",
+        "saveChanges": "Save Changes",
+        "createTemplate": "Create Template",
+        "confirmDelete": "Confirm Deletion",
+        "confirmDeleteTemplate": "Are you sure you want to delete template \"{name}\"? All stages under it will also be deleted. This action cannot be undone.",
+        "confirmDeleteStage": "Are you sure you want to delete stage \"{name}\"? This action cannot be undone.",
+        "deleting": "Deleting...",
+        "saving": "Saving...",
+        "stageType": "Stage Type",
+        "stageColor": "Stage Color",
+        "isRequired": "Required Stage",
+        "autoTransitionDays": "Auto Transition (Days)",
+        "autoTransitionHint": "Auto-advance to the next stage after the specified number of days. Set to 0 to disable.",
+        "autoTransitionPlaceholder": "0 means no auto-transition",
+        "stageDescription": "Stage Description",
+        "descriptionLabel": "Description",
+        "templateDescriptionPlaceholder": "Template usage description (optional)",
+        "templateNamePlaceholder": "e.g. Standard Procurement Contract Flow",
+        "stageNamePlaceholder": "e.g. Contract Drafting",
+        "stageDescriptionPlaceholder": "Stage description (optional)",
+        "editTemplateDesc": "Modify the basic information of the lifecycle template",
+        "createTemplateDesc": "Create a new contract lifecycle template",
+        "editStageDesc": "Modify the lifecycle stage information",
+        "createStageDesc": "Add a new lifecycle stage to the template",
+        "noBinding": "This contract is not bound to a lifecycle template",
+        "noBindingHint": "Please select a lifecycle template on the edit contract page to enable stage management",
+        "noStagesInTemplate": "This lifecycle template has no stages configured. Please set them up in template management first.",
+        "advanceButton": "Advance",
+        "advanceSuccess": "Advanced to next stage",
+        "advanceFailed": "Advance failed, please retry",
+        "noHistory": "No transition records",
+        "historyTruncated": "Only showing last {count} of {total} records",
+        "start": "Start",
+        "fallbackLabel": "Lifecycle"
       }
-    },
-    "dispatch": {
+    }
+  },
+  "dispatch": {
     "title": "Data Dispatch",
     "sources": "Data Sources",
     "tasks": "Dispatch Tasks",
@@ -836,8 +922,29 @@
     "flat": "Flat"
   },
   "calendar": {
-    "weekDays_short": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    "monthNames": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    "weekDays_short": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ],
+    "monthNames": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ]
   },
   "error": {
     "title": "Something Went Wrong",
@@ -995,5 +1102,28 @@
     "markAllRead": "Mark All Read",
     "empty": "No notifications",
     "markRead": "Read"
+  },
+  "catalog": {
+    "title": "Catalog Hub",
+    "tabs": {
+      "contractTypes": "Contract Types",
+      "stageTypes": "Stage Types",
+      "classifications": "Classifications",
+      "dictionary": "Dictionary"
+    }
+  },
+  "lookup": {
+    "title": "Dictionary Management",
+    "code": "Code",
+    "name": "Name",
+    "sortOrder": "Sort Order",
+    "addItem": "Add Item",
+    "editItem": "Edit Item",
+    "deleteConfirm": "Are you sure to delete this item?",
+    "tabs": {
+      "securityLevel": "Security Level",
+      "retentionPeriod": "Retention Period",
+      "rating": "Supplier Rating"
+    }
   }
 }

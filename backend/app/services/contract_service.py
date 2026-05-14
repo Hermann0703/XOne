@@ -8,7 +8,7 @@ from sqlalchemy import select, func, and_, or_, extract
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.contract import Fonds, Category, Classification, Contract, Milestone, LifecycleTemplate, LifecycleStage, ContractStageLog
+from app.models.contract import Fonds, Category, Classification, Contract, Milestone, LifecycleTemplate, LifecycleStage, ContractStageLog, TimelineTemplate, TimelineNode, ContractTimelineCustomNode
 from app.models.supplier import Supplier
 
 
@@ -232,13 +232,14 @@ async def list_contracts(
     fonds_id: Optional[int] = None,
     category_id: Optional[int] = None,
     status: Optional[str] = None,
-    contract_type: Optional[str] = None,
+    contract_type: Optional[str] = None,  # deprecated — prefer contract_type_id
+    contract_type_id: Optional[int] = None,
     search: Optional[str] = None,
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[Contract], int]:
     """获取合同列表，支持分页+多条件筛选+搜索"""
-    conditions = [Contract.user_id == user_id]
+    conditions = []
 
     if fonds_id is not None:
         conditions.append(Contract.fonds_id == fonds_id)
@@ -248,6 +249,8 @@ async def list_contracts(
         conditions.append(Contract.status == status)
     if contract_type is not None:
         conditions.append(Contract.contract_type == contract_type)
+    if contract_type_id is not None:
+        conditions.append(Contract.contract_type_id == contract_type_id)
     if search is not None and search.strip():
         search_term = f"%{search.strip()}%"
         conditions.append(
@@ -276,6 +279,7 @@ async def list_contracts(
             selectinload(Contract.supplier_rel),
             selectinload(Contract.lifecycle),
             selectinload(Contract.lifecycle_stage),
+            selectinload(Contract.contract_type_rel),
         )
         .order_by(Contract.updated_at.desc())
         .offset((page - 1) * page_size)
@@ -291,7 +295,7 @@ async def get_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> Opt
     """获取单个合同"""
     stmt = (
         select(Contract)
-        .where(Contract.id == contract_id, Contract.user_id == user_id)
+        .where(Contract.id == contract_id)
         .options(
             selectinload(Contract.fonds),
             selectinload(Contract.category),
@@ -300,6 +304,7 @@ async def get_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> Opt
             selectinload(Contract.milestones),
             selectinload(Contract.lifecycle),
             selectinload(Contract.lifecycle_stage),
+            selectinload(Contract.contract_type_rel),
         )
     )
     result = await db.execute(stmt)
@@ -322,24 +327,30 @@ async def create_contract(db: AsyncSession, user_id: UUID, data: dict) -> Contra
         start_date=data.get("start_date"),
         end_date=data.get("end_date"),
         status=data.get("status", "draft"),
-        contract_type=data.get("contract_type", "other"),
+        contract_type=data.get("contract_type", "other"),  # deprecated
+        contract_type_id=data.get("contract_type_id"),
         description=data.get("description"),
         keywords=data.get("keywords"),
+        requirement_no=data.get("requirement_no"),
+        subject_no=data.get("subject_no"),
+        procurement_no=data.get("procurement_no"),
+        subject_name=data.get("subject_name"),
         auto_renewal=data.get("auto_renewal", False),
         renewal_remind_days=data.get("renewal_remind_days", 7),
     )
     db.add(contract)
     await db.flush()
     await db.refresh(contract)
-    await db.refresh(contract, ["fonds", "category", "classification", "supplier_rel"])
+    await db.refresh(contract, ["fonds", "category", "classification", "contract_type_rel", "supplier_rel"])
 
     # 如果指定了生命周期模板，自动绑定到第一个阶段
     if data.get("lifecycle_id"):
         tmpl = await get_lifecycle_template(db, data["lifecycle_id"], user_id)
-        if tmpl and tmpl.stages:
-            first_stage = sorted(tmpl.stages, key=lambda s: s.sort_order)[0]
+        if tmpl:
             contract.lifecycle_id = tmpl.id
-            contract.lifecycle_stage_id = first_stage.id
+            if tmpl.stages:
+                first_stage = sorted(tmpl.stages, key=lambda s: s.sort_order)[0]
+                contract.lifecycle_stage_id = first_stage.id
             await db.flush()
             await db.refresh(contract, ["lifecycle", "lifecycle_stage"])
 
@@ -352,7 +363,7 @@ async def update_contract(
     """更新合同"""
     stmt = (
         select(Contract)
-        .where(Contract.id == contract_id, Contract.user_id == user_id)
+        .where(Contract.id == contract_id)
         .options(
             selectinload(Contract.fonds),
             selectinload(Contract.category),
@@ -368,9 +379,9 @@ async def update_contract(
     updatable = (
         "contract_no", "contract_name", "fonds_id", "category_id", "classification_id",
         "supplier_id", "amount", "currency", "sign_date", "start_date",
-        "end_date", "status", "contract_type", "description", "keywords",
+        "end_date", "status", "contract_type", "contract_type_id", "description", "keywords",
         "requirement_no", "subject_no", "procurement_no", "subject_name",
-        "lifecycle_id", "auto_renewal", "renewal_remind_days",
+        "lifecycle_id", "auto_renewal", "renewal_remind_days", "timeline_template_id",
     )
     for field in updatable:
         if field in data:
@@ -395,6 +406,7 @@ async def update_contract(
             selectinload(Contract.category),
             selectinload(Contract.classification),
             selectinload(Contract.supplier_rel),
+            selectinload(Contract.contract_type_rel),
             selectinload(Contract.lifecycle),
             selectinload(Contract.lifecycle_stage),
             selectinload(Contract.milestones),
@@ -407,7 +419,7 @@ async def update_contract(
 async def delete_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> bool:
     """删除合同（级联删除里程碑）"""
     stmt = select(Contract).where(
-        Contract.id == contract_id, Contract.user_id == user_id
+        Contract.id == contract_id
     )
     result = await db.execute(stmt)
     contract = result.scalar_one_or_none()
@@ -478,7 +490,7 @@ async def update_milestone(
     )
     result = await db.execute(stmt)
     milestone = result.scalar_one_or_none()
-    if not milestone or milestone.contract.user_id != user_id:
+    if not milestone:
         return None
 
     for field in ("name", "amount", "due_date", "completed_date", "status", "sort_order", "description"):
@@ -499,7 +511,7 @@ async def delete_milestone(db: AsyncSession, milestone_id: int, user_id: UUID) -
     )
     result = await db.execute(stmt)
     milestone = result.scalar_one_or_none()
-    if not milestone or milestone.contract.user_id != user_id:
+    if not milestone:
         return False
 
     await db.delete(milestone)
@@ -514,7 +526,6 @@ async def delete_milestone(db: AsyncSession, milestone_id: int, user_id: UUID) -
 
 async def list_suppliers(
     db: AsyncSession,
-    user_id: UUID,
     search: Optional[str] = None,
     status: Optional[str] = None,
     page: int = 1,
@@ -523,7 +534,7 @@ async def list_suppliers(
     """获取供应商列表，支持分页+搜索+状态筛选"""
     from uuid import UUID as PyUUID
 
-    conditions = [Supplier.user_id == user_id]
+    conditions = []
 
     if status is not None:
         conditions.append(Supplier.status == status)
@@ -567,7 +578,7 @@ async def get_supplier(db: AsyncSession, supplier_id: str, user_id: UUID) -> Opt
     except ValueError:
         return None
 
-    stmt = select(Supplier).where(Supplier.id == sid, Supplier.user_id == user_id)
+    stmt = select(Supplier).where(Supplier.id == sid)
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
@@ -605,7 +616,7 @@ async def update_supplier(
     except ValueError:
         return None
 
-    stmt = select(Supplier).where(Supplier.id == sid, Supplier.user_id == user_id)
+    stmt = select(Supplier).where(Supplier.id == sid)
     result = await db.execute(stmt)
     supplier = result.scalar_one_or_none()
     if not supplier:
@@ -634,7 +645,7 @@ async def delete_supplier(db: AsyncSession, supplier_id: str, user_id: UUID) -> 
     except ValueError:
         return False
 
-    stmt = select(Supplier).where(Supplier.id == sid, Supplier.user_id == user_id)
+    stmt = select(Supplier).where(Supplier.id == sid)
     result = await db.execute(stmt)
     supplier = result.scalar_one_or_none()
     if not supplier:
@@ -659,21 +670,21 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
     total_stmt = (
         select(func.count())
         .select_from(Contract)
-        .where(Contract.user_id == user_id)
+        .where(True)
     )
     total = (await db.execute(total_stmt)).scalar() or 0
 
     total_amount_stmt = (
         select(func.coalesce(func.sum(Contract.amount), 0))
         .select_from(Contract)
-        .where(Contract.user_id == user_id)
+        .where(True)
     )
     total_amount = float((await db.execute(total_amount_stmt)).scalar() or 0)
 
     # 按状态计数
     status_stmt = (
         select(Contract.status, func.count().label("count"))
-        .where(Contract.user_id == user_id)
+        .where(True)
         .group_by(Contract.status)
     )
     status_result = await db.execute(status_stmt)
@@ -693,7 +704,7 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
         select(func.count())
         .select_from(Milestone)
         .join(Contract, Milestone.contract_id == Contract.id)
-        .where(Contract.user_id == user_id)
+        .where(True)
     )
     total_milestones = (await db.execute(total_ms_stmt)).scalar() or 0
 
@@ -701,7 +712,7 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
         select(func.count())
         .select_from(Milestone)
         .join(Contract, Milestone.contract_id == Contract.id)
-        .where(Contract.user_id == user_id, Milestone.status == "completed")
+        .where(Milestone.status == "completed")
     )
     completed_milestones = (await db.execute(completed_ms_stmt)).scalar() or 0
 
@@ -709,7 +720,7 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
         select(func.count())
         .select_from(Milestone)
         .join(Contract, Milestone.contract_id == Contract.id)
-        .where(Contract.user_id == user_id, Milestone.status == "overdue")
+        .where(Milestone.status == "overdue")
     )
     overdue_count = (await db.execute(overdue_ms_stmt)).scalar() or 0
 
@@ -734,7 +745,7 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
     # ── by_type ──
     type_stmt = (
         select(Contract.contract_type, func.count().label("count"))
-        .where(Contract.user_id == user_id)
+        .where(True)
         .group_by(Contract.contract_type)
     )
     type_result = await db.execute(type_stmt)
@@ -756,7 +767,6 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
             select(func.count())
             .select_from(Contract)
             .where(
-                Contract.user_id == user_id,
                 extract("year", Contract.created_at) == year,
                 extract("month", Contract.created_at) == month,
             )
@@ -774,7 +784,6 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
         select(Fonds.name, func.count(Contract.id).label("count"))
         .outerjoin(Contract, and_(
             Contract.fonds_id == Fonds.id,
-            Contract.user_id == user_id,
         ))
         .group_by(Fonds.id, Fonds.name)
         .order_by(Fonds.sort_order.asc())
@@ -790,7 +799,6 @@ async def get_contract_dashboard(db: AsyncSession, user_id: UUID) -> dict:
     expiring_stmt = (
         select(Contract)
         .where(
-            Contract.user_id == user_id,
             Contract.status.notin_(["terminated", "completed"]),
             Contract.end_date >= today,
             Contract.end_date <= upcoming,
@@ -830,7 +838,7 @@ async def list_lifecycle_templates(
 ) -> list[LifecycleTemplate]:
     stmt = (
         select(LifecycleTemplate)
-        .where(LifecycleTemplate.user_id == user_id)
+        .where(True)
         .options(selectinload(LifecycleTemplate.stages))
         .order_by(LifecycleTemplate.updated_at.desc())
     )
@@ -843,7 +851,7 @@ async def get_lifecycle_template(
 ) -> Optional[LifecycleTemplate]:
     stmt = (
         select(LifecycleTemplate)
-        .where(LifecycleTemplate.id == template_id, LifecycleTemplate.user_id == user_id)
+        .where(LifecycleTemplate.id == template_id)
         .options(selectinload(LifecycleTemplate.stages))
     )
     result = await db.execute(stmt)
@@ -861,8 +869,13 @@ async def create_lifecycle_template(
     )
     db.add(template)
     await db.flush()
-    await db.refresh(template)
-    return template
+    # 重新查询以加载 selectin 关系，避免 MissingGreenlet
+    result = await db.execute(
+        select(LifecycleTemplate)
+        .options(selectinload(LifecycleTemplate.stages))
+        .where(LifecycleTemplate.id == template.id)
+    )
+    return result.scalar_one()
 
 
 async def update_lifecycle_template(
@@ -870,7 +883,7 @@ async def update_lifecycle_template(
 ) -> Optional[LifecycleTemplate]:
     stmt = (
         select(LifecycleTemplate)
-        .where(LifecycleTemplate.id == template_id, LifecycleTemplate.user_id == user_id)
+        .where(LifecycleTemplate.id == template_id)
         .options(selectinload(LifecycleTemplate.stages))
     )
     result = await db.execute(stmt)
@@ -881,7 +894,6 @@ async def update_lifecycle_template(
         if field in data:
             setattr(template, field, data[field])
     await db.flush()
-    await db.refresh(template)
     return template
 
 
@@ -889,7 +901,7 @@ async def delete_lifecycle_template(
     db: AsyncSession, template_id: int, user_id: UUID
 ) -> bool:
     stmt = select(LifecycleTemplate).where(
-        LifecycleTemplate.id == template_id, LifecycleTemplate.user_id == user_id
+        LifecycleTemplate.id == template_id
     )
     result = await db.execute(stmt)
     template = result.scalar_one_or_none()
@@ -936,7 +948,7 @@ async def update_lifecycle_stage(
     )
     result = await db.execute(stmt)
     stage = result.scalar_one_or_none()
-    if not stage or stage.template.user_id != user_id:
+    if not stage:
         return None
     for field in (
         "name", "stage_type", "sort_order", "description",
@@ -959,7 +971,7 @@ async def delete_lifecycle_stage(
     )
     result = await db.execute(stmt)
     stage = result.scalar_one_or_none()
-    if not stage or stage.template.user_id != user_id:
+    if not stage:
         return False
     await db.delete(stage)
     await db.flush()
@@ -998,6 +1010,35 @@ async def get_contract_lifecycle(
         return {"contract_id": contract_id, "has_lifecycle": False}
     tmpl = await get_lifecycle_template(db, contract.lifecycle_id, user_id)
     history = await get_contract_stage_history(db, contract_id, user_id)
+
+    # ── 阶段时间统计 ──
+    now = datetime.now()
+    # history 是 DESC，反转成 ASC 计算时序
+    asc_logs = list(reversed(history))
+    stage_stats: dict = {}  # {stage_id: {entered_at, left_at, duration_hours}}
+
+    for log in asc_logs:
+        # 进入 to_stage
+        if log.to_stage_id not in stage_stats:
+            stage_stats[log.to_stage_id] = {
+                "entered_at": log.created_at.isoformat() if log.created_at else None,
+                "left_at": None,
+                "duration_hours": None,
+            }
+        # 离开 from_stage（被后一条记录覆盖）——只记录第一次离开时间
+        if log.from_stage_id and log.from_stage_id in stage_stats:
+            if stage_stats[log.from_stage_id]["left_at"] is None:
+                stage_stats[log.from_stage_id]["left_at"] = log.created_at.isoformat() if log.created_at else None
+
+    # 计算每个阶段的时长（小时）
+    for sid, stat in stage_stats.items():
+        entered = stat.get("entered_at")
+        left = stat.get("left_at")
+        if entered:
+            et = datetime.fromisoformat(entered)
+            lt = datetime.fromisoformat(left) if left else now
+            stat["duration_hours"] = round((lt - et).total_seconds() / 3600, 1)
+
     return {
         "contract_id": contract_id,
         "has_lifecycle": True,
@@ -1005,7 +1046,22 @@ async def get_contract_lifecycle(
         "current_stage": _lifecycle_stage_to_dict(contract.lifecycle_stage) if contract.lifecycle_stage else None,
         "current_stage_id": contract.lifecycle_stage_id,
         "history": [_stage_log_to_dict(log) for log in history],
+        "stage_stats": stage_stats,
+        "stage_links": contract.stage_links or {},
     }
+
+
+async def update_stage_links(
+    db: AsyncSession, contract_id: int, user_id: UUID, stage_links: dict
+) -> Optional[dict]:
+    """更新合同各阶段的补充链接"""
+    contract = await get_contract(db, contract_id, user_id)
+    if not contract:
+        return None
+    contract.stage_links = stage_links
+    await db.commit()
+    await db.refresh(contract)
+    return {"contract_id": contract_id, "stage_links": contract.stage_links or {}}
 
 
 async def advance_contract_stage(
@@ -1013,7 +1069,7 @@ async def advance_contract_stage(
 ) -> Optional[dict]:
     stmt = (
         select(Contract)
-        .where(Contract.id == contract_id, Contract.user_id == user_id)
+        .where(Contract.id == contract_id)
         .options(
             selectinload(Contract.lifecycle),
             selectinload(Contract.lifecycle_stage),
@@ -1056,14 +1112,15 @@ async def advance_contract_stage(
     old_stage_id = contract.lifecycle_stage_id
     contract.lifecycle_stage_id = next_stage.id
 
-    stage_to_status = {
-        "drafting": "draft", "review": "draft",
-        "signing": "signed", "execution": "in_progress",
-        "renewal": "in_progress", "termination": "terminated", "archived": "completed",
-    }
-    new_status = stage_to_status.get(next_stage.stage_type)
-    if new_status:
-        contract.status = new_status
+    # 从数据库查询 StageType 获取对应状态，找不到则默认 "draft"
+    from app.models.contract import StageType
+    stmt = select(StageType).where(
+        StageType.code == next_stage.stage_type,
+    )
+    result = await db.execute(stmt)
+    stage_type_row = result.scalar_one_or_none()
+    new_status = stage_type_row.default_status if stage_type_row else "draft"
+    contract.status = new_status
 
     await db.flush()
     await db.refresh(contract, ["lifecycle_stage"])
@@ -1128,3 +1185,235 @@ def _stage_log_to_dict(log) -> dict:
         "notes": log.notes,
         "created_at": log.created_at.isoformat() if log.created_at else None,
     }
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  时间轴模板 (TimelineTemplate) CRUD
+# ══════════════════════════════════════════════════════════════════════
+
+async def list_timeline_templates(db: AsyncSession) -> list[TimelineTemplate]:
+    """获取所有时间轴模板，按 id 升序"""
+    stmt = select(TimelineTemplate).order_by(TimelineTemplate.id.asc())
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def create_timeline_template(db: AsyncSession, data: dict) -> TimelineTemplate:
+    """创建时间轴模板"""
+    template = TimelineTemplate(
+        name=data["name"],
+        description=data.get("description"),
+        is_active=data.get("is_active", True),
+    )
+    db.add(template)
+    await db.flush()
+    await db.refresh(template)
+    return template
+
+
+async def get_timeline_template(db: AsyncSession, template_id: int) -> Optional[TimelineTemplate]:
+    """获取单个时间轴模板（含节点）"""
+    stmt = (
+        select(TimelineTemplate)
+        .where(TimelineTemplate.id == template_id)
+        .options(selectinload(TimelineTemplate.nodes))
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def update_timeline_template(
+    db: AsyncSession, template_id: int, data: dict
+) -> Optional[TimelineTemplate]:
+    """更新时间轴模板"""
+    stmt = select(TimelineTemplate).where(TimelineTemplate.id == template_id)
+    result = await db.execute(stmt)
+    template = result.scalar_one_or_none()
+    if not template:
+        return None
+
+    for field in ("name", "description", "is_active"):
+        if field in data:
+            setattr(template, field, data[field])
+
+    await db.flush()
+    await db.refresh(template)
+    return template
+
+
+async def delete_timeline_template(db: AsyncSession, template_id: int) -> bool:
+    """删除时间轴模板（级联删除节点）"""
+    stmt = select(TimelineTemplate).where(TimelineTemplate.id == template_id)
+    result = await db.execute(stmt)
+    template = result.scalar_one_or_none()
+    if not template:
+        return False
+
+    await db.delete(template)
+    await db.flush()
+    return True
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  时间轴节点 (TimelineNode) CRUD
+# ══════════════════════════════════════════════════════════════════════
+
+async def list_timeline_nodes(db: AsyncSession, template_id: int) -> list[TimelineNode]:
+    """获取模板下的所有节点（按 sort_order 排序）"""
+    stmt = (
+        select(TimelineNode)
+        .where(TimelineNode.template_id == template_id)
+        .order_by(TimelineNode.sort_order.asc())
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def create_timeline_node(
+    db: AsyncSession, template_id: int, data: dict
+) -> TimelineNode:
+    """在模板中创建节点"""
+    node = TimelineNode(
+        template_id=template_id,
+        label=data["label"],
+        sort_order=data.get("sort_order", 0),
+        date_source=data.get("date_source"),
+        active_statuses=data.get("active_statuses", []),
+        icon_type=data.get("icon_type", "circle"),
+        is_required=data.get("is_required", True),
+        description=data.get("description"),
+    )
+    db.add(node)
+    await db.flush()
+    await db.refresh(node)
+    return node
+
+
+async def update_timeline_node(
+    db: AsyncSession, node_id: int, data: dict
+) -> Optional[TimelineNode]:
+    """更新节点"""
+    stmt = select(TimelineNode).where(TimelineNode.id == node_id)
+    result = await db.execute(stmt)
+    node = result.scalar_one_or_none()
+    if not node:
+        return None
+
+    for field in (
+        "label", "sort_order", "date_source", "active_statuses",
+        "icon_type", "is_required", "description",
+    ):
+        if field in data:
+            setattr(node, field, data[field])
+
+    await db.flush()
+    await db.refresh(node)
+    return node
+
+
+async def delete_timeline_node(db: AsyncSession, node_id: int) -> bool:
+    """删除节点"""
+    stmt = select(TimelineNode).where(TimelineNode.id == node_id)
+    result = await db.execute(stmt)
+    node = result.scalar_one_or_none()
+    if not node:
+        return False
+
+    await db.delete(node)
+    await db.flush()
+    return True
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  合同自定义时间轴节点 (ContractTimelineCustomNode) CRUD
+# ══════════════════════════════════════════════════════════════════════
+
+async def list_contract_custom_nodes(
+    db: AsyncSession, contract_id: int
+) -> list[ContractTimelineCustomNode]:
+    """获取合同的所有自定义节点（按 sort_order 排序）"""
+    stmt = (
+        select(ContractTimelineCustomNode)
+        .where(ContractTimelineCustomNode.contract_id == contract_id)
+        .order_by(ContractTimelineCustomNode.sort_order.asc())
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def create_contract_custom_node(
+    db: AsyncSession, contract_id: int, data: dict
+) -> ContractTimelineCustomNode:
+    """为合同创建自定义节点"""
+    node = ContractTimelineCustomNode(
+        contract_id=contract_id,
+        label=data["label"],
+        date_value=data.get("date_value"),
+        sort_order=data.get("sort_order", 0),
+        icon_type=data.get("icon_type", "plus"),
+    )
+    db.add(node)
+    await db.flush()
+    await db.refresh(node)
+    return node
+
+
+async def delete_contract_custom_node(db: AsyncSession, node_id: int) -> bool:
+    """删除合同自定义节点"""
+    stmt = select(ContractTimelineCustomNode).where(
+        ContractTimelineCustomNode.id == node_id
+    )
+    result = await db.execute(stmt)
+    node = result.scalar_one_or_none()
+    if not node:
+        return False
+
+    await db.delete(node)
+    await db.flush()
+    return True
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  种子数据
+# ══════════════════════════════════════════════════════════════════════
+
+async def seed_default_timeline_template(db: AsyncSession) -> Optional[TimelineTemplate]:
+    """如果没有任何模板，创建默认「标准流程」模板（含7个节点）"""
+    # 检查是否已存在模板
+    stmt = select(TimelineTemplate).limit(1)
+    result = await db.execute(stmt)
+    if result.scalar_one_or_none() is not None:
+        return None
+
+    template = TimelineTemplate(
+        name="标准流程",
+        description="合同标准流程时间轴",
+        is_active=True,
+    )
+    db.add(template)
+    await db.flush()
+
+    default_nodes = [
+        {"label": "RAT需求", "sort_order": 0, "date_source": None, "active_statuses": [], "icon_type": "file-text"},
+        {"label": "项目流程", "sort_order": 1, "date_source": None, "active_statuses": [], "icon_type": "git-branch"},
+        {"label": "非项目审议流程", "sort_order": 2, "date_source": None, "active_statuses": [], "icon_type": "clipboard-check"},
+        {"label": "请示审批流程", "sort_order": 3, "date_source": None, "active_statuses": [], "icon_type": "file-check"},
+        {"label": "采购需求上报", "sort_order": 4, "date_source": None, "active_statuses": [], "icon_type": "shopping-cart"},
+        {"label": "续约流程", "sort_order": 5, "date_source": None, "active_statuses": [], "icon_type": "refresh-cw"},
+        {"label": "费控流程", "sort_order": 6, "date_source": None, "active_statuses": [], "icon_type": "dollar-sign"},
+    ]
+    for nd in default_nodes:
+        db.add(TimelineNode(
+            template_id=template.id,
+            label=nd["label"],
+            sort_order=nd["sort_order"],
+            date_source=nd["date_source"],
+            active_statuses=nd["active_statuses"],
+            icon_type=nd["icon_type"],
+            is_required=True,
+            description=None,
+        ))
+
+    await db.flush()
+    await db.refresh(template, ["nodes"])
+    return template

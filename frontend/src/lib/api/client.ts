@@ -1,5 +1,5 @@
 // API 客户端 — 基于 axios 的统一请求封装
-// 响应格式: {code, message, data, paging:{total,page,size}}
+// 响应格式: {code, message, data, paging:{total,total_pages,page,page_size}}
 
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
@@ -46,8 +46,8 @@ axiosClient.interceptors.response.use(
 );
 
 /** 通用 GET 请求 */
-export async function apiGet<T = unknown>(url: string, params?: Record<string, unknown>): Promise<{ code: number; message: string; data: T; paging?: { total: number; page: number; size: number } }> {
-  return axiosClient.get(url, { params }) as unknown as Promise<{ code: number; message: string; data: T; paging?: { total: number; page: number; size: number } }>;
+export async function apiGet<T = unknown>(url: string, params?: Record<string, unknown>): Promise<{ code: number; message: string; data: T; paging?: { total: number; total_pages: number; page: number; page_size: number } }> {
+  return axiosClient.get(url, { params }) as unknown as Promise<{ code: number; message: string; data: T; paging?: { total: number; total_pages: number; page: number; page_size: number } }>;
 }
 
 /** 通用 POST 请求 */

@@ -23,7 +23,9 @@ export interface Contract {
   sign_date?: string;        // 签署日期
   start_date?: string;       // 服务开始日期
   end_date?: string;         // 服务结束日期
-  contract_type?: string;    // 类型
+  contract_type?: string;    // 类型 (deprecated)
+  contract_type_id?: number; // 合同类型ID (FK)
+  contract_type_name?: string; // 合同类型名称
   status: string;            // 状态: draft/signed/in_progress/completed/terminated
   description?: string;      // 描述
   keywords?: string[];       // 关键词
@@ -111,8 +113,9 @@ export interface DashboardData {
 
 export interface Paging {
   total: number;
+  total_pages: number;
   page: number;
-  size: number;
+  page_size: number;
 }
 
 export interface Supplier {
@@ -141,6 +144,7 @@ interface ContractStore {
   contracts: Contract[];
   paging: Paging | null;
   loading: boolean;
+  error: string | null;
 
   // 详情
   selectedContract: Contract | null;
@@ -211,6 +215,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
   contracts: [],
   paging: null,
   loading: false,
+  error: null,
   selectedContract: null,
   fonds: [],
   categories: [],
@@ -258,8 +263,30 @@ export const useContractStore = create<ContractStore>((set, get) => ({
         set({ contracts: [res.data, ...contracts] });
         return res.data;
       }
-    } catch {
-      // 静默处理
+      // 后端返回业务错误（code != 0）
+      set({ error: res.message || '创建合同失败' });
+      console.error('[Store] createContract 业务错误:', res.code, res.message);
+    } catch (error: unknown) {
+      // HTTP 错误（422 验证失败 / 500 服务器错误 / 网络错误）
+      const errResponse = (error as any)?.response;
+      const status = errResponse?.status;
+      if (errResponse?.data) {
+        const errData = errResponse.data;
+        // FastAPI 422: {"detail": [{"msg": "..."}]} → 拼接字段级错误
+        if (status === 422 && Array.isArray(errData.detail)) {
+          const messages = errData.detail.map((d: any) => d.msg || JSON.stringify(d));
+          set({ error: messages.join('; ') });
+        } else if (status >= 500) {
+          set({ error: '服务器内部错误，请联系管理员' });
+          console.error(`[Store] createContract HTTP ${status}:`, errData);
+        } else {
+          set({ error: errData.message || errData.detail || '创建合同失败' });
+        }
+      } else if (status) {
+        set({ error: `请求失败 (${status})` });
+      } else {
+        set({ error: '网络连接失败，请检查后端服务' });
+      }
     }
     return null;
   },
@@ -275,8 +302,31 @@ export const useContractStore = create<ContractStore>((set, get) => ({
         });
         return res.data;
       }
-    } catch {
-      // 静默处理
+      // 后端返回业务错误（code != 0）
+      set({ error: res.message || '更新合同失败' });
+      console.error('[Store] updateContract 业务错误:', res.code, res.message);
+    } catch (error: unknown) {
+      // HTTP 错误（422 验证失败 / 500 服务器错误 / 网络错误）
+      const errResponse = (error as any)?.response;
+      const status = errResponse?.status;
+      if (errResponse?.data) {
+        const errData = errResponse.data;
+        // FastAPI 422: {"detail": [{"msg": "..."}]} → 拼接字段级错误
+        if (status === 422 && Array.isArray(errData.detail)) {
+          const messages = errData.detail.map((d: any) => d.msg || JSON.stringify(d));
+          set({ error: messages.join('; ') });
+        } else if (status >= 500) {
+          // 5xx: 隐藏内部细节，给出可操作提示
+          set({ error: '服务器内部错误，请联系管理员' });
+          console.error(`[Store] updateContract HTTP ${status}:`, errData);
+        } else {
+          set({ error: errData.message || errData.detail || '更新合同失败' });
+        }
+      } else if (status) {
+        set({ error: `请求失败 (${status})` });
+      } else {
+        set({ error: '网络连接失败，请检查后端服务' });
+      }
     }
     return null;
   },
@@ -482,7 +532,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
   fetchSuppliers: async (search = '', status = '', page = 1, pageSize = 15) => {
     set({ supplierLoading: true });
     try {
-      const params: Record<string, unknown> = { page, size: pageSize };
+      const params: Record<string, unknown> = { page, page_size: pageSize };
       if (search) params.search = search;
       if (status) params.status = status;
       const res = await apiGet<Supplier[]>('/work/contracts/suppliers', params);
@@ -539,3 +589,38 @@ export const useContractStore = create<ContractStore>((set, get) => ({
     return false;
   },
 }));
+
+// ─── 时间轴模板类型 ─────────────────────────────────
+
+export interface TimelineTemplate {
+  id: number;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  nodes?: TimelineNode[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TimelineNode {
+  id: number;
+  template_id: number;
+  label: string;
+  sort_order: number;
+  date_source?: string;
+  active_statuses?: string[];
+  icon_type: string;
+  is_required: boolean;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContractTimelineCustomNode {
+  id: number;
+  contract_id: number;
+  label: string;
+  date_value?: string;
+  sort_order: number;
+  icon_type: string;
+}

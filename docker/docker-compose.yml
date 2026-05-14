@@ -65,17 +65,17 @@ services:
     container_name: xone-frontend
     ports:
       - "3000:3000"
-    volumes:
-      - ../frontend:/app            # 源码挂载，支持热更新
-      - /app/node_modules           # 匿名卷，隔离宿主机 node_modules
+    # NOTE: 不使用源码挂载，使用 Dockerfile 构建的 standalone 输出 (server.js)
+    # 如需 HMR 开发模式，用 docker-compose.dev.yml
     environment:
       <<: *common-env
       NEXT_PUBLIC_API_URL: /api
+      HOSTNAME: "0.0.0.0"
     networks:
       - xone
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://0.0.0.0:3000"]
       interval: 30s
       timeout: 10s
       retries: 3

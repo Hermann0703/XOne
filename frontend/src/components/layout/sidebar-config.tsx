@@ -15,12 +15,15 @@ import {
   FileText,
   BarChart3,
   Building2,
+  Tag,
   Package,
   Settings2,
   User,
   HardDrive,
   Search,
   Bell,
+  Layers,
+  Shield,
 } from 'lucide-react'
 import type { SidebarGroupProps } from './SidebarGroup'
 import type { SidebarMenuItemProps } from './SidebarMenuItem'
@@ -153,6 +156,12 @@ const workGroups: SidebarGroupConfig[] = [
             icon: GitBranch,
             label: '生命周期管理',
             path: '/work/contracts/lifecycle',
+          },
+          {
+            id: 'work.catalog',
+            icon: FolderOpen,
+            label: '台账管理',
+            path: '/work/catalog',
           },
         ],
       },

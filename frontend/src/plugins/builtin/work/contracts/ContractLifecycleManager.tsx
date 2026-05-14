@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   Plus,
@@ -32,34 +32,18 @@ import {
   type LifecycleTemplate,
   type LifecycleStage,
 } from './lifecycleStore'
+import { apiGet } from '@/lib/api/client'
 
-// ─── 阶段类型映射 ────────────────────────────────────
+// ─── 阶段类型数据 ────────────────────────────────────
 
-const STAGE_TYPE_LABELS: Record<string, string> = {
-  drafting: '合同拟定',
-  review: '法务审核',
-  signing: '合同签署',
-  execution: '合同履约',
-  renewal: '合同续约',
-  termination: '合同停止',
-  archived: '合同归档',
-  custom: '自定义',
+interface StageType {
+  id: number
+  name: string
+  code: string
+  color: string
+  default_status: string
+  sort_order: number
 }
-
-const STAGE_TYPE_COLORS: Record<string, string> = {
-  drafting: '#3b82f6',
-  review: '#f59e0b',
-  signing: '#10b981',
-  execution: '#8b5cf6',
-  renewal: '#ec4899',
-  termination: '#ef4444',
-  archived: '#6b7280',
-  custom: '#6b7280',
-}
-
-const STAGE_TYPE_OPTIONS = Object.entries(STAGE_TYPE_LABELS).map(
-  ([value, label]) => ({ value, label }),
-)
 
 // ─── 模板表单数据 ────────────────────────────────────
 
@@ -106,6 +90,35 @@ export default function ContractLifecycleManager() {
     deleteStage,
     reorderStages,
   } = useLifecycleStore()
+
+  // ── 阶段类型（API 动态加载） ──
+  const [stageTypes, setStageTypes] = useState<StageType[]>([])
+  const [stageTypesLoading, setStageTypesLoading] = useState(true)
+
+  useEffect(() => {
+    apiGet<StageType[]>('/work/contracts/stage-types/active')
+      .then((res) => {
+        if (res.code === 0 && Array.isArray(res.data)) {
+          setStageTypes(res.data)
+        }
+      })
+      .catch((err) => console.error('获取阶段类型失败:', err))
+      .finally(() => setStageTypesLoading(false))
+  }, [])
+
+  // 派生映射 — 从 API 数据构建 code→label / code→color / options
+  const stageTypeLabels = useMemo<Record<string, string>>(
+    () => Object.fromEntries(stageTypes.map((t) => [t.code, t.name])),
+    [stageTypes],
+  )
+  const stageTypeColors = useMemo<Record<string, string>>(
+    () => Object.fromEntries(stageTypes.map((t) => [t.code, t.color])),
+    [stageTypes],
+  )
+  const stageTypeOptions = useMemo(
+    () => stageTypes.map((t) => ({ value: t.code, label: t.name })),
+    [stageTypes],
+  )
 
   // 展开/折叠的模板 ID 集合
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
@@ -244,7 +257,7 @@ export default function ContractLifecycleManager() {
     setStageForm((prev) => ({
       ...prev,
       stage_type: value,
-      color: STAGE_TYPE_COLORS[value] || '#6b7280',
+      color: stageTypeColors[value] || '#6b7280',
     }))
   }
 
@@ -381,11 +394,11 @@ export default function ContractLifecycleManager() {
                                 <Badge
                                   variant="outline"
                                   style={{
-                                    borderColor: stage.color || STAGE_TYPE_COLORS[stage.stage_type],
-                                    color: stage.color || STAGE_TYPE_COLORS[stage.stage_type],
+                                    borderColor: stage.color || stageTypeColors[stage.stage_type],
+                                    color: stage.color || stageTypeColors[stage.stage_type],
                                   }}
                                 >
-                                  {STAGE_TYPE_LABELS[stage.stage_type] || stage.stage_type}
+                                  {stageTypeLabels[stage.stage_type] || stage.stage_type}
                                 </Badge>
 
                                 {/* 必填标记 */}
@@ -572,7 +585,7 @@ export default function ContractLifecycleManager() {
               阶段类型
             </label>
             <Select
-              options={STAGE_TYPE_OPTIONS}
+              options={stageTypeOptions}
               value={stageForm.stage_type}
               onChange={(e) => handleStageTypeChange(e.target.value)}
             />

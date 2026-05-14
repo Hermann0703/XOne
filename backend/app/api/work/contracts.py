@@ -1,15 +1,23 @@
 """合同管理模块 API — 全宗 / 分类 / 密级 / 合同 / 里程碑 / 仪表盘"""
 
-from datetime import date
+import logging
+from datetime import date, datetime
 from typing import List, Optional, Union
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator
+
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
+from app.models.contract import ContractType, Contract
 from app.services import contract_service
 
 router = APIRouter(prefix="/contracts", tags=["工作-合同"], redirect_slashes=False)
@@ -92,9 +100,10 @@ class ContractCreate(BaseModel):
     )
     contract_type: str = Field(
         default="other",
-        pattern="^(purchase|service|lease|sale|loan|other)$",
-        description="合同类型"
+        pattern="^[a-z_][a-z0-9_]*$",
+        description="合同类型 (deprecated → contract_type_id)"
     )
+    contract_type_id: Optional[int] = Field(default=None, gt=0, description="合同类型ID (FK → contract_types)")
     requirement_no: Optional[str] = Field(
         default=None, max_length=32,
         pattern="^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
@@ -147,9 +156,10 @@ class ContractUpdate(BaseModel):
     )
     contract_type: Optional[str] = Field(
         default=None,
-        pattern="^(purchase|service|lease|sale|loan|other)$",
-        description="合同类型"
+        pattern="^[a-z_][a-z0-9_]*$",
+        description="合同类型 (deprecated → contract_type_id)"
     )
+    contract_type_id: Optional[int] = Field(default=None, gt=0, description="合同类型ID (FK → contract_types)")
     requirement_no: Optional[str] = Field(
         default=None, max_length=32,
         pattern="^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
@@ -169,8 +179,9 @@ class ContractUpdate(BaseModel):
     description: Optional[str] = Field(default=None, description="描述")
     keywords: Optional[str] = Field(default=None, max_length=512, description="关键词")
     lifecycle_id: Optional[int] = Field(default=None, gt=0, description="生命周期模板ID")
-    auto_renewal: bool = Field(default=False, description="是否启用自动续约")
-    renewal_remind_days: int = Field(default=7, ge=1, le=90, description="续约提醒天数(到期前N天触发)")
+    auto_renewal: Optional[bool] = Field(default=None, description="是否启用自动续约")
+    renewal_remind_days: Optional[int] = Field(default=None, ge=1, le=90, description="续约提醒天数(到期前N天触发)")
+    timeline_template_id: Optional[int] = Field(default=None, gt=0, description="时间轴模板ID")
 
     @field_validator('keywords', mode='before')
     @classmethod
@@ -231,7 +242,8 @@ class LifecycleStageCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=128, description="阶段名称")
     stage_type: str = Field(
         default="custom",
-        pattern="^(drafting|review|signing|execution|renewal|termination|archived|custom)$",
+        min_length=1,
+        max_length=64,
         description="阶段类型"
     )
     sort_order: int = Field(default=0, ge=0, description="排序")
@@ -246,7 +258,8 @@ class LifecycleStageUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=128, description="阶段名称")
     stage_type: Optional[str] = Field(
         default=None,
-        pattern="^(drafting|review|signing|execution|renewal|termination|archived|custom)$",
+        min_length=1,
+        max_length=64,
         description="阶段类型"
     )
     sort_order: Optional[int] = Field(default=None, ge=0, description="排序")
@@ -298,6 +311,36 @@ class SupplierUpdate(BaseModel):
     rating: Optional[str] = Field(default=None, max_length=32, description="评级")
     status: Optional[str] = Field(default=None, max_length=32, description="状态")
     notes: Optional[str] = Field(default=None, description="备注")
+
+
+class CreateContractTypeRequest(BaseModel):
+    """创建合同类型请求"""
+    name: str = Field(..., min_length=1, max_length=64, description="类型名称")
+    code: str = Field(..., min_length=1, max_length=32, pattern="^[a-z_][a-z0-9_]*$", description="类型编码（英文小写+下划线）")
+    description: Optional[str] = Field(default=None, max_length=512, description="描述")
+    sort_order: int = Field(default=0, ge=0, description="排序")
+
+
+class UpdateContractTypeRequest(BaseModel):
+    """更新合同类型请求"""
+    name: Optional[str] = Field(default=None, min_length=1, max_length=64, description="类型名称")
+    description: Optional[str] = Field(default=None, max_length=512, description="描述")
+    sort_order: Optional[int] = Field(default=None, ge=0, description="排序")
+    is_active: Optional[bool] = Field(default=None, description="是否启用")
+
+
+class ContractTypeResponse(BaseModel):
+    """合同类型响应"""
+    id: int
+    name: str
+    code: str
+    description: Optional[str] = None
+    sort_order: int
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 # ── 辅助序列化函数 ────────────────────────────────────────────────────
@@ -382,12 +425,17 @@ def _contract_to_dict(ct) -> dict:
         "end_date": ct.end_date.isoformat() if ct.end_date else None,
         "status": ct.status,
         "contract_type": ct.contract_type,
+        "contract_type_id": ct.contract_type_id,
         "requirement_no": ct.requirement_no,
         "subject_no": ct.subject_no,
         "procurement_no": ct.procurement_no,
         "subject_name": ct.subject_name,
         "description": ct.description,
         "keywords": ct.keywords,
+        "fonds_name": ct.fonds.name if hasattr(ct, "fonds") and ct.fonds else None,
+        "category_name": ct.category.name if hasattr(ct, "category") and ct.category else None,
+        "classification_name": ct.classification.name if hasattr(ct, "classification") and ct.classification else None,
+        "contract_type_name": ct.contract_type_rel.name if hasattr(ct, "contract_type_rel") and ct.contract_type_rel else None,
         "created_at": ct.created_at.isoformat() if ct.created_at else None,
         "updated_at": ct.updated_at.isoformat() if ct.updated_at else None,
         "fonds": _safe_fonds_to_dict(ct.fonds) if hasattr(ct, "fonds") and ct.fonds else None,
@@ -397,8 +445,11 @@ def _contract_to_dict(ct) -> dict:
         "lifecycle_stage_id": ct.lifecycle_stage_id,
         "lifecycle_stage_name": ct.lifecycle_stage.name if ct.lifecycle_stage else None,
         "lifecycle_template_name": ct.lifecycle.name if ct.lifecycle else None,
+        "timeline_template_id": ct.timeline_template_id,
+        "timeline_template_name": ct.timeline_template.name if ct.timeline_template else None,
         "auto_renewal": ct.auto_renewal,
         "renewal_remind_days": ct.renewal_remind_days,
+        "stage_links": ct.stage_links or {},
     }
 
 
@@ -437,6 +488,19 @@ def _supplier_to_dict(s) -> dict:
         "notes": s.notes,
         "created_at": s.created_at.isoformat() if s.created_at else None,
         "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+    }
+
+
+def _contract_type_to_dict(ct: "ContractType") -> dict:
+    """ContractType → dict"""
+    return {
+        "id": ct.id,
+        "name": ct.name,
+        "code": ct.code,
+        "description": ct.description,
+        "sort_order": ct.sort_order,
+        "is_active": ct.is_active,
+        "created_at": ct.created_at.isoformat() if ct.created_at else None,
     }
 
 
@@ -612,11 +676,35 @@ async def delete_category(
 # ═══════════════════════════════════════════════════════════════════════
 
 
+
+# ── 密级种子数据 ─────────────────────────────────────
+
+async def _seed_default_classifications(db: AsyncSession) -> None:
+    """如果 classifications 表为空，插入默认密级"""
+    from app.models.contract import Classification as CL
+    result = await db.execute(select(func.count()).select_from(CL))
+    count = result.scalar() or 0
+    if count > 0:
+        return
+
+    defaults = [
+        {"name": "公开", "code": "public", "level": 0, "color": "green", "description": "可对外公开的信息"},
+        {"name": "内部", "code": "internal", "level": 1, "color": "blue", "description": "公司内部可流通"},
+        {"name": "普通商密", "code": "confidential", "level": 2, "color": "amber", "description": "一般商业秘密"},
+        {"name": "核心商密", "code": "secret", "level": 3, "color": "orange", "description": "核心商业秘密"},
+        {"name": "绝密", "code": "top_secret", "level": 4, "color": "red", "description": "最高密级，严格管控"},
+    ]
+    for d in defaults:
+        db.add(CL(**d))
+    await db.flush()
+
+
 @router.get("/classifications", summary="获取密级列表")
 async def get_classifications_list(
     db: AsyncSession = Depends(get_db),
 ):
     """获取所有密级"""
+    await _seed_default_classifications(db)
     items = await contract_service.list_classifications(db)
     return {
         "code": 0,
@@ -701,7 +789,8 @@ async def get_contracts_list(
     fonds_id: Optional[int] = Query(default=None, description="按全宗ID筛选"),
     category_id: Optional[int] = Query(default=None, description="按分类ID筛选"),
     status: Optional[str] = Query(default=None, description="按状态筛选"),
-    contract_type: Optional[str] = Query(default=None, description="按类型筛选"),
+    contract_type: Optional[str] = Query(default=None, description="按类型筛选 (deprecated, 用contract_type_id)"),
+    contract_type_id: Optional[int] = Query(default=None, description="按合同类型ID筛选"),
     search: Optional[str] = Query(default=None, description="搜索关键词"),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
@@ -715,6 +804,7 @@ async def get_contracts_list(
         category_id=category_id,
         status=status,
         contract_type=contract_type,
+        contract_type_id=contract_type_id,
         search=search,
         page=page,
         page_size=page_size,
@@ -739,12 +829,31 @@ async def create_contract(
     db: AsyncSession = Depends(get_db),
 ):
     """创建新的合同"""
-    contract = await contract_service.create_contract(db, current_user.id, body.model_dump())
-    return {
-        "code": 0,
-        "message": "合同创建成功",
-        "data": _contract_to_dict(contract),
-    }
+    try:
+        contract = await contract_service.create_contract(db, current_user.id, body.model_dump())
+        return {
+            "code": 0,
+            "message": "合同创建成功",
+            "data": _contract_to_dict(contract),
+        }
+    except IntegrityError as e:
+        await db.rollback()
+        orig = str(e.orig).lower() if e.orig else ""
+        if "unique" in orig or "duplicate" in orig:
+            if "contract_no" in orig:
+                return {"code": 1, "message": "合同编号已存在，请使用不同的编号"}
+            return {"code": 1, "message": "数据唯一性冲突，请检查输入"}
+        if "foreign key" in orig or "fk_" in orig:
+            return {"code": 1, "message": "关联数据不存在，请检查全宗/分类/供应商/合同类型等是否有效"}
+        logger.exception("创建合同 IntegrityError: %s", e)
+        return {"code": 1, "message": "数据完整性错误，请检查输入"}
+    except ValueError as e:
+        await db.rollback()
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        await db.rollback()
+        logger.exception("创建合同失败: user_id=%s", current_user.id)
+        raise HTTPException(status_code=500, detail=f"服务器内部错误: {str(e)}")
 
 
 
@@ -765,7 +874,6 @@ async def get_suppliers_list(
     """获取供应商列表，支持分页+搜索+状态筛选"""
     items, total = await contract_service.list_suppliers(
         db,
-        user_id=current_user.id,
         search=search,
         status=status,
         page=page,
@@ -1076,6 +1184,712 @@ async def get_contract_stage_history_endpoint(
     }
 
 
+
+
+class StageLinksUpdate(BaseModel):
+    """更新合同阶段补充链接请求体 — 全量替换 stage_links 字典"""
+    stage_links: dict = Field(..., description="阶段链接映射: { 'stage_id': [{url, label}, ...] }")
+
+
+@router.put("/{contract_id}/lifecycle/stage-links", summary="更新合同阶段补充链接")
+async def update_stage_links(
+    contract_id: int,
+    body: StageLinksUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """设置某个合同生命周期各阶段的补充链接（全量替换）"""
+    result = await contract_service.update_stage_links(
+        db, contract_id, user.id, body.stage_links
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="合同不存在")
+    return {"code": 0, "message": "更新成功", "data": result}
+
+# ═══════════════════════════════════════════════════════════
+#  合同类型 CRUD
+# ═══════════════════════════════════════════════════════════
+
+@router.get("/contract-types", summary="获取合同类型列表")
+async def list_contract_types(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    include_inactive: bool = Query(default=False, description="是否包含已禁用的类型"),
+):
+    """获取当前用户的所有合同类型"""
+    conditions = []
+    if not include_inactive:
+        conditions.append(ContractType.is_active == True)
+    result = await db.execute(
+        select(ContractType).where(*conditions).order_by(ContractType.sort_order, ContractType.id)
+    )
+    types = result.scalars().all()
+    return {"code": 0, "data": [_contract_type_to_dict(t) for t in types]}
+
+
+@router.post("/contract-types", summary="创建合同类型")
+async def create_contract_type(
+    body: CreateContractTypeRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """创建新的合同类型"""
+    # 检查 code 唯一性
+    existing = await db.execute(
+        select(ContractType).where(
+            ContractType.user_id == user.id,
+            ContractType.code == body.code
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail=f"编码 '{body.code}' 已存在")
+
+    ct = ContractType(
+        user_id=user.id,
+        name=body.name,
+        code=body.code,
+        description=body.description,
+        sort_order=body.sort_order,
+        is_active=True,
+    )
+    db.add(ct)
+    await db.commit()
+    await db.refresh(ct)
+    return {"code": 0, "data": _contract_type_to_dict(ct), "message": "合同类型创建成功"}
+
+
+@router.get("/contract-types/{type_id}", summary="获取合同类型详情")
+async def get_contract_type(
+    type_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取单个合同类型详情"""
+    result = await db.execute(
+        select(ContractType).where(ContractType.id == type_id, ContractType.user_id == user.id)
+    )
+    ct = result.scalar_one_or_none()
+    if not ct:
+        raise HTTPException(status_code=404, detail="合同类型不存在")
+    return {"code": 0, "data": _contract_type_to_dict(ct)}
+
+
+@router.patch("/contract-types/{type_id}", summary="更新合同类型")
+async def update_contract_type(
+    type_id: int,
+    body: UpdateContractTypeRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """更新合同类型信息"""
+    result = await db.execute(
+        select(ContractType).where(ContractType.id == type_id, ContractType.user_id == user.id)
+    )
+    ct = result.scalar_one_or_none()
+    if not ct:
+        raise HTTPException(status_code=404, detail="合同类型不存在")
+
+    update_data = body.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(ct, key, value)
+
+    await db.commit()
+    await db.refresh(ct)
+    return {"code": 0, "data": _contract_type_to_dict(ct), "message": "合同类型更新成功"}
+
+
+@router.delete("/contract-types/{type_id}", summary="删除合同类型")
+async def delete_contract_type(
+    type_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除合同类型（检查是否有关联合同）"""
+    result = await db.execute(
+        select(ContractType).where(ContractType.id == type_id, ContractType.user_id == user.id)
+    )
+    ct = result.scalar_one_or_none()
+    if not ct:
+        raise HTTPException(status_code=404, detail="合同类型不存在")
+
+    # 检查是否有关联合同
+    contract_count = await db.execute(
+        select(func.count(Contract.id)).where(
+            Contract.user_id == user.id,
+            Contract.contract_type == ct.code
+        )
+    )
+    if contract_count.scalar() > 0:
+        raise HTTPException(status_code=400, detail=f"该类型下有 {contract_count.scalar()} 个合同，无法删除")
+
+    await db.delete(ct)
+    await db.commit()
+    return {"code": 0, "message": "合同类型删除成功"}
+
+
+# ═══════════════════════════════════════════════════════════
+#  阶段类型 (StageType) CRUD — 必须在 /{contract_id} 之前定义
+# ═══════════════════════════════════════════════════════════
+
+# ── StageType Schemas ─────────────────────────────────────
+
+class StageTypeCreate(BaseModel):
+    """创建阶段类型请求体"""
+    name: str = Field(..., min_length=1, max_length=64, description="中文名称")
+    code: str = Field(..., min_length=1, max_length=32, pattern="^[a-z_]+$", description="英文编码(小写+下划线)")
+    color: str = Field(default="gray", min_length=1, max_length=16, description="显示颜色(hex或named)")
+    default_status: str = Field(default="draft", min_length=1, max_length=32, description="对应合同状态")
+    description: Optional[str] = Field(default=None, description="描述")
+    sort_order: int = Field(default=0, description="排序")
+
+
+class StageTypeUpdate(BaseModel):
+    """更新阶段类型请求体"""
+    name: Optional[str] = Field(default=None, min_length=1, max_length=64, description="中文名称")
+    code: Optional[str] = Field(default=None, min_length=1, max_length=32, pattern="^[a-z_]+$", description="英文编码(小写+下划线)")
+    color: Optional[str] = Field(default=None, min_length=1, max_length=16, description="显示颜色(hex或named)")
+    default_status: Optional[str] = Field(default=None, min_length=1, max_length=32, description="对应合同状态")
+    description: Optional[str] = Field(default=None, description="描述")
+    sort_order: Optional[int] = Field(default=None, description="排序")
+    is_active: Optional[bool] = Field(default=None, description="是否启用")
+
+
+def _stage_type_to_dict(st: "StageType") -> dict:
+    """StageType → dict"""
+    from app.models.contract import StageType as ST
+    return {
+        "id": st.id,
+        "name": st.name,
+        "code": st.code,
+        "color": st.color,
+        "default_status": st.default_status,
+        "description": st.description,
+        "sort_order": st.sort_order,
+        "is_active": st.is_active,
+        "created_at": st.created_at.isoformat() if st.created_at else None,
+        "updated_at": st.updated_at.isoformat() if st.updated_at else None,
+    }
+
+
+# ── 种子数据 ─────────────────────────────────────────────
+
+async def _seed_default_stage_types(db: AsyncSession, user_id: UUID) -> None:
+    """如果 stage_types 表为空，插入默认的8种阶段类型"""
+    from app.models.contract import StageType as ST
+    result = await db.execute(
+        select(func.count()).select_from(ST).where(ST.user_id == user_id)
+    )
+    count = result.scalar() or 0
+    if count > 0:
+        return
+
+    defaults = [
+        {"name": "拟定", "code": "drafting", "color": "blue", "default_status": "draft", "sort_order": 1},
+        {"name": "审核", "code": "review", "color": "amber", "default_status": "draft", "sort_order": 2},
+        {"name": "签署", "code": "signing", "color": "green", "default_status": "signed", "sort_order": 3},
+        {"name": "履约", "code": "execution", "color": "purple", "default_status": "in_progress", "sort_order": 4},
+        {"name": "续约", "code": "renewal", "color": "pink", "default_status": "in_progress", "sort_order": 5},
+        {"name": "终止", "code": "termination", "color": "red", "default_status": "terminated", "sort_order": 6},
+        {"name": "归档", "code": "archived", "color": "gray", "default_status": "completed", "sort_order": 7},
+        {"name": "自定义", "code": "custom", "color": "gray", "default_status": "draft", "sort_order": 8},
+    ]
+    for d in defaults:
+        db.add(ST(
+            user_id=user_id,
+            name=d["name"],
+            code=d["code"],
+            color=d["color"],
+            default_status=d["default_status"],
+            sort_order=d["sort_order"],
+            is_active=True,
+        ))
+    await db.flush()
+
+
+async def _seed_default_timeline_template(db: AsyncSession) -> None:
+    """如果 timeline_templates 表为空，创建默认「标准流程」模板"""
+    await contract_service.seed_default_timeline_template(db)
+
+
+# ── StageType 端点 ────────────────────────────────────────
+
+@router.get("/stage-types", summary="获取阶段类型列表")
+async def list_stage_types(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    include_inactive: bool = Query(default=False, description="是否包含已禁用的类型"),
+):
+    """获取当前用户的所有阶段类型"""
+    from app.models.contract import StageType as ST
+    await _seed_default_stage_types(db, user.id)
+
+    conditions = [ST.user_id == user.id]
+    if not include_inactive:
+        conditions.append(ST.is_active == True)
+
+    result = await db.execute(
+        select(ST).where(*conditions).order_by(ST.sort_order, ST.id)
+    )
+    items = result.scalars().all()
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": [_stage_type_to_dict(t) for t in items],
+    }
+
+
+@router.get("/stage-types/active", summary="获取启用的阶段类型列表")
+async def list_active_stage_types(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取仅启用的阶段类型，供前端下拉使用"""
+    from app.models.contract import StageType as ST
+    await _seed_default_stage_types(db, user.id)
+
+    result = await db.execute(
+        select(ST)
+        .where(ST.user_id == user.id, ST.is_active == True)
+        .order_by(ST.sort_order, ST.id)
+    )
+    items = result.scalars().all()
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": [_stage_type_to_dict(t) for t in items],
+    }
+
+
+@router.post("/stage-types", summary="创建阶段类型")
+async def create_stage_type(
+    body: StageTypeCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """创建新的阶段类型"""
+    from app.models.contract import StageType as ST
+
+    # 检查 code 唯一性
+    existing = await db.execute(
+        select(ST).where(ST.user_id == user.id, ST.code == body.code)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail=f"编码 '{body.code}' 已存在")
+
+    st = ST(
+        user_id=user.id,
+        name=body.name,
+        code=body.code,
+        color=body.color,
+        default_status=body.default_status,
+        description=body.description,
+        sort_order=body.sort_order,
+        is_active=True,
+    )
+    db.add(st)
+    await db.commit()
+    await db.refresh(st)
+    return {
+        "code": 0,
+        "message": "阶段类型创建成功",
+        "data": _stage_type_to_dict(st),
+    }
+
+
+@router.get("/stage-types/{stage_type_id}", summary="获取阶段类型详情")
+async def get_stage_type(
+    stage_type_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取单个阶段类型详情"""
+    from app.models.contract import StageType as ST
+    result = await db.execute(
+        select(ST).where(ST.id == stage_type_id, ST.user_id == user.id)
+    )
+    st = result.scalar_one_or_none()
+    if not st:
+        raise HTTPException(status_code=404, detail="阶段类型不存在")
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": _stage_type_to_dict(st),
+    }
+
+
+@router.patch("/stage-types/{stage_type_id}", summary="更新阶段类型")
+async def update_stage_type(
+    stage_type_id: int,
+    body: StageTypeUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """更新阶段类型信息"""
+    from app.models.contract import StageType as ST
+    result = await db.execute(
+        select(ST).where(ST.id == stage_type_id, ST.user_id == user.id)
+    )
+    st = result.scalar_one_or_none()
+    if not st:
+        raise HTTPException(status_code=404, detail="阶段类型不存在")
+
+    update_data = body.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(st, key, value)
+
+    await db.commit()
+    await db.refresh(st)
+    return {
+        "code": 0,
+        "message": "阶段类型更新成功",
+        "data": _stage_type_to_dict(st),
+    }
+
+
+@router.delete("/stage-types/{stage_type_id}", summary="删除阶段类型")
+async def delete_stage_type(
+    stage_type_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除阶段类型"""
+    from app.models.contract import StageType as ST
+    result = await db.execute(
+        select(ST).where(ST.id == stage_type_id, ST.user_id == user.id)
+    )
+    st = result.scalar_one_or_none()
+    if not st:
+        raise HTTPException(status_code=404, detail="阶段类型不存在")
+
+    await db.delete(st)
+    await db.commit()
+    return {
+        "code": 0,
+        "message": "阶段类型删除成功",
+        "data": None,
+    }
+
+
+# ═══════════════════════════════════════════════════════════
+#  时间轴模板 (TimelineTemplate) CRUD — 必须在 /{contract_id} 之前定义
+# ═══════════════════════════════════════════════════════════
+
+# ── Timeline Schemas ─────────────────────────────────────
+
+class TimelineTemplateCreate(BaseModel):
+    """创建时间轴模板请求体"""
+    name: str = Field(..., min_length=1, max_length=128, description="模板名称")
+    description: Optional[str] = Field(default=None, description="描述")
+    is_active: bool = Field(default=True, description="是否启用")
+
+
+class TimelineTemplateUpdate(BaseModel):
+    """更新时间轴模板请求体"""
+    name: Optional[str] = Field(default=None, min_length=1, max_length=128, description="模板名称")
+    description: Optional[str] = Field(default=None, description="描述")
+    is_active: Optional[bool] = Field(default=None, description="是否启用")
+
+
+class TimelineNodeCreate(BaseModel):
+    """创建时间轴节点请求体"""
+    label: str = Field(..., min_length=1, max_length=128, description="节点名称")
+    sort_order: int = Field(default=0, description="排序")
+    date_source: Optional[str] = Field(default=None, max_length=64, description="日期来源")
+    active_statuses: Optional[list] = Field(default=None, description="此节点在哪些合同状态下视为已达成")
+    icon_type: str = Field(default="circle", max_length=32, description="图标类型")
+    is_required: bool = Field(default=True, description="是否必选")
+    description: Optional[str] = Field(default=None, description="节点说明")
+
+
+class TimelineNodeUpdate(BaseModel):
+    """更新时间轴节点请求体"""
+    label: Optional[str] = Field(default=None, min_length=1, max_length=128, description="节点名称")
+    sort_order: Optional[int] = Field(default=None, description="排序")
+    date_source: Optional[str] = Field(default=None, max_length=64, description="日期来源")
+    active_statuses: Optional[list] = Field(default=None, description="此节点在哪些合同状态下视为已达成")
+    icon_type: Optional[str] = Field(default=None, max_length=32, description="图标类型")
+    is_required: Optional[bool] = Field(default=None, description="是否必选")
+    description: Optional[str] = Field(default=None, description="节点说明")
+
+
+class ContractTimelineCustomNodeCreate(BaseModel):
+    """创建合同自定义时间轴节点请求体"""
+    label: str = Field(..., min_length=1, max_length=128, description="节点名称")
+    date_value: Optional[date] = Field(default=None, description="节点日期")
+    sort_order: int = Field(default=0, description="排序")
+    icon_type: str = Field(default="plus", max_length=32, description="图标类型")
+
+
+# ── 序列化辅助 ───────────────────────────────────────────
+
+def _timeline_template_to_dict(t) -> dict:
+    """TimelineTemplate → dict"""
+    return {
+        "id": t.id,
+        "name": t.name,
+        "description": t.description,
+        "is_active": t.is_active,
+        "nodes": [_timeline_node_to_dict(n) for n in (t.nodes or [])],
+        "created_at": t.created_at.isoformat() if t.created_at else None,
+        "updated_at": t.updated_at.isoformat() if t.updated_at else None,
+    }
+
+
+def _timeline_node_to_dict(n) -> dict:
+    """TimelineNode → dict"""
+    return {
+        "id": n.id,
+        "template_id": n.template_id,
+        "label": n.label,
+        "sort_order": n.sort_order,
+        "date_source": n.date_source,
+        "active_statuses": n.active_statuses,
+        "icon_type": n.icon_type,
+        "is_required": n.is_required,
+        "description": n.description,
+        "created_at": n.created_at.isoformat() if n.created_at else None,
+        "updated_at": n.updated_at.isoformat() if n.updated_at else None,
+    }
+
+
+def _contract_custom_node_to_dict(n) -> dict:
+    """ContractTimelineCustomNode → dict"""
+    return {
+        "id": n.id,
+        "contract_id": n.contract_id,
+        "label": n.label,
+        "date_value": n.date_value.isoformat() if n.date_value else None,
+        "sort_order": n.sort_order,
+        "icon_type": n.icon_type,
+        "created_at": n.created_at.isoformat() if n.created_at else None,
+        "updated_at": n.updated_at.isoformat() if n.updated_at else None,
+    }
+
+
+# ── Timeline Templates 端点 ──────────────────────────────
+
+@router.get("/timeline-templates", summary="获取时间轴模板列表")
+async def list_timeline_templates(
+    db: AsyncSession = Depends(get_db),
+):
+    """获取所有时间轴模板（含节点）"""
+    await _seed_default_timeline_template(db)
+    templates = await contract_service.list_timeline_templates(db)
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": [_timeline_template_to_dict(t) for t in templates],
+    }
+
+
+@router.post("/timeline-templates", summary="创建时间轴模板")
+async def create_timeline_template(
+    body: TimelineTemplateCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """创建新的时间轴模板"""
+    template = await contract_service.create_timeline_template(
+        db, body.model_dump()
+    )
+    return {
+        "code": 0,
+        "message": "时间轴模板创建成功",
+        "data": _timeline_template_to_dict(template),
+    }
+
+
+@router.get("/timeline-templates/{template_id}", summary="获取时间轴模板详情")
+async def get_timeline_template(
+    template_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """获取单个时间轴模板及其所有节点"""
+    template = await contract_service.get_timeline_template(db, template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="时间轴模板不存在")
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": _timeline_template_to_dict(template),
+    }
+
+
+@router.patch("/timeline-templates/{template_id}", summary="更新时间轴模板")
+async def update_timeline_template(
+    template_id: int,
+    body: TimelineTemplateUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """更新时间轴模板信息"""
+    template = await contract_service.update_timeline_template(
+        db, template_id, body.model_dump(exclude_unset=True)
+    )
+    if not template:
+        raise HTTPException(status_code=404, detail="时间轴模板不存在")
+    return {
+        "code": 0,
+        "message": "时间轴模板更新成功",
+        "data": _timeline_template_to_dict(template),
+    }
+
+
+@router.delete("/timeline-templates/{template_id}", summary="删除时间轴模板")
+async def delete_timeline_template(
+    template_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除时间轴模板（级联删除其下所有节点）"""
+    success = await contract_service.delete_timeline_template(db, template_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="时间轴模板不存在")
+    return {
+        "code": 0,
+        "message": "时间轴模板删除成功",
+        "data": None,
+    }
+
+
+# ── Timeline Nodes 端点 ──────────────────────────────────
+
+@router.get("/timeline-templates/{template_id}/nodes", summary="获取模板节点列表")
+async def list_timeline_nodes(
+    template_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """获取指定模板下的所有节点"""
+    nodes = await contract_service.list_timeline_nodes(db, template_id)
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": [_timeline_node_to_dict(n) for n in nodes],
+    }
+
+
+@router.post("/timeline-templates/{template_id}/nodes", summary="创建模板节点")
+async def create_timeline_node(
+    template_id: int,
+    body: TimelineNodeCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """在指定模板中创建节点"""
+    node = await contract_service.create_timeline_node(
+        db, template_id, body.model_dump()
+    )
+    return {
+        "code": 0,
+        "message": "节点创建成功",
+        "data": _timeline_node_to_dict(node),
+    }
+
+
+@router.patch("/timeline-templates/{template_id}/nodes/{node_id}", summary="更新模板节点")
+async def update_timeline_node(
+    template_id: int,
+    node_id: int,
+    body: TimelineNodeUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """更新节点信息"""
+    node = await contract_service.update_timeline_node(
+        db, node_id, body.model_dump(exclude_unset=True)
+    )
+    if not node:
+        raise HTTPException(status_code=404, detail="节点不存在")
+    return {
+        "code": 0,
+        "message": "节点更新成功",
+        "data": _timeline_node_to_dict(node),
+    }
+
+
+@router.delete("/timeline-templates/{template_id}/nodes/{node_id}", summary="删除模板节点")
+async def delete_timeline_node(
+    template_id: int,
+    node_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除节点"""
+    success = await contract_service.delete_timeline_node(db, node_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="节点不存在")
+    return {
+        "code": 0,
+        "message": "节点删除成功",
+        "data": None,
+    }
+
+
+# ── Contract Custom Timeline Nodes 端点 ──────────────────
+
+@router.get("/{contract_id}/timeline-custom-nodes", summary="获取合同自定义时间轴节点")
+async def list_contract_custom_nodes(
+    contract_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取指定合同的所有自定义时间轴节点"""
+    # 用户隔离：先确认合同属于当前用户
+    contract = await contract_service.get_contract(db, contract_id, current_user.id)
+    if not contract:
+        raise HTTPException(status_code=404, detail="合同不存在")
+    nodes = await contract_service.list_contract_custom_nodes(db, contract_id)
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "data": [_contract_custom_node_to_dict(n) for n in nodes],
+    }
+
+
+@router.post("/{contract_id}/timeline-custom-nodes", summary="创建合同自定义时间轴节点")
+async def create_contract_custom_node(
+    contract_id: int,
+    body: ContractTimelineCustomNodeCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """为指定合同创建自定义时间轴节点"""
+    # 用户隔离
+    contract = await contract_service.get_contract(db, contract_id, current_user.id)
+    if not contract:
+        raise HTTPException(status_code=404, detail="合同不存在")
+    node = await contract_service.create_contract_custom_node(
+        db, contract_id, body.model_dump()
+    )
+    return {
+        "code": 0,
+        "message": "自定义节点创建成功",
+        "data": _contract_custom_node_to_dict(node),
+    }
+
+
+@router.delete("/{contract_id}/timeline-custom-nodes/{node_id}", summary="删除合同自定义时间轴节点")
+async def delete_contract_custom_node(
+    contract_id: int,
+    node_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除指定合同的自定义时间轴节点"""
+    # 用户隔离
+    contract = await contract_service.get_contract(db, contract_id, current_user.id)
+    if not contract:
+        raise HTTPException(status_code=404, detail="合同不存在")
+    success = await contract_service.delete_contract_custom_node(db, node_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="自定义节点不存在")
+    return {
+        "code": 0,
+        "message": "自定义节点删除成功",
+        "data": None,
+    }
+
+
 @router.get("/{contract_id}", summary="获取合同详情")
 async def get_contract(
     contract_id: int,
@@ -1213,4 +2027,5 @@ async def delete_milestone(
         "message": "里程碑删除成功",
         "data": None,
     }
+
 

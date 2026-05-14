@@ -1,6 +1,7 @@
 from app.models.user import User
 from app.models.project import Project, ProjectColumn, ProjectTask, ProjectMilestone
-from app.models.contract import Fonds, Category, Classification, Contract, Milestone
+from app.models.contract import Fonds, Category, Classification, Contract, Milestone, ContractType, StageType
+from app.models.lookup import LookupDict
 from app.models.supplier import Supplier
 from app.models.archive import Archive, BorrowRecord, AppraisalRecord, ArchiveFile
 from app.models.dispatch import DispatchDataSource, DispatchTask, DispatchLog
@@ -15,7 +16,8 @@ from app.models.assets import Account, Transaction
 __all__ = [
     "User",
     "Project", "ProjectColumn", "ProjectTask", "ProjectMilestone",
-    "Fonds", "Category", "Classification", "Contract", "Milestone",
+    "Fonds", "Category", "Classification", "Contract", "Milestone", "ContractType", "StageType",
+    "LookupDict",
     "Supplier",
     "Archive", "BorrowRecord", "AppraisalRecord", "ArchiveFile",
     "DispatchDataSource", "DispatchTask", "DispatchLog",

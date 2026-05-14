@@ -68,8 +68,9 @@ export interface OverviewData {
 
 export interface Paging {
   total: number;
+  total_pages: number;
   page: number;
-  size: number;
+  page_size: number;
 }
 
 // ─── Store 接口 ─────────────────────────────────────

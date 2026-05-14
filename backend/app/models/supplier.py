@@ -1,8 +1,8 @@
 from typing import Optional
-from uuid import uuid4
+from uuid import UUID, uuid4
 
-from sqlalchemy import Column, String, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import String, Text, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID as SAUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -12,8 +12,8 @@ from app.models.base import TimestampMixin
 class Supplier(Base, TimestampMixin):
     __tablename__ = "suppliers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), primary_key=True, default=uuid4, comment="供应商ID")
+    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, comment="用户ID")
 
     name: Mapped[str] = mapped_column(String(256), nullable=False, comment="供应商名称")
     contact_person: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, comment="联系人")

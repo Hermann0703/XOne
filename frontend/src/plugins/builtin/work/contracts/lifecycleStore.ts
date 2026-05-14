@@ -84,12 +84,14 @@ export const useLifecycleStore = create<LifecycleStore>((set, get) => ({
       const res = await apiPost<LifecycleTemplate>('/work/contracts/lifecycle/templates', data);
       if (res.code === 0) {
         const { templates } = get();
-        set({ templates: [...templates, res.data] });
+        set({ templates: [...templates, res.data], error: null });
         return res.data;
       }
       console.error('[LifecycleStore] createTemplate 业务错误:', res.message);
+      set({ error: res.message || '创建模板失败' });
     } catch (e: unknown) {
       console.error('[LifecycleStore] createTemplate 请求失败:', e);
+      set({ error: '创建模板失败，请检查网络或联系管理员' });
     }
     return null;
   },

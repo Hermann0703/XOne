@@ -13,6 +13,7 @@ from app.api.work.archives import router as archives_router
 from app.api.work.storage import router as storage_router
 from app.api.work.knowledge import router as knowledge_router
 from app.api.work.dispatch import router as dispatch_router
+from app.api.work.lookup import router as lookup_router
 from app.api.work.search import router as search_router
 from app.api.work.dashboard import router as work_dashboard_router
 from app.api.work.project import router as project_router
@@ -31,6 +32,7 @@ api_router.include_router(contracts_router, prefix="/work", tags=["工作-合同
 api_router.include_router(archives_router, prefix="/work", tags=["工作-档案"])
 api_router.include_router(storage_router, prefix="/work", tags=["工作-存储"])
 api_router.include_router(dispatch_router, prefix="/work", tags=["工作-数据报送"])
+api_router.include_router(lookup_router, prefix="/work", tags=["工作-字典"])
 api_router.include_router(knowledge_router, prefix="/work", tags=["工作-知识库"])
 api_router.include_router(search_router, prefix="/work", tags=["全局搜索"])
 api_router.include_router(project_router, prefix="/work", tags=["工作-项目管理"])
