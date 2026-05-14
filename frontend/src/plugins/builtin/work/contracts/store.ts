@@ -33,10 +33,6 @@ export interface Contract {
   subject_no?: string;       // 标的编号
   procurement_no?: string;   // 采购记录编号
   subject_name?: string;     // 标的名称
-  lifecycle_id?: number | null;       // 生命周期模板ID
-  lifecycle_stage_id?: number | null; // 当前阶段ID
-  lifecycle_stage_name?: string | null; // 当前阶段名称
-  lifecycle_template_name?: string | null; // 模板名称
   auto_renewal?: boolean;        // 是否启用自动续约
   renewal_remind_days?: number;  // 续约提醒天数
   created_at?: string;

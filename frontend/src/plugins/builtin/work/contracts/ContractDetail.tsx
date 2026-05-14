@@ -2,30 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useContractStore } from "./store";
 import { apiGet } from "@/lib/api/client";
 import dynamic from "next/dynamic";
 
 const Timeline = dynamic(() => import("./Timeline"), {
-  loading: () => (
-    <div className="flex items-center justify-center py-12">
-      <Loader2 className="size-5 animate-spin text-muted-foreground" />
-    </div>
-  ),
-});
-
-const LifecyclePanel = dynamic(() => import("./LifecyclePanel"), {
-  loading: () => (
-    <div className="flex items-center justify-center py-12">
-      <Loader2 className="size-5 animate-spin text-muted-foreground" />
-    </div>
-  ),
+  ssr: false,
 });
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
@@ -42,7 +29,6 @@ export default function ContractDetail() {
   const id = Number(params?.id as string);
   const { selectedContract, fetchContract, deleteContract } = useContractStore();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("lifecycle");
   const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -200,21 +186,10 @@ export default function ContractDetail() {
             </Card>
           )}
 
-          {/* 生命周期标签页 */}
+          {/* 时间轴 */}
           <Card>
             <CardContent className="pt-6">
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-4">
-                  <TabsTrigger value="timeline-tab">时间轴</TabsTrigger>
-                  <TabsTrigger value="lifecycle">生命周期</TabsTrigger>
-                </TabsList>
-                <TabsContent value="timeline-tab">
-                  <Timeline contract={c} />
-                </TabsContent>
-                <TabsContent value="lifecycle">
-                  <LifecyclePanel contractId={c.id} lifecycleId={c.lifecycle_id} />
-                </TabsContent>
-              </Tabs>
+              <Timeline contract={c} />
             </CardContent>
           </Card>
         </div>

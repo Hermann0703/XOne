@@ -139,27 +139,7 @@ class Contract(TimestampMixin, Base):
         "Milestone", back_populates="contract", lazy="selectin", cascade="all, delete-orphan"
     )
 
-    # ── 生命周期 ──
-    lifecycle_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("lifecycle_templates.id", ondelete="SET NULL"),
-        nullable=True, index=True, comment="生命周期模板ID"
-    )
-    lifecycle_stage_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("lifecycle_stages.id", ondelete="SET NULL"),
-        nullable=True, index=True, comment="当前阶段ID"
-    )
-    # stage_links: { stage_id -> [{url, label}] } — 各阶段补充链接
-    stage_links: Mapped[Optional[dict]] = mapped_column(
-        JSON, nullable=True, default=None, comment="各阶段补充流程链接"
-    )
-    lifecycle: Mapped[Optional["LifecycleTemplate"]] = relationship("LifecycleTemplate", foreign_keys=[lifecycle_id])
-    lifecycle_stage: Mapped[Optional["LifecycleStage"]] = relationship("LifecycleStage", foreign_keys=[lifecycle_stage_id])
     timeline_template: Mapped[Optional["TimelineTemplate"]] = relationship("TimelineTemplate", foreign_keys=[timeline_template_id])
-    stage_logs: Mapped[list["ContractStageLog"]] = relationship(
-        "ContractStageLog", back_populates="contract",
-        lazy="selectin", cascade="all, delete-orphan",
-        order_by="ContractStageLog.created_at.desc()"
-    )
 
     # ── 自动续约 ──
     auto_renewal: Mapped[bool] = mapped_column(
@@ -214,68 +194,6 @@ class Milestone(TimestampMixin, Base):
             f"<Milestone(id={self.id}, contract_id={self.contract_id}, "
             f"name={self.name!r}, status={self.status!r})>"
         )
-
-
-class LifecycleTemplate(TimestampMixin, Base):
-    """生命周期模板 — 用户自定义的合同阶段流程"""
-    __tablename__ = "lifecycle_templates"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[UUID] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
-    name: Mapped[str] = mapped_column(String(128), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-
-    stages: Mapped[list["LifecycleStage"]] = relationship(
-        "LifecycleStage", back_populates="template",
-        lazy="selectin", cascade="all, delete-orphan",
-        order_by="LifecycleStage.sort_order"
-    )
-
-
-class LifecycleStage(TimestampMixin, Base):
-    """生命周期阶段"""
-    __tablename__ = "lifecycle_stages"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    template_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("lifecycle_templates.id", ondelete="CASCADE"),
-        nullable=False, index=True
-    )
-    name: Mapped[str] = mapped_column(String(128), nullable=False)
-    stage_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="custom"
-    )
-    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    color: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
-    is_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    auto_transition_days: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-
-    template: Mapped["LifecycleTemplate"] = relationship("LifecycleTemplate", back_populates="stages")
-
-
-class ContractStageLog(TimestampMixin, Base):
-    """合同阶段流转日志"""
-    __tablename__ = "contract_stage_logs"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    contract_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("contracts.id", ondelete="CASCADE"),
-        nullable=False, index=True
-    )
-    lifecycle_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    from_stage_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    to_stage_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    from_stage_name: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    to_stage_name: Mapped[str] = mapped_column(String(128), nullable=False)
-    triggered_by: Mapped[str] = mapped_column(
-        String(16), nullable=False, default="manual"
-    )
-    operator_id: Mapped[Optional[UUID]] = mapped_column(SAUUID(as_uuid=True), nullable=True)
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
-    contract: Mapped["Contract"] = relationship("Contract", back_populates="stage_logs")
 
 
 class ContractType(TimestampMixin, Base):

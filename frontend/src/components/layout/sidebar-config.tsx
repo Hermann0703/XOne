@@ -152,12 +152,6 @@ const workGroups: SidebarGroupConfig[] = [
             path: '/work/contracts/suppliers',
           },
           {
-            id: 'work.contracts.lifecycle',
-            icon: GitBranch,
-            label: '生命周期管理',
-            path: '/work/contracts/lifecycle',
-          },
-          {
             id: 'work.catalog',
             icon: FolderOpen,
             label: '台账管理',

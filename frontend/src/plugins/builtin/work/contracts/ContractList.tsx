@@ -272,7 +272,6 @@ export default function ContractList() {
                     <TableHead>标的名称</TableHead>
                     <TableHead className="w-[100px]">采购金额</TableHead>
                     <TableHead className="w-[80px]">状态</TableHead>
-                    <TableHead className="w-[120px]">生命周期</TableHead>
                     <TableHead className="w-[100px]">签署日期</TableHead>
                     <TableHead className="w-[80px]">类型</TableHead>
                     <TableHead className="w-[120px]">操作</TableHead>
@@ -312,20 +311,6 @@ export default function ContractList() {
                           {c.amount != null ? `${c.currency || "CNY"} ${c.amount.toLocaleString()}` : "-"}
                         </TableCell>
                         <TableCell><StatusBadge status={c.status} /></TableCell>
-                        <TableCell>
-                          {c.lifecycle_template_name ? (
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-xs font-medium leading-tight">{c.lifecycle_template_name}</span>
-                              {c.lifecycle_stage_name && (
-                                <Badge variant="outline" className="text-[10px] px-1 py-0 leading-tight h-auto">
-                                  {c.lifecycle_stage_name}
-                                </Badge>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
                         <TableCell className="text-sm">{c.sign_date || "-"}</TableCell>
                         <TableCell className="text-sm">{c.contract_type_name || c.contract_type || "-"}</TableCell>
                         <TableCell>

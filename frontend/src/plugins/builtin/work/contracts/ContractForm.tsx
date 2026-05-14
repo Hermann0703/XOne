@@ -12,7 +12,6 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useContractStore, type Contract } from "./store";
-import { useLifecycleStore } from "./lifecycleStore";
 import { apiGet } from "@/lib/api/client";
 
 const INITIAL_FORM: Partial<Contract> = {
@@ -35,7 +34,6 @@ const INITIAL_FORM: Partial<Contract> = {
   description: "",
   keywords: [],
   status: "draft",
-  lifecycle_id: undefined,
   auto_renewal: false,
   renewal_remind_days: 7,
 };
@@ -60,8 +58,6 @@ export default function ContractForm() {
     createContract,
     updateContract,
   } = useContractStore();
-
-  const { templates: lifecycleTemplates, fetchTemplates } = useLifecycleStore();
 
   const [form, setForm] = useState<Partial<Contract>>({ ...INITIAL_FORM });
   const [keywordInput, setKeywordInput] = useState("");
@@ -88,8 +84,7 @@ export default function ContractForm() {
     fetchCategories();
     fetchClassifications();
     fetchSuppliers();
-    fetchTemplates();
-  }, [fetchFonds, fetchCategories, fetchClassifications, fetchSuppliers, fetchTemplates]);
+  }, [fetchFonds, fetchCategories, fetchClassifications, fetchSuppliers]);
 
   // 编辑模式下加载合同
   useEffect(() => {
@@ -116,7 +111,6 @@ export default function ContractForm() {
             contract_type_id: c.contract_type_id || undefined,
             description: c.description || "",
             keywords: c.keywords || [],
-            lifecycle_id: c.lifecycle_id || undefined,
             auto_renewal: c.auto_renewal ?? false,
             renewal_remind_days: c.renewal_remind_days ?? 7,
             status: c.status,
@@ -395,72 +389,6 @@ export default function ContractForm() {
           <div>
             <label htmlFor="field-contract-end-date" className="text-sm font-medium text-text-secondary block mb-1">服务结束日期</label>
             <Input id="field-contract-end-date" type="date" value={form.end_date || ""} onChange={(e) => setField("end_date", e.target.value)} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 生命周期 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">生命周期管理</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div>
-            <label htmlFor="field-lifecycle" className="text-sm font-medium text-text-secondary block mb-1">
-              绑定生命周期模板
-            </label>
-            <Select
-              id="field-lifecycle"
-              options={[
-                { value: "", label: "不使用生命周期模板" },
-                ...(lifecycleTemplates || []).map(t => ({ value: String(t.id), label: t.name })),
-              ]}
-              value={form.lifecycle_id ? String(form.lifecycle_id) : ""}
-              onChange={(e) => setField("lifecycle_id", e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="选择生命周期模板（可选）"
-            />
-          </div>
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm font-medium text-text-secondary">自动续约</span>
-                <p className="text-xs text-text-muted mt-0.5">
-                  合同到期时自动推进到下一生命周期阶段
-                </p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={form.auto_renewal || false}
-                onClick={() => setField("auto_renewal", !form.auto_renewal)}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                  form.auto_renewal ? "bg-primary" : "bg-border"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    form.auto_renewal ? "translate-x-4" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-            {form.auto_renewal && (
-              <div className="mt-3">
-                <label htmlFor="field-renewal-remind" className="text-sm font-medium text-text-secondary block mb-1">
-                  续约提醒天数
-                </label>
-                <Input
-                  id="field-renewal-remind"
-                  type="number"
-                  min={1}
-                  max={90}
-                  value={form.renewal_remind_days ?? 7}
-                  onChange={(e) => setField("renewal_remind_days", Number(e.target.value))}
-                  className="w-24"
-                />
-                <p className="text-xs text-text-muted mt-1">合同到期前 N 天自动触发续约</p>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
