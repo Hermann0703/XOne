@@ -8,7 +8,7 @@ from sqlalchemy import select, func, and_, or_, extract
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.contract import Fonds, Category, Classification, Contract, Milestone, TimelineTemplate, TimelineNode, ContractTimelineCustomNode
+from app.models.contract import Fonds, Category, Classification, Contract, Milestone, ContractPayment, ContractPaymentAttachment, TimelineTemplate, TimelineNode, ContractTimelineCustomNode
 from app.models.supplier import Supplier
 
 
@@ -310,13 +310,23 @@ async def get_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> Opt
 
 
 async def create_contract(db: AsyncSession, user_id: UUID, data: dict) -> Contract:
-    """创建合同"""
+    """创建合同（fonds_id/category_id 未传入时自动取数据库第一条作为默认值）"""
+    fonds_id = data.get("fonds_id")
+    category_id = data.get("category_id")
+    if fonds_id is None:
+        fonds_result = await db.execute(select(Fonds).order_by(Fonds.sort_order.asc(), Fonds.id.asc()).limit(1))
+        if default_fonds := fonds_result.scalar_one_or_none():
+            fonds_id = default_fonds.id
+    if category_id is None:
+        cat_result = await db.execute(select(Category).order_by(Category.sort_order.asc(), Category.id.asc()).limit(1))
+        if default_cat := cat_result.scalar_one_or_none():
+            category_id = default_cat.id
     contract = Contract(
         user_id=user_id,
         contract_no=data["contract_no"],
         contract_name=data["contract_name"],
-        fonds_id=data["fonds_id"],
-        category_id=data["category_id"],
+        fonds_id=fonds_id,
+        category_id=category_id,
         classification_id=data["classification_id"],
         supplier_id=data.get("supplier_id"),
         amount=data["amount"],
@@ -408,6 +418,210 @@ async def delete_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> 
     await db.flush()
     return True
 
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  合同付款计划 (ContractPayment) CRUD
+# ══════════════════════════════════════════════════════════════════════
+
+async def _get_accessible_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> Optional[Contract]:
+    """获取当前用户可访问的合同。
+
+    付款计划和附件是合同下的敏感资源，必须通过合同 owner 校验，
+    避免通过 contract_id/payment_id/attachment_id 枚举访问他人数据。
+    """
+    stmt = (
+        select(Contract)
+        .where(Contract.id == contract_id, Contract.user_id == user_id)
+        .options(selectinload(Contract.payments))
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def list_contract_payments(db: AsyncSession, contract_id: int, user_id: UUID) -> list[ContractPayment]:
+    """获取合同付款计划，预加载附件。"""
+    contract_check = await _get_accessible_contract(db, contract_id, user_id)
+    if not contract_check:
+        return []
+
+    stmt = (
+        select(ContractPayment)
+        .join(Contract, Contract.id == ContractPayment.contract_id)
+        .where(ContractPayment.contract_id == contract_id, Contract.user_id == user_id)
+        .options(selectinload(ContractPayment.attachments), selectinload(ContractPayment.contract))
+        .order_by(ContractPayment.sort_order.asc(), ContractPayment.id.asc())
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_contract_payment(db: AsyncSession, payment_id: int, user_id: UUID) -> Optional[ContractPayment]:
+    """获取单个付款期次，预加载附件和合同，并校验合同所属用户。"""
+    stmt = (
+        select(ContractPayment)
+        .join(Contract, Contract.id == ContractPayment.contract_id)
+        .where(ContractPayment.id == payment_id, Contract.user_id == user_id)
+        .options(selectinload(ContractPayment.attachments), selectinload(ContractPayment.contract))
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def create_contract_payment(db: AsyncSession, contract_id: int, user_id: UUID, data: dict) -> Optional[ContractPayment]:
+    """为合同创建付款期次。"""
+    contract_check = await _get_accessible_contract(db, contract_id, user_id)
+    if not contract_check:
+        return None
+
+    payment = ContractPayment(
+        contract_id=contract_id,
+        name=data["name"],
+        amount=data.get("amount"),
+        currency=data.get("currency") or contract_check.currency or "CNY",
+        acceptance_date=data.get("acceptance_date"),
+        actual_payment_date=data.get("actual_payment_date"),
+        status=data.get("status", "pending"),
+        sort_order=data.get("sort_order", 0),
+        notes=data.get("notes"),
+    )
+    db.add(payment)
+    await db.flush()
+    result = await db.execute(
+        select(ContractPayment)
+        .where(ContractPayment.id == payment.id)
+        .options(selectinload(ContractPayment.attachments), selectinload(ContractPayment.contract))
+    )
+    return result.scalar_one()
+
+
+async def update_contract_payment(db: AsyncSession, payment_id: int, user_id: UUID, data: dict) -> Optional[ContractPayment]:
+    """更新付款期次。"""
+    payment = await get_contract_payment(db, payment_id, user_id)
+    if not payment:
+        return None
+
+    for field in ("name", "amount", "currency", "acceptance_date", "actual_payment_date", "status", "sort_order", "notes"):
+        if field in data:
+            setattr(payment, field, data[field])
+
+    await db.flush()
+    result = await db.execute(
+        select(ContractPayment)
+        .where(ContractPayment.id == payment.id)
+        .options(selectinload(ContractPayment.attachments), selectinload(ContractPayment.contract))
+    )
+    return result.scalar_one()
+
+
+async def delete_contract_payment(db: AsyncSession, payment_id: int, user_id: UUID) -> bool:
+    """删除付款期次。"""
+    payment = await get_contract_payment(db, payment_id, user_id)
+    if not payment:
+        return False
+    await db.delete(payment)
+    await db.flush()
+    return True
+
+
+async def bulk_create_contract_payments(db: AsyncSession, contract_id: int, user_id: UUID, template: str) -> Optional[list[ContractPayment]]:
+    """按两期/三期模板快速生成付款计划（仅生成名称与排序，不分配金额）。
+
+    该接口用于合同表单选择模板后的快捷生成。为避免编辑页保存时重复点击
+    或前端重复提交导致合同详情页追加重复步骤，同一合同内已存在同名付款
+    期次时不再重复创建；只补齐模板中缺失的期次。
+    """
+    contract_check = await _get_accessible_contract(db, contract_id, user_id)
+    if not contract_check:
+        return None
+
+    names = ["首付款", "尾款"] if template == "two" else ["首付款", "进度款", "尾款"]
+    existing_result = await db.execute(
+        select(ContractPayment)
+        .where(ContractPayment.contract_id == contract_id, ContractPayment.name.in_(names))
+    )
+    existing_by_name = {payment.name: payment for payment in existing_result.scalars().all()}
+
+    for idx, name in enumerate(names, start=1):
+        existing_payment = existing_by_name.get(name)
+        if existing_payment:
+            existing_payment.sort_order = idx
+            continue
+        db.add(ContractPayment(
+            contract_id=contract_id,
+            name=name,
+            amount=None,
+            currency=contract_check.currency or "CNY",
+            status="pending",
+            sort_order=idx,
+        ))
+    await db.flush()
+    return await list_contract_payments(db, contract_id, user_id)
+
+
+async def mark_contract_payment_paid(db: AsyncSession, payment_id: int, user_id: UUID, actual_payment_date: Optional[date] = None) -> Optional[ContractPayment]:
+    """标记付款期次为已付款。若未传日期且原日期为空，则填今天。"""
+    payment = await get_contract_payment(db, payment_id, user_id)
+    if not payment:
+        return None
+    payment.status = "paid"
+    if actual_payment_date is not None:
+        payment.actual_payment_date = actual_payment_date
+    elif payment.actual_payment_date is None:
+        payment.actual_payment_date = date.today()
+    await db.flush()
+    result = await db.execute(
+        select(ContractPayment)
+        .where(ContractPayment.id == payment.id)
+        .options(selectinload(ContractPayment.attachments), selectinload(ContractPayment.contract))
+    )
+    return result.scalar_one()
+
+
+async def create_contract_payment_attachment(db: AsyncSession, payment_id: int, user_id: UUID, data: dict) -> Optional[ContractPaymentAttachment]:
+    """创建付款附件元数据。"""
+    payment = await get_contract_payment(db, payment_id, user_id)
+    if not payment:
+        return None
+    attachment = ContractPaymentAttachment(
+        payment_id=payment_id,
+        original_name=data["original_name"],
+        stored_name=data["stored_name"],
+        file_path=data["file_path"],
+        file_size=data["file_size"],
+        content_type=data.get("content_type") or "application/pdf",
+        file_ext=data.get("file_ext") or "pdf",
+        uploaded_by=user_id,
+    )
+    db.add(attachment)
+    await db.flush()
+    await db.refresh(attachment)
+    return attachment
+
+
+async def get_contract_payment_attachment(db: AsyncSession, attachment_id: int, user_id: UUID) -> Optional[ContractPaymentAttachment]:
+    """获取附件，预加载付款和合同，并校验合同所属用户。"""
+    stmt = (
+        select(ContractPaymentAttachment)
+        .join(ContractPayment, ContractPayment.id == ContractPaymentAttachment.payment_id)
+        .join(Contract, Contract.id == ContractPayment.contract_id)
+        .where(ContractPaymentAttachment.id == attachment_id, Contract.user_id == user_id)
+        .options(
+            selectinload(ContractPaymentAttachment.payment).selectinload(ContractPayment.contract),
+        )
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def delete_contract_payment_attachment(db: AsyncSession, attachment_id: int, user_id: UUID) -> Optional[ContractPaymentAttachment]:
+    """删除附件元数据，返回被删对象用于外层删除磁盘文件。"""
+    attachment = await get_contract_payment_attachment(db, attachment_id, user_id)
+    if not attachment:
+        return None
+    await db.delete(attachment)
+    await db.flush()
+    return attachment
 
 # ══════════════════════════════════════════════════════════════════════
 #  里程碑 (Milestone) CRUD
@@ -566,13 +780,17 @@ async def create_supplier(db: AsyncSession, user_id: UUID, data: dict) -> Suppli
     supplier = Supplier(
         user_id=user_id,
         name=data["name"],
-        contact_person=data.get("contact_person"),
-        contact_phone=data.get("contact_phone"),
+        short_name=data.get("short_name"),
+        english_name=data.get("english_name"),
+        legal_person=data.get("legal_person"),
+        unified_social_credit_code=data.get("unified_social_credit_code"),
+        taxpayer_type=data.get("taxpayer_type"),
         address=data.get("address"),
+        business_scope=data.get("business_scope"),
         business_license=data.get("business_license"),
         tax_id=data.get("tax_id"),
-        bank_name=data.get("bank_name"),
-        bank_account=data.get("bank_account"),
+        contacts=data.get("contacts", []),
+        bank_accounts=data.get("bank_accounts", []),
         rating=data.get("rating"),
         status=data.get("status", "active"),
         notes=data.get("notes"),
@@ -601,8 +819,11 @@ async def update_supplier(
         return None
 
     updatable = (
-        "name", "contact_person", "contact_phone", "address",
-        "business_license", "tax_id", "bank_name", "bank_account",
+        "name", "short_name", "english_name", "legal_person",
+        "unified_social_credit_code", "taxpayer_type", "address",
+        "business_scope",
+        "business_license", "tax_id",
+        "contacts", "bank_accounts",
         "rating", "status", "notes",
     )
     for field in updatable:

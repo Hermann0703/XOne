@@ -1,11 +1,15 @@
 """合同管理模块 API — 全宗 / 分类 / 密级 / 合同 / 里程碑 / 仪表盘"""
 
 import logging
+import re
+from pathlib import Path
+from uuid import UUID, uuid4
 from datetime import date, datetime
 from typing import List, Optional, Union
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi.responses import FileResponse
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field, field_validator
 
 from sqlalchemy import func, select
@@ -13,6 +17,35 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
+
+PAYMENT_UPLOAD_ROOT = Path("uploads/contract-payments").resolve()
+MAX_PAYMENT_ATTACHMENT_SIZE = 20 * 1024 * 1024
+
+
+def _safe_pdf_filename(filename: str | None) -> str:
+    """清理上传文件名，避免路径遍历和响应头注入。"""
+    name = Path(filename or "attachment.pdf").name
+    name = re.sub(r"[\r\n\x00-\x1f\x7f]+", "", name).strip()
+    name = name.replace('"', "'")
+    if not name.lower().endswith(".pdf"):
+        name = "attachment.pdf"
+    if len(name) > 180:
+        stem = Path(name).stem[:170].rstrip() or "attachment"
+        name = f"{stem}.pdf"
+    return name or "attachment.pdf"
+
+
+def _resolve_payment_attachment_path(raw_path: str) -> Path | None:
+    """解析附件路径并限制在 PAYMENT_UPLOAD_ROOT 下。"""
+    path = Path(raw_path)
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    resolved = path.resolve()
+    try:
+        resolved.relative_to(PAYMENT_UPLOAD_ROOT)
+    except ValueError:
+        return None
+    return resolved
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -84,8 +117,8 @@ class ContractCreate(BaseModel):
     """创建合同请求体"""
     contract_no: str = Field(..., min_length=1, max_length=64, description="合同编号")
     contract_name: str = Field(..., min_length=1, max_length=256, description="合同名称")
-    fonds_id: int = Field(..., gt=0, description="所属全宗ID")
-    category_id: int = Field(..., gt=0, description="所属分类ID")
+    fonds_id: Optional[int] = Field(default=None, gt=0, description="所属全宗ID；为空时使用系统默认全宗")
+    category_id: Optional[int] = Field(default=None, gt=0, description="所属分类ID；为空时使用系统默认分类")
     classification_id: int = Field(..., gt=0, description="密级ID")
     supplier_id: Optional[str] = Field(default=None, description="供应商ID（UUID字符串）")
     amount: float = Field(..., ge=0, description="合同金额")
@@ -221,19 +254,59 @@ class MilestoneUpdate(BaseModel):
     description: Optional[str] = Field(default=None, description="描述")
 
 
+class ContractPaymentCreate(BaseModel):
+    """创建付款期次请求体"""
+    name: str = Field(..., min_length=1, max_length=128, description="期次名称")
+    amount: Optional[float] = Field(default=None, ge=0, description="付款金额")
+    currency: Optional[str] = Field(default=None, max_length=8, description="币种")
+    acceptance_date: Optional[date] = Field(default=None, description="验收日期")
+    actual_payment_date: Optional[date] = Field(default=None, description="实际付款日期")
+    status: str = Field(default="pending", pattern="^(pending|paid|cancelled)$", description="状态")
+    sort_order: int = Field(default=0, description="排序")
+    notes: Optional[str] = Field(default=None, description="备注")
+
+
+class ContractPaymentUpdate(BaseModel):
+    """更新付款期次请求体"""
+    name: Optional[str] = Field(default=None, min_length=1, max_length=128, description="期次名称")
+    amount: Optional[float] = Field(default=None, ge=0, description="付款金额")
+    currency: Optional[str] = Field(default=None, max_length=8, description="币种")
+    acceptance_date: Optional[date] = Field(default=None, description="验收日期")
+    actual_payment_date: Optional[date] = Field(default=None, description="实际付款日期")
+    status: Optional[str] = Field(default=None, pattern="^(pending|paid|cancelled)$", description="状态")
+    sort_order: Optional[int] = Field(default=None, description="排序")
+    notes: Optional[str] = Field(default=None, description="备注")
+
+
+class ContractPaymentBulkCreate(BaseModel):
+    """按模板快速生成付款计划"""
+    template: str = Field(..., pattern="^(two|three)$", description="two=首付款/尾款; three=首付款/进度款/尾款")
+
+
+class ContractPaymentMarkPaid(BaseModel):
+    """标记已付款请求体"""
+    actual_payment_date: Optional[date] = Field(default=None, description="实际付款日期")
+
+
 
 class SupplierCreate(BaseModel):
     """创建供应商请求体"""
-    name: str = Field(..., min_length=1, max_length=256, description="供应商名称")
-    contact_person: Optional[str] = Field(default=None, max_length=128, description="联系人")
-    contact_phone: Optional[str] = Field(default=None, max_length=32, description="联系电话")
-    address: Optional[str] = Field(default=None, max_length=512, description="地址")
-    business_license: Optional[str] = Field(default=None, max_length=128, description="营业执照号")
-    tax_id: Optional[str] = Field(default=None, max_length=64, description="税号")
-    bank_name: Optional[str] = Field(default=None, max_length=256, description="开户银行")
-    bank_account: Optional[str] = Field(default=None, max_length=64, description="银行账号")
-    dc_bank_name: Optional[str] = Field(default=None, max_length=256, description="数字人民币开户行")
-    dc_bank_account: Optional[str] = Field(default=None, max_length=64, description="数字人民币账号")
+    name: str = Field(..., min_length=1, max_length=256, description="企业名称")
+
+    # 供应商信息
+    short_name: Optional[str] = Field(default=None, max_length=128, description="企业简称")
+    english_name: Optional[str] = Field(default=None, max_length=256, description="英文名称")
+    legal_person: Optional[str] = Field(default=None, max_length=128, description="法人")
+    unified_social_credit_code: Optional[str] = Field(default=None, max_length=64, description="统一社会信用代码")
+    taxpayer_type: Optional[str] = Field(default=None, max_length=32, description="纳税人标识")
+    address: Optional[str] = Field(default=None, max_length=512, description="注册地址")
+    business_scope: Optional[str] = Field(default=None, description="经营范围")
+
+    # 联系人列表
+    contacts: Optional[list] = Field(default=None, description="联系人列表 [{name,title,phone,landline,email}]")
+    # 银行账户列表
+    bank_accounts: Optional[list] = Field(default=None, description="银行账户列表 [{account_type,account_number,bank_name}]")
+
     rating: Optional[str] = Field(default=None, max_length=32, description="评级")
     status: Optional[str] = Field(default="active", max_length=32, description="状态: active/inactive")
     notes: Optional[str] = Field(default=None, description="备注")
@@ -241,16 +314,19 @@ class SupplierCreate(BaseModel):
 
 class SupplierUpdate(BaseModel):
     """更新供应商请求体"""
-    name: Optional[str] = Field(default=None, min_length=1, max_length=256, description="供应商名称")
-    contact_person: Optional[str] = Field(default=None, max_length=128, description="联系人")
-    contact_phone: Optional[str] = Field(default=None, max_length=32, description="联系电话")
-    address: Optional[str] = Field(default=None, max_length=512, description="地址")
-    business_license: Optional[str] = Field(default=None, max_length=128, description="营业执照号")
-    tax_id: Optional[str] = Field(default=None, max_length=64, description="税号")
-    bank_name: Optional[str] = Field(default=None, max_length=256, description="开户银行")
-    bank_account: Optional[str] = Field(default=None, max_length=64, description="银行账号")
-    dc_bank_name: Optional[str] = Field(default=None, max_length=256, description="数字人民币开户行")
-    dc_bank_account: Optional[str] = Field(default=None, max_length=64, description="数字人民币账号")
+    name: Optional[str] = Field(default=None, min_length=1, max_length=256, description="企业名称")
+
+    short_name: Optional[str] = Field(default=None, max_length=128, description="企业简称")
+    english_name: Optional[str] = Field(default=None, max_length=256, description="英文名称")
+    legal_person: Optional[str] = Field(default=None, max_length=128, description="法人")
+    unified_social_credit_code: Optional[str] = Field(default=None, max_length=64, description="统一社会信用代码")
+    taxpayer_type: Optional[str] = Field(default=None, max_length=32, description="纳税人标识")
+    address: Optional[str] = Field(default=None, max_length=512, description="注册地址")
+    business_scope: Optional[str] = Field(default=None, description="经营范围")
+
+    contacts: Optional[list] = Field(default=None, description="联系人列表")
+    bank_accounts: Optional[list] = Field(default=None, description="银行账户列表")
+
     rating: Optional[str] = Field(default=None, max_length=32, description="评级")
     status: Optional[str] = Field(default=None, max_length=32, description="状态")
     notes: Optional[str] = Field(default=None, description="备注")
@@ -407,16 +483,57 @@ def _milestone_to_dict(m) -> dict:
     }
 
 
+def _payment_attachment_to_dict(a) -> dict:
+    return {
+        "id": a.id,
+        "payment_id": a.payment_id,
+        "original_name": a.original_name,
+        "stored_name": a.stored_name,
+        "file_size": a.file_size,
+        "content_type": a.content_type,
+        "file_ext": a.file_ext,
+        "uploaded_by": str(a.uploaded_by) if a.uploaded_by else None,
+        "created_at": a.created_at.isoformat() if a.created_at else None,
+        "updated_at": a.updated_at.isoformat() if a.updated_at else None,
+    }
+
+
+def _payment_to_dict(p) -> dict:
+    return {
+        "id": p.id,
+        "contract_id": p.contract_id,
+        "name": p.name,
+        "amount": float(p.amount) if p.amount is not None else None,
+        "currency": p.currency,
+        "acceptance_date": p.acceptance_date.isoformat() if p.acceptance_date else None,
+        "actual_payment_date": p.actual_payment_date.isoformat() if p.actual_payment_date else None,
+        "status": p.status,
+        "sort_order": p.sort_order,
+        "notes": p.notes,
+        "attachments": [_payment_attachment_to_dict(a) for a in (p.attachments or [])],
+        "created_at": p.created_at.isoformat() if p.created_at else None,
+        "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+    }
+
+
 def _supplier_to_dict(s) -> dict:
     return {
         "id": str(s.id),
         "user_id": str(s.user_id) if s.user_id else None,
         "name": s.name,
-        "contact_person": s.contact_person,
-        "contact_phone": s.contact_phone,
+        "short_name": s.short_name,
+        "english_name": s.english_name,
+        "legal_person": s.legal_person,
+        "unified_social_credit_code": s.unified_social_credit_code,
+        "taxpayer_type": s.taxpayer_type,
         "address": s.address,
+        "business_scope": s.business_scope,
         "business_license": s.business_license,
         "tax_id": s.tax_id,
+        "contacts": s.contacts if isinstance(s.contacts, list) else (s.contacts or []),
+        "bank_accounts": s.bank_accounts if isinstance(s.bank_accounts, list) else (s.bank_accounts or []),
+        "contact_person": s.contact_person,
+        "contact_phone": s.contact_phone,
         "bank_name": s.bank_name,
         "bank_account": s.bank_account,
         "dc_bank_name": s.dc_bank_name,
@@ -1039,6 +1156,177 @@ async def delete_contract_type(
     return {"code": 0, "message": "合同类型删除成功"}
 
 
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  合同付款计划 / PDF 附件端点 — 必须在 /{contract_id} 参数路由之前定义
+# ═══════════════════════════════════════════════════════════════════════
+
+
+@router.get("/{contract_id}/payments", summary="获取合同付款计划")
+async def list_contract_payments(
+    contract_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    items = await contract_service.list_contract_payments(db, contract_id, current_user.id)
+    return {"code": 0, "message": "查询成功", "data": [_payment_to_dict(p) for p in items]}
+
+
+@router.post("/{contract_id}/payments", summary="创建合同付款期次")
+async def create_contract_payment(
+    contract_id: int,
+    body: ContractPaymentCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    payment = await contract_service.create_contract_payment(db, contract_id, current_user.id, body.model_dump(exclude_none=True))
+    if not payment:
+        raise HTTPException(status_code=404, detail="合同不存在")
+    return {"code": 0, "message": "付款期次创建成功", "data": _payment_to_dict(payment)}
+
+
+@router.post("/{contract_id}/payments/bulk", summary="按模板生成合同付款计划")
+async def bulk_create_contract_payments(
+    contract_id: int,
+    body: ContractPaymentBulkCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    payments = await contract_service.bulk_create_contract_payments(db, contract_id, current_user.id, body.template)
+    if payments is None:
+        raise HTTPException(status_code=404, detail="合同不存在")
+    return {"code": 0, "message": "付款计划生成成功", "data": [_payment_to_dict(p) for p in payments]}
+
+
+@router.patch("/payments/{payment_id}", summary="更新合同付款期次")
+async def update_contract_payment(
+    payment_id: int,
+    body: ContractPaymentUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    payment = await contract_service.update_contract_payment(db, payment_id, current_user.id, body.model_dump(exclude_unset=True))
+    if not payment:
+        raise HTTPException(status_code=404, detail="付款期次不存在")
+    return {"code": 0, "message": "付款期次更新成功", "data": _payment_to_dict(payment)}
+
+
+@router.delete("/payments/{payment_id}", summary="删除合同付款期次")
+async def delete_contract_payment(
+    payment_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    ok = await contract_service.delete_contract_payment(db, payment_id, current_user.id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="付款期次不存在")
+    return {"code": 0, "message": "付款期次删除成功", "data": None}
+
+
+@router.patch("/payments/{payment_id}/mark-paid", summary="标记付款期次为已付款")
+async def mark_contract_payment_paid(
+    payment_id: int,
+    body: Optional[ContractPaymentMarkPaid] = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    payment = await contract_service.mark_contract_payment_paid(
+        db, payment_id, current_user.id, body.actual_payment_date if body else None
+    )
+    if not payment:
+        raise HTTPException(status_code=404, detail="付款期次不存在")
+    return {"code": 0, "message": "已标记为已付款", "data": _payment_to_dict(payment)}
+
+
+@router.post("/payments/{payment_id}/attachments", summary="上传付款 PDF 附件")
+async def upload_contract_payment_attachment(
+    payment_id: int,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    payment = await contract_service.get_contract_payment(db, payment_id, current_user.id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="付款期次不存在")
+
+    original_name = _safe_pdf_filename(file.filename)
+    if file.content_type not in ("application/pdf", "application/octet-stream"):
+        raise HTTPException(status_code=400, detail="仅支持上传 PDF 文件")
+
+    content = await file.read()
+    if len(content) > MAX_PAYMENT_ATTACHMENT_SIZE:
+        raise HTTPException(status_code=400, detail="PDF 文件不能超过 20MB")
+    if not content.startswith(b"%PDF-"):
+        raise HTTPException(status_code=400, detail="文件内容不是有效的 PDF")
+
+    upload_dir = PAYMENT_UPLOAD_ROOT / str(payment.contract_id) / str(payment_id)
+    await run_in_threadpool(upload_dir.mkdir, parents=True, exist_ok=True)
+    stored_name = f"{uuid4().hex}.pdf"
+    file_path = upload_dir / stored_name
+    await run_in_threadpool(file_path.write_bytes, content)
+
+    attachment = await contract_service.create_contract_payment_attachment(db, payment_id, current_user.id, {
+        "original_name": original_name,
+        "stored_name": stored_name,
+        "file_path": str(file_path),
+        "file_size": len(content),
+        "content_type": "application/pdf",
+        "file_ext": "pdf",
+    })
+    if not attachment:
+        try:
+            file_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+        raise HTTPException(status_code=404, detail="付款期次不存在")
+    return {"code": 0, "message": "附件上传成功", "data": _payment_attachment_to_dict(attachment)}
+
+
+@router.get("/payments/{payment_id}/attachments", summary="获取付款附件列表")
+async def list_contract_payment_attachments(
+    payment_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    payment = await contract_service.get_contract_payment(db, payment_id, current_user.id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="付款期次不存在")
+    return {"code": 0, "message": "查询成功", "data": [_payment_attachment_to_dict(a) for a in payment.attachments]}
+
+
+@router.get("/payments/attachments/{attachment_id}/preview", summary="在线预览付款 PDF 附件")
+async def preview_contract_payment_attachment(
+    attachment_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    attachment = await contract_service.get_contract_payment_attachment(db, attachment_id, current_user.id)
+    if not attachment:
+        raise HTTPException(status_code=404, detail="附件不存在")
+    path = _resolve_payment_attachment_path(attachment.file_path)
+    if not path or not path.exists():
+        raise HTTPException(status_code=404, detail="文件不存在")
+    return FileResponse(path, media_type="application/pdf", filename=_safe_pdf_filename(attachment.original_name))
+
+
+@router.delete("/payments/attachments/{attachment_id}", summary="删除付款 PDF 附件")
+async def delete_contract_payment_attachment(
+    attachment_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    attachment = await contract_service.delete_contract_payment_attachment(db, attachment_id, current_user.id)
+    if not attachment:
+        raise HTTPException(status_code=404, detail="附件不存在")
+    try:
+        path = _resolve_payment_attachment_path(attachment.file_path)
+        if path:
+            await run_in_threadpool(path.unlink, missing_ok=True)
+    except Exception:
+        logger.warning("删除付款附件磁盘文件失败: %s", attachment.file_path, exc_info=True)
+    return {"code": 0, "message": "附件删除成功", "data": None}
+
 # ═══════════════════════════════════════════════════════════
 #  阶段类型 (StageType) CRUD — 必须在 /{contract_id} 之前定义
 # ═══════════════════════════════════════════════════════════
@@ -1537,6 +1825,174 @@ async def delete_timeline_node(
     }
 
 
+# ═══════════════════════════════════════════════════════════════════════
+#  组织架构 CRUD
+# ═══════════════════════════════════════════════════════════════════════
+
+from app.models.department import Department as DepartmentModel
+
+
+class DepartmentCreate(BaseModel):
+    """创建部门请求体"""
+    id: str = Field(
+        ..., min_length=1, max_length=16, pattern=r"^\d+$",
+        description="部门ID（纯数字字符串，如 001、0101）"
+    )
+    name: str = Field(..., min_length=1, max_length=128, description="部门名称")
+    leader: Optional[str] = Field(default=None, max_length=64, description="负责人")
+    business_contact: Optional[str] = Field(default=None, max_length=64, description="业务对接人")
+    it_contact: Optional[str] = Field(default=None, max_length=64, description="IT对接人")
+    remarks: Optional[str] = Field(default=None, description="备注")
+
+
+class DepartmentUpdate(BaseModel):
+    """更新部门请求体"""
+    name: Optional[str] = Field(default=None, min_length=1, max_length=128, description="部门名称")
+    leader: Optional[str] = Field(default=None, max_length=64, description="负责人")
+    business_contact: Optional[str] = Field(default=None, max_length=64, description="业务对接人")
+    it_contact: Optional[str] = Field(default=None, max_length=64, description="IT对接人")
+    remarks: Optional[str] = Field(default=None, description="备注")
+
+
+class DepartmentResponse(BaseModel):
+    """部门响应"""
+    id: str
+    name: str
+    leader: Optional[str] = None
+    business_contact: Optional[str] = None
+    it_contact: Optional[str] = None
+    remarks: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+def _department_to_dict(d: DepartmentModel) -> dict:
+    return {
+        "id": d.id,
+        "name": d.name,
+        "leader": d.leader,
+        "business_contact": d.business_contact,
+        "it_contact": d.it_contact,
+        "remarks": d.remarks,
+        "created_at": d.created_at.isoformat() if d.created_at else None,
+        "updated_at": d.updated_at.isoformat() if d.updated_at else None,
+    }
+
+
+@router.get("/departments", summary="获取组织架构列表")
+async def list_departments(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    search: Optional[str] = Query(default=None, description="搜索部门名称/ID"),
+):
+    """获取当前用户的所有部门"""
+    conditions = [DepartmentModel.user_id == user.id]
+    if search:
+        conditions.append(
+            (DepartmentModel.name.ilike(f"%{search}%")) |
+            (DepartmentModel.id.ilike(f"%{search}%"))
+        )
+    result = await db.execute(
+        select(DepartmentModel).where(*conditions).order_by(DepartmentModel.id)
+    )
+    depts = result.scalars().all()
+    return {"code": 0, "data": [_department_to_dict(d) for d in depts]}
+
+
+@router.post("/departments", summary="创建部门")
+async def create_department(
+    body: DepartmentCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """创建新的部门"""
+    existing = await db.execute(
+        select(DepartmentModel).where(DepartmentModel.id == body.id)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail=f"部门ID '{body.id}' 已存在")
+
+    dept = DepartmentModel(
+        id=body.id,
+        user_id=user.id,
+        name=body.name,
+        leader=body.leader,
+        business_contact=body.business_contact,
+        it_contact=body.it_contact,
+        remarks=body.remarks,
+    )
+    db.add(dept)
+    await db.commit()
+    await db.refresh(dept)
+    return {"code": 0, "data": _department_to_dict(dept), "message": "部门创建成功"}
+
+
+@router.get("/departments/{dept_id}", summary="获取部门详情")
+async def get_department(
+    dept_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取单个部门详情"""
+    result = await db.execute(
+        select(DepartmentModel).where(
+            DepartmentModel.id == dept_id, DepartmentModel.user_id == user.id
+        )
+    )
+    dept = result.scalar_one_or_none()
+    if not dept:
+        raise HTTPException(status_code=404, detail="部门不存在")
+    return {"code": 0, "data": _department_to_dict(dept)}
+
+
+@router.patch("/departments/{dept_id}", summary="更新部门")
+async def update_department(
+    dept_id: str,
+    body: DepartmentUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """更新部门信息"""
+    result = await db.execute(
+        select(DepartmentModel).where(
+            DepartmentModel.id == dept_id, DepartmentModel.user_id == user.id
+        )
+    )
+    dept = result.scalar_one_or_none()
+    if not dept:
+        raise HTTPException(status_code=404, detail="部门不存在")
+
+    update_data = body.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(dept, key, value)
+
+    await db.commit()
+    await db.refresh(dept)
+    return {"code": 0, "data": _department_to_dict(dept), "message": "部门更新成功"}
+
+
+@router.delete("/departments/{dept_id}", summary="删除部门")
+async def delete_department(
+    dept_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除部门"""
+    result = await db.execute(
+        select(DepartmentModel).where(
+            DepartmentModel.id == dept_id, DepartmentModel.user_id == user.id
+        )
+    )
+    dept = result.scalar_one_or_none()
+    if not dept:
+        raise HTTPException(status_code=404, detail="部门不存在")
+
+    await db.delete(dept)
+    await db.commit()
+    return {"code": 0, "message": "部门删除成功", "data": None}
 # ── Contract Custom Timeline Nodes 端点 ──────────────────
 
 @router.get("/{contract_id}/timeline-custom-nodes", summary="获取合同自定义时间轴节点")

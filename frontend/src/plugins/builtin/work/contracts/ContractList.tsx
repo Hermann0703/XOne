@@ -62,12 +62,12 @@ function StatusBadge({ status }: { status: string }) {
 // ─── 仪表盘卡片 ──────────────────────────────────────
 
 function DashboardCards() {
-  const { dashboard, fetchDashboard, fonds, fetchFonds } = useContractStore();
+  const { dashboard, fetchDashboard } = useContractStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchDashboard(), fetchFonds()]).finally(() => setLoading(false));
-  }, [fetchDashboard, fetchFonds]);
+    fetchDashboard().finally(() => setLoading(false));
+  }, [fetchDashboard]);
 
   const cards = [
     { label: "合同总数", value: dashboard?.summary?.total_contracts ?? "--", icon: <FileText className="size-5 text-blue-500" /> },
@@ -111,10 +111,7 @@ export default function ContractList() {
     contracts,
     paging,
     loading,
-    fonds,
-    categories,
     fetchContracts,
-    fetchCategories,
     deleteContract,
   } = useContractStore();
 
@@ -122,8 +119,6 @@ export default function ContractList() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [fondsFilter, setFondsFilter] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 15;
 
@@ -136,7 +131,6 @@ export default function ContractList() {
   const [loadingTypes, setLoadingTypes] = useState(true);
 
   useEffect(() => {
-    fetchCategories();
     apiGet<{ id: number; name: string; code: string }[]>("/work/contracts/contract-types", { include_inactive: "true" })
       .then((res) => {
         if (res.code === 0 && res.data) {
@@ -151,10 +145,8 @@ export default function ContractList() {
     if (search) params.search = search;
     if (statusFilter) params.status = statusFilter;
     if (typeFilter) params.contract_type_id = Number(typeFilter);
-    if (fondsFilter) params.fonds_id = fondsFilter;
-    if (categoryFilter) params.category_id = categoryFilter;
     fetchContracts(params);
-  }, [page, search, statusFilter, typeFilter, fondsFilter, categoryFilter, fetchContracts]);
+  }, [page, search, statusFilter, typeFilter, fetchContracts]);
 
   useEffect(() => {
     loadContracts();
@@ -202,26 +194,6 @@ export default function ContractList() {
 
             <Select
               options={[
-                { value: "", label: "全部全宗" },
-                ...fonds.map((f) => ({ value: String(f.id), label: f.name })),
-              ]}
-              value={fondsFilter}
-              onChange={(e) => { setFondsFilter(e.target.value); setPage(1); }}
-              placeholder="全宗筛选"
-            />
-
-            <Select
-              options={[
-                { value: "", label: "全部分类" },
-                ...categories.map((c) => ({ value: String(c.id), label: c.name })),
-              ]}
-              value={categoryFilter}
-              onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
-              placeholder="分类筛选"
-            />
-
-            <Select
-              options={[
                 { value: "", label: "全部状态" },
                 { value: "draft", label: "草稿" },
                 { value: "signed", label: "已签署" },
@@ -264,8 +236,6 @@ export default function ContractList() {
                   <TableRow>
                     <TableHead className="w-[120px]">合同编号</TableHead>
                     <TableHead>合同名称</TableHead>
-                    <TableHead className="w-[80px]">全宗</TableHead>
-                    <TableHead className="w-[80px]">分类</TableHead>
                     <TableHead className="w-[80px]">密级</TableHead>
                     <TableHead className="w-[120px]">需求编号</TableHead>
                     <TableHead className="w-[120px]">供应商</TableHead>
@@ -280,7 +250,7 @@ export default function ContractList() {
                 <TableBody>
                   {contracts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={14} className="py-10">
+                      <TableCell colSpan={12} className="py-10">
                         <div className="flex flex-col items-center justify-center gap-3 text-center">
                           <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
                             <FileText className="w-7 h-7 text-muted-foreground" />
@@ -301,8 +271,6 @@ export default function ContractList() {
                       <TableRow key={c.id}>
                         <TableCell className="font-mono text-sm">{c.contract_no}</TableCell>
                         <TableCell className="max-w-[200px] truncate" title={c.contract_name}>{c.contract_name}</TableCell>
-                        <TableCell className="text-sm">{c.fonds_name || "-"}</TableCell>
-                        <TableCell className="text-sm">{c.category_name || "-"}</TableCell>
                         <TableCell className="text-sm">{c.classification_name || "-"}</TableCell>
                         <TableCell className="font-mono text-sm">{c.requirement_no || "-"}</TableCell>
                         <TableCell>{c.supplier || "-"}</TableCell>

@@ -4,7 +4,7 @@ from datetime import date
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Date, Text, Index, UniqueConstraint, JSON
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Date, Text, Index, UniqueConstraint, JSON, Numeric, BigInteger
 from sqlalchemy.dialects.postgresql import UUID as SAUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.supplier import Supplier
@@ -138,6 +138,9 @@ class Contract(TimestampMixin, Base):
     milestones: Mapped[list["Milestone"]] = relationship(
         "Milestone", back_populates="contract", lazy="selectin", cascade="all, delete-orphan"
     )
+    payments: Mapped[list["ContractPayment"]] = relationship(
+        "ContractPayment", back_populates="contract", lazy="selectin", cascade="all, delete-orphan", order_by="ContractPayment.sort_order"
+    )
 
     timeline_template: Mapped[Optional["TimelineTemplate"]] = relationship("TimelineTemplate", foreign_keys=[timeline_template_id])
 
@@ -194,6 +197,59 @@ class Milestone(TimestampMixin, Base):
             f"<Milestone(id={self.id}, contract_id={self.contract_id}, "
             f"name={self.name!r}, status={self.status!r})>"
         )
+
+
+class ContractPayment(TimestampMixin, Base):
+    """合同付款计划 — 独立于履约里程碑的费用付款期次"""
+
+    __tablename__ = "contract_payments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    contract_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("contracts.id", ondelete="CASCADE"), nullable=False, index=True, comment="所属合同ID"
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False, comment="期次名称")
+    amount: Mapped[Optional[float]] = mapped_column(Numeric(18, 2), nullable=True, comment="付款金额")
+    currency: Mapped[str] = mapped_column(String(8), nullable=False, default="CNY", comment="币种")
+    acceptance_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="验收日期")
+    actual_payment_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="实际付款日期")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending", comment="状态: pending/paid/cancelled")
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="排序")
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="备注")
+
+    contract: Mapped["Contract"] = relationship("Contract", back_populates="payments")
+    attachments: Mapped[list["ContractPaymentAttachment"]] = relationship(
+        "ContractPaymentAttachment", back_populates="payment", lazy="selectin", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_contract_payments_contract_status", "contract_id", "status"),
+        Index("ix_contract_payments_contract_order", "contract_id", "sort_order"),
+    )
+
+
+class ContractPaymentAttachment(TimestampMixin, Base):
+    """合同付款附件 — PDF 付款凭证/发票等"""
+
+    __tablename__ = "contract_payment_attachments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    payment_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("contract_payments.id", ondelete="CASCADE"), nullable=False, index=True, comment="付款期次ID"
+    )
+    original_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="原始文件名")
+    stored_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="存储文件名")
+    file_path: Mapped[str] = mapped_column(String(1024), nullable=False, comment="本地文件路径")
+    file_size: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="文件大小(bytes)")
+    content_type: Mapped[str] = mapped_column(String(128), nullable=False, default="application/pdf", comment="MIME类型")
+    file_ext: Mapped[str] = mapped_column(String(16), nullable=False, default="pdf", comment="扩展名")
+    uploaded_by: Mapped[Optional[UUID]] = mapped_column(SAUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, comment="上传人")
+
+    payment: Mapped["ContractPayment"] = relationship("ContractPayment", back_populates="attachments")
+
+    __table_args__ = (
+        Index("ix_contract_payment_attachments_payment", "payment_id"),
+    )
 
 
 class ContractType(TimestampMixin, Base):

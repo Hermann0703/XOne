@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Save, X, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -17,8 +17,6 @@ import { apiGet } from "@/lib/api/client";
 const INITIAL_FORM: Partial<Contract> = {
   contract_no: "",
   contract_name: "",
-  fonds_id: undefined,
-  category_id: undefined,
   classification_id: undefined,
   supplier_id: undefined,
   amount: undefined,
@@ -46,21 +44,22 @@ export default function ContractForm() {
   const isEdit = !!id;
 
   const {
-    selectedContract,
-    fonds,
-    categories,
     classifications,
     suppliers,
     fetchContract,
-    fetchFonds,
-    fetchCategories,
     fetchClassifications,
     fetchSuppliers,
+    payments,
+    fetchPayments,
     createContract,
     updateContract,
+    bulkCreatePayments,
   } = useContractStore();
 
   const [form, setForm] = useState<Partial<Contract>>({ ...INITIAL_FORM });
+  const [paymentTemplate, setPaymentTemplate] = useState<"" | "two" | "three">("");
+  const [originalPaymentTemplate, setOriginalPaymentTemplate] = useState<"" | "two" | "three">("");
+  const [paymentsLoaded, setPaymentsLoaded] = useState(false);
   const [keywordInput, setKeywordInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loadingContract, setLoadingContract] = useState(false);
@@ -92,11 +91,9 @@ export default function ContractForm() {
 
   // 加载基础数据
   useEffect(() => {
-    fetchFonds();
-    fetchCategories();
     fetchClassifications();
     fetchSuppliers();
-  }, [fetchFonds, fetchCategories, fetchClassifications, fetchSuppliers]);
+  }, [fetchClassifications, fetchSuppliers]);
 
   // 编辑模式下加载合同
   useEffect(() => {
@@ -107,8 +104,6 @@ export default function ContractForm() {
           setForm({
             contract_no: c.contract_no,
             contract_name: c.contract_name,
-            fonds_id: c.fonds_id,
-            category_id: c.category_id,
             classification_id: c.classification_id,
             supplier_id: c.supplier_id || undefined,
             amount: c.amount,
@@ -134,6 +129,30 @@ export default function ContractForm() {
     }
   }, [isEdit, id, fetchContract]);
 
+  const inferPaymentTemplate = useCallback((items: typeof payments): "" | "two" | "three" => {
+    const names = items
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order || a.id - b.id)
+      .map((p) => p.name);
+    if (names.length === 2 && names[0] === "首付款" && names[1] === "尾款") return "two";
+    if (names.length === 3 && names[0] === "首付款" && names[1] === "进度款" && names[2] === "尾款") return "three";
+    return "";
+  }, []);
+
+  // 编辑模式下从已有付款期次推断模板，用于回显；避免保存未变更合同再次追加模板步骤
+  useEffect(() => {
+    if (!isEdit || !id) return;
+    setPaymentsLoaded(false);
+    fetchPayments(Number(id)).finally(() => setPaymentsLoaded(true));
+  }, [isEdit, id, fetchPayments]);
+
+  useEffect(() => {
+    if (!isEdit || !paymentsLoaded) return;
+    const inferred = inferPaymentTemplate(payments);
+    setPaymentTemplate(inferred);
+    setOriginalPaymentTemplate(inferred);
+  }, [isEdit, paymentsLoaded, payments, inferPaymentTemplate]);
+
   const setField = (field: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     // 清除对应字段的错误
@@ -146,8 +165,6 @@ export default function ContractForm() {
     const errors: Record<string, string> = {};
     if (!form.contract_no?.trim()) errors.contract_no = "请输入合同编号";
     if (!form.contract_name?.trim()) errors.contract_name = "请输入合同名称";
-    if (!form.fonds_id) errors.fonds_id = "请选择全宗";
-    if (!form.category_id) errors.category_id = "请选择分类";
     if (!form.classification_id) errors.classification_id = "请选择密级";
     if (form.amount == null || form.amount === undefined) errors.amount = "请输入采购金额";
     else if (Number.isNaN(form.amount) || Number(form.amount) <= 0) errors.amount = "请输入有效的采购金额（需大于0）";
@@ -202,6 +219,17 @@ export default function ContractForm() {
         result = await createContract(data as Partial<Contract>);
       }
       if (result) {
+        const shouldGeneratePayments = paymentTemplate && (!isEdit || paymentTemplate !== originalPaymentTemplate);
+        if (shouldGeneratePayments) {
+          try {
+            const payments = await bulkCreatePayments(result.id, paymentTemplate);
+            if (!payments) {
+              toast("合同已保存，但付款计划模板生成失败");
+            }
+          } catch {
+            toast("合同已保存，但付款计划模板生成失败");
+          }
+        }
         router.push(`/work/contracts/${result.id}`);
       } else {
         // 优先显示后端返回的错误消息
@@ -249,6 +277,7 @@ export default function ContractForm() {
           <CardTitle className="text-base">基本信息</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* ──── 左列 ──── */}
           <div>
             <label htmlFor="field-contract-no" className="text-sm font-medium text-text-secondary block mb-1">
               合同编号 <span className="text-destructive">*</span>
@@ -258,6 +287,7 @@ export default function ContractForm() {
               <p className="text-xs text-destructive mt-1">{fieldErrors.contract_no}</p>
             )}
           </div>
+          {/* ──── 右列 ──── */}
           <div>
             <label htmlFor="field-contract-name" className="text-sm font-medium text-text-secondary block mb-1">
               合同名称 <span className="text-destructive">*</span>
@@ -275,6 +305,10 @@ export default function ContractForm() {
             )}
           </div>
           <div>
+            <label htmlFor="field-subject-name" className="text-sm font-medium text-text-secondary block mb-1">标的名称</label>
+            <Input id="field-subject-name" value={form.subject_name || ""} onChange={(e) => setField("subject_name", e.target.value)} placeholder="请输入标的名称" />
+          </div>
+          <div>
             <label htmlFor="field-subject-no" className="text-sm font-medium text-text-secondary block mb-1">标的编号</label>
             <Input id="field-subject-no" value={form.subject_no || ""} onChange={(e) => setField("subject_no", e.target.value)} placeholder="字母+数字+'-'" />
             {fieldErrors.subject_no && (
@@ -282,40 +316,21 @@ export default function ContractForm() {
             )}
           </div>
           <div>
-            <label htmlFor="field-subject-name" className="text-sm font-medium text-text-secondary block mb-1">标的名称</label>
-            <Input id="field-subject-name" value={form.subject_name || ""} onChange={(e) => setField("subject_name", e.target.value)} placeholder="请输入标的名称" />
+            <label htmlFor="field-contract-type" className="text-sm font-medium text-text-secondary block mb-1">合同类型</label>
+            <Select
+              id="field-contract-type"
+              options={contractTypes.map((t) => ({ value: String(t.id), label: t.name }))}
+              value={form.contract_type_id ? String(form.contract_type_id) : ""}
+              onChange={(e) => setField("contract_type_id", e.target.value ? Number(e.target.value) : undefined)}
+              placeholder="选择类型"
+              disabled={loadingTypes}
+            />
           </div>
           <div>
             <label htmlFor="field-proc-no" className="text-sm font-medium text-text-secondary block mb-1">采购记录编号</label>
             <Input id="field-proc-no" value={form.procurement_no || ""} onChange={(e) => setField("procurement_no", e.target.value)} placeholder="字母+数字+'-'" />
             {fieldErrors.procurement_no && (
               <p className="text-xs text-destructive mt-1">{fieldErrors.procurement_no}</p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="field-contract-fonds" className="text-sm font-medium text-text-secondary block mb-1">全宗 <span className="text-destructive">*</span></label>
-            <Select
-              id="field-contract-fonds"
-              options={fonds.map(f => ({ value: String(f.id), label: f.name }))}
-              value={form.fonds_id ? String(form.fonds_id) : ""}
-              onChange={(e) => setField("fonds_id", e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="选择全宗"
-            />
-            {fieldErrors.fonds_id && (
-              <p className="text-xs text-destructive mt-1">{fieldErrors.fonds_id}</p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="field-contract-category" className="text-sm font-medium text-text-secondary block mb-1">分类 <span className="text-destructive">*</span></label>
-            <Select
-              id="field-contract-category"
-              options={categories.map(c => ({ value: String(c.id), label: c.name }))}
-              value={form.category_id ? String(form.category_id) : ""}
-              onChange={(e) => setField("category_id", e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="选择分类"
-            />
-            {fieldErrors.category_id && (
-              <p className="text-xs text-destructive mt-1">{fieldErrors.category_id}</p>
             )}
           </div>
           <div>
@@ -332,17 +347,6 @@ export default function ContractForm() {
             )}
           </div>
           <div>
-            <label htmlFor="field-contract-type" className="text-sm font-medium text-text-secondary block mb-1">合同类型</label>
-            <Select
-              id="field-contract-type"
-              options={contractTypes.map((t) => ({ value: String(t.id), label: t.name }))}
-              value={form.contract_type_id ? String(form.contract_type_id) : ""}
-              onChange={(e) => setField("contract_type_id", e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="选择类型"
-              disabled={loadingTypes}
-            />
-          </div>
-          <div>
             <label htmlFor="field-timeline-template" className="text-sm font-medium text-text-secondary block mb-1">时间轴模板</label>
             <Select
               id="field-timeline-template"
@@ -350,6 +354,20 @@ export default function ContractForm() {
               value={form.timeline_template_id ? String(form.timeline_template_id) : ""}
               onChange={(e) => setField("timeline_template_id", e.target.value ? Number(e.target.value) : undefined)}
               placeholder="选择时间轴模板"
+            />
+          </div>
+          <div>
+            <label htmlFor="field-payment-template" className="text-sm font-medium text-text-secondary block mb-1">付款计划模板</label>
+            <Select
+              id="field-payment-template"
+              options={[
+                { value: "", label: "-- 不使用模板 --" },
+                { value: "two", label: "两期付款模板" },
+                { value: "three", label: "三期付款模板" },
+              ]}
+              value={paymentTemplate}
+              onChange={(e) => setPaymentTemplate(e.target.value as "" | "two" | "three")}
+              placeholder="选择付款计划模板"
             />
           </div>
         </CardContent>
