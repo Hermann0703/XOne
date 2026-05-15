@@ -2,7 +2,7 @@
 // 管理合同、全宗、分类、密级、里程碑的 CRUD 状态
 
 import { create } from 'zustand';
-import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api/client';
+import { apiGet, apiPost, apiPatch, apiDelete, axiosClient } from '@/lib/api/client';
 
 // ─── 类型定义 ───────────────────────────────────────
 
@@ -75,6 +75,35 @@ export interface Milestone {
   remark?: string;
 }
 
+export interface ContractPaymentAttachment {
+  id: number;
+  payment_id: number;
+  original_name: string;
+  stored_name: string;
+  file_size: number;
+  content_type: string;
+  file_ext: string;
+  uploaded_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ContractPayment {
+  id: number;
+  contract_id: number;
+  name: string;
+  amount?: number | null;
+  currency: string;
+  acceptance_date?: string | null;
+  actual_payment_date?: string | null;
+  status: 'pending' | 'paid' | 'cancelled';
+  sort_order: number;
+  notes?: string | null;
+  attachments: ContractPaymentAttachment[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface DashboardSummary {
   total_contracts: number;
   total_amount: number;
@@ -116,18 +145,39 @@ export interface Paging {
   page_size: number;
 }
 
+export interface SupplierContact {
+  name: string;
+  title: string;
+  phone: string;
+  landline: string;
+  email: string;
+}
+
+export interface SupplierBankAccount {
+  account_type: string;
+  account_number: string;
+  bank_name: string;
+}
+
 export interface Supplier {
   id: string;
+  user_id?: string;
+  // 供应商信息
   name: string;
-  contact_person?: string;
-  contact_phone?: string;
+  short_name?: string;
+  english_name?: string;
+  legal_person?: string;
+  unified_social_credit_code?: string;
+  taxpayer_type?: string;
   address?: string;
+  business_scope?: string;
   business_license?: string;
   tax_id?: string;
-  bank_name?: string;
-  bank_account?: string;
-  dc_bank_name?: string;
-  dc_bank_account?: string;
+  // 联系人列表
+  contacts?: SupplierContact[];
+  // 银行账户列表
+  bank_accounts?: SupplierBankAccount[];
+  // 评级与状态
   rating?: string;
   status?: string;
   notes?: string;
@@ -154,6 +204,9 @@ interface ContractStore {
 
   // 里程碑
   milestones: Milestone[];
+
+  // 付款计划
+  payments: ContractPayment[];
 
   // 仪表盘
   dashboard: DashboardData | null;
@@ -194,6 +247,17 @@ interface ContractStore {
   updateMilestone: (id: number, data: Partial<Milestone>) => Promise<Milestone | null>;
   deleteMilestone: (id: number) => Promise<boolean>;
 
+  // ── 付款计划 ──
+  fetchPayments: (contractId: number) => Promise<void>;
+  createPayment: (contractId: number, data: Partial<ContractPayment>) => Promise<ContractPayment | null>;
+  updatePayment: (id: number, data: Partial<ContractPayment>) => Promise<ContractPayment | null>;
+  deletePayment: (id: number) => Promise<boolean>;
+  bulkCreatePayments: (contractId: number, template: 'two' | 'three') => Promise<ContractPayment[] | null>;
+  markPaymentPaid: (id: number, actualPaymentDate?: string) => Promise<ContractPayment | null>;
+  uploadPaymentAttachment: (paymentId: number, file: File) => Promise<ContractPaymentAttachment | null>;
+  deletePaymentAttachment: (attachmentId: number) => Promise<boolean>;
+  previewPaymentAttachment: (attachmentId: number) => Promise<string | null>;
+
   // ── 仪表盘 ──
   fetchDashboard: () => Promise<void>;
 
@@ -219,6 +283,7 @@ export const useContractStore = create<ContractStore>((set, get) => ({
   categories: [],
   classifications: [],
   milestones: [],
+  payments: [],
   dashboard: null,
   suppliers: [],
   supplierPaging: null,
@@ -510,6 +575,143 @@ export const useContractStore = create<ContractStore>((set, get) => ({
       }
     } catch { /* 静默处理 */ }
     return false;
+  },
+
+  // ── 付款计划 ──
+
+  fetchPayments: async (contractId) => {
+    try {
+      const res = await apiGet<ContractPayment[]>(`/work/contracts/${contractId}/payments`);
+      if (res.code === 0) set({ payments: res.data });
+    } catch (error) {
+      console.error('[Store] fetchPayments failed:', error);
+      set({ error: '加载付款计划失败' });
+    }
+  },
+
+  createPayment: async (contractId, data) => {
+    try {
+      const res = await apiPost<ContractPayment>(`/work/contracts/${contractId}/payments`, data);
+      if (res.code === 0) {
+        set({ payments: [...get().payments, res.data].sort((a, b) => a.sort_order - b.sort_order || a.id - b.id) });
+        return res.data;
+      }
+      set({ error: res.message || '创建付款期次失败' });
+    } catch (error) {
+      console.error('[Store] createPayment failed:', error);
+      set({ error: '创建付款期次失败' });
+    }
+    return null;
+  },
+
+  updatePayment: async (id, data) => {
+    try {
+      const res = await apiPatch<ContractPayment>(`/work/contracts/payments/${id}`, data);
+      if (res.code === 0) {
+        set({ payments: get().payments.map((p) => (p.id === id ? res.data : p)).sort((a, b) => a.sort_order - b.sort_order || a.id - b.id) });
+        return res.data;
+      }
+      set({ error: res.message || '更新付款期次失败' });
+    } catch (error) {
+      console.error('[Store] updatePayment failed:', error);
+      set({ error: '更新付款期次失败' });
+    }
+    return null;
+  },
+
+  deletePayment: async (id) => {
+    try {
+      const res = await apiDelete(`/work/contracts/payments/${id}`);
+      if (res.code === 0) {
+        set({ payments: get().payments.filter((p) => p.id !== id) });
+        return true;
+      }
+    } catch (error) {
+      console.error('[Store] deletePayment failed:', error);
+      set({ error: '删除付款期次失败' });
+    }
+    return false;
+  },
+
+  bulkCreatePayments: async (contractId, template) => {
+    try {
+      const res = await apiPost<ContractPayment[]>(`/work/contracts/${contractId}/payments/bulk`, { template });
+      if (res.code === 0) {
+        set({ payments: res.data });
+        return res.data;
+      }
+      set({ error: res.message || '生成付款计划失败' });
+    } catch (error) {
+      console.error('[Store] bulkCreatePayments failed:', error);
+      set({ error: '生成付款计划失败' });
+    }
+    return null;
+  },
+
+  markPaymentPaid: async (id, actualPaymentDate) => {
+    try {
+      const res = await apiPatch<ContractPayment>(`/work/contracts/payments/${id}/mark-paid`, actualPaymentDate ? { actual_payment_date: actualPaymentDate } : {});
+      if (res.code === 0) {
+        set({ payments: get().payments.map((p) => (p.id === id ? res.data : p)) });
+        return res.data;
+      }
+    } catch (error) {
+      console.error('[Store] markPaymentPaid failed:', error);
+      set({ error: '标记已付款失败' });
+    }
+    return null;
+  },
+
+  uploadPaymentAttachment: async (paymentId, file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await axiosClient.post(`/work/contracts/payments/${paymentId}/attachments`, formData, {
+        timeout: 60000,
+        headers: { 'Content-Type': undefined },
+      }) as unknown as { code: number; message: string; data: ContractPaymentAttachment };
+      if (res.code === 0) {
+        set({
+          payments: get().payments.map((p) => (
+            p.id === paymentId ? { ...p, attachments: [...(p.attachments || []), res.data] } : p
+          )),
+        });
+        return res.data;
+      }
+      set({ error: res.message || '上传附件失败' });
+    } catch (error) {
+      console.error('[Store] uploadPaymentAttachment failed:', error);
+      set({ error: '上传附件失败，仅支持20MB以内PDF' });
+    }
+    return null;
+  },
+
+  deletePaymentAttachment: async (attachmentId) => {
+    try {
+      const res = await apiDelete(`/work/contracts/payments/attachments/${attachmentId}`);
+      if (res.code === 0) {
+        set({ payments: get().payments.map((p) => ({ ...p, attachments: (p.attachments || []).filter((a) => a.id !== attachmentId) })) });
+        return true;
+      }
+    } catch (error) {
+      console.error('[Store] deletePaymentAttachment failed:', error);
+      set({ error: '删除附件失败' });
+    }
+    return false;
+  },
+
+  previewPaymentAttachment: async (attachmentId) => {
+    try {
+      const blob = await axiosClient.get(`/work/contracts/payments/attachments/${attachmentId}/preview`, { responseType: 'blob' }) as unknown as Blob;
+      if (!(blob instanceof Blob) || (blob.type && !blob.type.includes('pdf'))) {
+        throw new Error('返回内容不是 PDF 文件');
+      }
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.error('[Store] previewPaymentAttachment failed:', error);
+      set({ error: '预览附件失败' });
+      return null;
+    }
   },
 
   // ── 仪表盘 ──

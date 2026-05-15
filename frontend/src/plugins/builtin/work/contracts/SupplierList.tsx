@@ -9,11 +9,11 @@ import {
   Pencil,
   Trash2,
   Building2,
+  Eye,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -66,7 +66,6 @@ export default function SupplierList() {
 
   // 筛选
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 15;
 
@@ -75,8 +74,8 @@ export default function SupplierList() {
   const [deleting, setDeleting] = useState(false);
 
   const loadSuppliers = useCallback(() => {
-    fetchSuppliers(search, statusFilter, page, pageSize);
-  }, [search, statusFilter, page, fetchSuppliers]);
+    fetchSuppliers(search, "", page, pageSize);
+  }, [search, page, fetchSuppliers]);
 
   useEffect(() => {
     loadSuppliers();
@@ -99,23 +98,31 @@ export default function SupplierList() {
 
   return (
     <div className="space-y-6 p-6">
-      {/* 操作栏 */}
+      {/* 页面标题 + 新建按钮 */}
       <div className="flex items-center justify-between">
-        <Button onClick={() => router.push('/work/contracts/suppliers/new')}>
-          <Plus className="size-4 mr-1" />
+        <div>
+          <h2 className="text-2xl font-bold text-text-primary">供应商管理</h2>
+          <p className="text-sm text-text-secondary mt-1">
+            管理企业供应商信息，共 {supplierPaging?.total ?? "—"} 条记录
+          </p>
+        </div>
+        <Button onClick={() => router.push('/work/contracts/suppliers/new')} className="gap-1.5 shadow-sm">
+          <Plus className="size-4" />
           新增供应商
         </Button>
       </div>
 
-      {/* 搜索筛选 */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-3 items-end">
-            <div className="relative flex-1 min-w-[250px]">
+      {/* 供应商列表卡片 — 含搜索 + 表格 */}
+      <Card className="shadow-none border-border/50">
+        <CardHeader className="pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="text-base">供应商列表</CardTitle>
+            {/* 搜索栏内嵌在 CardHeader */}
+            <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-text-secondary" />
               <Input
-                placeholder="搜索供应商名称、联系人、电话..."
-                className="pl-9"
+                placeholder="搜索名称、联系人、电话..."
+                className="pl-9 h-9"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -123,29 +130,11 @@ export default function SupplierList() {
                 }}
               />
             </div>
-            <Select
-              options={[
-                { value: "", label: "全部状态" },
-                { value: "active", label: "启用" },
-                { value: "inactive", label: "停用" },
-                { value: "blacklisted", label: "黑名单" },
-              ]}
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              placeholder="状态筛选"
-            />
           </div>
-        </CardContent>
-      </Card>
-
-      {/* 数据表格 */}
-      <Card>
-        <CardContent className="pt-6">
+        </CardHeader>
+        <CardContent className="pt-0">
           {supplierLoading ? (
-            <div className="space-y-3">
+            <div className="space-y-3 py-4">
               {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-10 w-full rounded" />
               ))}
@@ -154,35 +143,31 @@ export default function SupplierList() {
             <>
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>名称</TableHead>
-                    <TableHead className="w-[100px]">联系人</TableHead>
-                    <TableHead className="w-[130px]">电话</TableHead>
-                    <TableHead className="w-[80px]">评级</TableHead>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[200px]">名称</TableHead>
+                    <TableHead className="w-[80px]">联系人</TableHead>
+                    <TableHead className="w-[120px]">电话</TableHead>
+                    <TableHead className="w-[70px]">评级</TableHead>
                     <TableHead className="w-[80px]">状态</TableHead>
-                    <TableHead className="w-[130px]">操作</TableHead>
+                    <TableHead className="w-[120px] text-right">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {suppliers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-10">
-                        <div className="flex flex-col items-center justify-center gap-3 text-center">
-                          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
-                            <Building2 className="w-7 h-7 text-muted-foreground" />
+                      <TableCell colSpan={6} className="py-14">
+                        <div className="flex flex-col items-center justify-center gap-4 text-center">
+                          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted/50">
+                            <Building2 className="w-7 h-7 text-muted-foreground/60" />
                           </div>
                           <div>
-                            <p className="text-lg font-medium text-foreground">
+                            <p className="text-base font-medium text-foreground">
                               暂无供应商
                             </p>
                             <p className="text-sm text-muted-foreground mt-1">
-                              点击「新增供应商」按钮添加第一个供应商
+                              点击「新增供应商」按钮开始添加
                             </p>
                           </div>
-                          <Button onClick={() => router.push('/work/contracts/suppliers/new')} className="gap-1.5">
-                            <Plus className="w-4 h-4" />
-                            新增供应商
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -191,27 +176,35 @@ export default function SupplierList() {
                       const statusConfig =
                         STATUS_MAP[s.status || ""] || STATUS_MAP.inactive;
                       return (
-                        <TableRow key={s.id}>
+                        <TableRow
+                          key={s.id}
+                          className="hover:bg-muted/30 transition-colors"
+                        >
                           <TableCell className="font-medium">
-                            {s.name}
+                            <div className="flex items-center gap-2">
+                              <div className="size-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Building2 className="size-3.5 text-primary/70" />
+                              </div>
+                              {s.name}
+                            </div>
                           </TableCell>
-                          <TableCell>{s.contact_person || "-"}</TableCell>
+                          <TableCell>{s.contacts?.[0]?.name || "-"}</TableCell>
                           <TableCell className="font-mono text-sm">
-                            {s.contact_phone || "-"}
+                            {s.contacts?.[0]?.phone || "-"}
                           </TableCell>
                           <TableCell>
                             {s.rating ? (
-                              <Badge variant="outline">
+                              <Badge variant="outline" className="text-xs px-1.5 py-0">
                                 {RATING_LABELS[s.rating] || s.rating}
                               </Badge>
                             ) : (
-                              "-"
+                              <span className="text-text-tertiary">-</span>
                             )}
                           </TableCell>
                           <TableCell>
                             <Badge
                               variant="outline"
-                              className={`inline-flex items-center gap-1 ${statusConfig.className}`}
+                              className={`inline-flex items-center gap-1 text-xs px-1.5 py-0 ${statusConfig.className}`}
                             >
                               <span
                                 className={`size-1.5 rounded-full ${
@@ -219,20 +212,31 @@ export default function SupplierList() {
                                     ? "bg-green-500"
                                     : s.status === "blacklisted"
                                     ? "bg-red-500"
-                                    : "bg-gray-500"
+                                    : "bg-gray-400"
                                 }`}
                               />
                               {statusConfig.label}
                             </Badge>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-0.5">
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                title="查看"
+                                aria-label="查看供应商"
+                                onClick={() => router.push(`/work/contracts/suppliers/${s.id}`)}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                <Eye className="size-3.5" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon-xs"
                                 title="编辑"
                                 aria-label="编辑供应商"
                                 onClick={() => router.push(`/work/contracts/suppliers/${s.id}/edit`)}
+                                className="text-muted-foreground hover:text-foreground"
                               >
                                 <Pencil className="size-3.5" />
                               </Button>
@@ -242,8 +246,9 @@ export default function SupplierList() {
                                 title="删除"
                                 aria-label="删除供应商"
                                 onClick={() => setDeleteTarget(s)}
+                                className="text-muted-foreground hover:text-destructive"
                               >
-                                <Trash2 className="size-3.5 text-destructive" />
+                                <Trash2 className="size-3.5" />
                               </Button>
                             </div>
                           </TableCell>
@@ -256,7 +261,7 @@ export default function SupplierList() {
 
               {/* 分页器 */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4">
+                <div className="flex items-center justify-between pt-4 border-t border-border/30 mt-4">
                   <div className="text-sm text-text-secondary">
                     共 {supplierPaging?.total ?? 0} 条记录
                   </div>
@@ -269,7 +274,7 @@ export default function SupplierList() {
                     >
                       上一页
                     </Button>
-                    <span className="text-sm px-2">
+                    <span className="text-sm tabular-nums px-2">
                       {page} / {totalPages}
                     </span>
                     <Button
