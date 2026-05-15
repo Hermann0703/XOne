@@ -98,11 +98,11 @@ interface DashboardApiResponse {
 // ====================================================================
 
 const quickEntries: QuickEntry[] = [
-  { title: '购物清单', href: '../shopping', icon: ShoppingCart, color: 'hover:text-orange-500' },
-  { title: '藏书阁',   href: '../reading',  icon: BookOpen,    color: 'hover:text-amber-600' },
-  { title: '影音馆',   href: '../media',    icon: Film,        color: 'hover:text-purple-500' },
-  { title: '资产管理', href: '../assets',   icon: TrendingUp,  color: 'hover:text-green-500' },
-  { title: '健康管理', href: '../health',   icon: Heart,       color: 'hover:text-red-500' },
+  { title: '购物清单', href: '../shopping', icon: ShoppingCart, color: 'hover:text-warning' },
+  { title: '藏书阁',   href: '../reading',  icon: BookOpen,    color: 'hover:text-warning' },
+  { title: '影音馆',   href: '../media',    icon: Film,        color: 'hover:text-info' },
+  { title: '资产管理', href: '../assets',   icon: TrendingUp,  color: 'hover:text-success' },
+  { title: '健康管理', href: '../health',   icon: Heart,       color: 'hover:text-destructive' },
 ];
 
 // ====================================================================
@@ -191,13 +191,13 @@ function getActivityIconAndColor(module: string): {
   color: string;
 } {
   const map: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
-    '购物清单': { icon: ShoppingCart, color: 'text-orange-500' },
-    '藏书阁': { icon: BookOpen, color: 'text-amber-600' },
-    '影音馆': { icon: Film, color: 'text-purple-500' },
-    '资产管理': { icon: TrendingUp, color: 'text-green-500' },
-    '健康管理': { icon: Heart, color: 'text-red-500' },
+    '购物清单': { icon: ShoppingCart, color: 'text-warning' },
+    '藏书阁': { icon: BookOpen, color: 'text-warning' },
+    '影音馆': { icon: Film, color: 'text-info' },
+    '资产管理': { icon: TrendingUp, color: 'text-success' },
+    '健康管理': { icon: Heart, color: 'text-destructive' },
   };
-  return map[module] || { icon: Clock, color: 'text-gray-500' };
+  return map[module] || { icon: Clock, color: 'text-text-tertiary' };
 }
 
 /** 判断是否为当前月份的日期 */
@@ -266,8 +266,8 @@ export default function PersonalDashboard() {
         value: String(s?.shopping_pending ?? 0),
         label: '待购项',
         icon: ShoppingCart,
-        color: 'text-orange-500',
-        bgColor: 'bg-orange-50',
+        color: 'text-warning',
+        bgColor: 'bg-warning/10',
         trend: s?.shopping_total ?? 0,
         trendLabel: '总计',
       },
@@ -276,8 +276,8 @@ export default function PersonalDashboard() {
         value: String(s?.reading_in_progress ?? 0),
         label: '在读',
         icon: BookOpen,
-        color: 'text-amber-600',
-        bgColor: 'bg-amber-50',
+        color: 'text-warning',
+        bgColor: 'bg-warning/10',
         trend: s?.reading_completed ?? 0,
         trendLabel: '已读完',
       },
@@ -286,8 +286,8 @@ export default function PersonalDashboard() {
         value: String(s?.media_watched ?? 0),
         label: '已看',
         icon: Film,
-        color: 'text-purple-500',
-        bgColor: 'bg-purple-50',
+        color: 'text-info',
+        bgColor: 'bg-info/10',
         trend: s?.media_total ?? 0,
         trendLabel: '总计',
       },
@@ -296,8 +296,8 @@ export default function PersonalDashboard() {
         value: formatCurrency(s?.assets_net_worth),
         label: '总资产',
         icon: TrendingUp,
-        color: 'text-green-500',
-        bgColor: 'bg-green-50',
+        color: 'text-success',
+        bgColor: 'bg-success/10',
         trend: s?.assets_month_income ?? 0,
         trendLabel: '月收入',
       },
@@ -306,8 +306,8 @@ export default function PersonalDashboard() {
         value: String(s?.health_today_calories ?? 0),
         label: '今日卡路里',
         icon: Heart,
-        color: 'text-red-500',
-        bgColor: 'bg-red-50',
+        color: 'text-destructive',
+        bgColor: 'bg-destructive/10',
         trend: s?.health_exercise_minutes ?? 0,
         trendLabel: '运动分钟',
       },

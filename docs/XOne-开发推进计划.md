@@ -479,6 +479,37 @@ Day 1   ████████  P5 Docker + API 代理修复  ✅
 > **执行命令**: 输入 "继续推进" 或指定具体任务。
 ---
 
+## 2026-05-16 供应商 UI 美化 + 合同筛选精简
+
+> 详情记录：`docs/plans/2026-05-16-supplier-ui-beautification.md`（本次日志）
+
+### 需求
+
+- 供应商管理/详情/表单三个页面 UI 美化，解决字段间距不统一问题。
+- 合并碎片化卡片，减少视觉干扰。
+- 合同表单移除去全宗/分类筛选下拉框（业务上不再需要前端筛选）。
+
+### 开发结果
+
+**供应商 UI 全面美化：**
+- **SupplierForm** — 评级/状态合并进供应商信息主卡片，用 `border-t` 分隔线内嵌；所有字段统一 `grid grid-cols-2 gap-x-6 gap-y-4`；去掉独立评级卡片、冗余备注标签、无意义 hover 类。
+- **SupplierDetail** — 信息字段统一网格对齐，联系人/银行表格式展示+行悬停；面包屑导航；评级/状态内嵌。
+- **SupplierList** — 搜索栏并入表格卡片（去外层卡片壳）；行 `hover:bg-muted/30` 高亮；状态圆点 Badge；名称列图标点缀；空白态引导。
+- **后端** — Supplier 模型新增 `business_scope` Text 字段（全层透传）。
+
+**合同筛选精简：**
+- ContractForm/ContractList 完全移除全宗(fonds)和分类(category)筛选下拉框及相关 state/fetch。
+- 后端 `ContractCreate`/`ContractUpdate` 的 `fonds_id`/`category_id` 设 `default=""`，兼容前端不传值。
+
+### 验证
+
+- `npx tsc --noEmit` 通过，`npm run build` 通过。
+- Docker frontend 重建 → `up -d` 正常。
+- `curl localhost:8000/health` → `{"status":"ok","database":true}`。
+- 浏览器复验：供应商列表/详情/新建三个页面布局正确，评级/状态已内嵌。
+
+---
+
 ## 2026-05-15 合同管理增强：付款计划 / 附件预览 / 详情页修复
 
 > 详情记录：`docs/plans/2026-05-15-contract-payments-and-detail-fix.md`

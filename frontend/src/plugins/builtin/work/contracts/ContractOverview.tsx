@@ -68,32 +68,32 @@ export default function ContractOverview() {
     {
       label: "合同总数",
       value: s?.total_contracts ?? "--",
-      icon: <FileText className="size-5 text-blue-500" />,
+      icon: <FileText className="size-5 text-primary" />,
     },
     {
       label: "合同总金额",
       value: s?.total_amount != null ? formatAmount(s.total_amount) : "--",
-      icon: <DollarSign className="size-5 text-emerald-500" />,
+      icon: <DollarSign className="size-5 text-success" />,
     },
     {
       label: "生效中",
       value: s?.active_count ?? "--",
-      icon: <TrendingUp className="size-5 text-green-500" />,
+      icon: <TrendingUp className="size-5 text-success" />,
     },
     {
       label: "已完成",
       value: s?.completed_count ?? "--",
-      icon: <CheckCircle2 className="size-5 text-indigo-500" />,
+      icon: <CheckCircle2 className="size-5 text-success" />,
     },
     {
       label: "草稿",
       value: s?.draft_count ?? "--",
-      icon: <Clock className="size-5 text-orange-500" />,
+      icon: <Clock className="size-5 text-warning" />,
     },
     {
       label: "已终止",
       value: s?.terminated_count ?? "--",
-      icon: <AlertTriangle className="size-5 text-red-500" />,
+      icon: <AlertTriangle className="size-5 text-destructive" />,
     },
   ];
 
@@ -189,7 +189,7 @@ export default function ContractOverview() {
         <Card className="bg-card border rounded-xl">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="size-4 text-orange-500" />
+              <AlertTriangle className="size-4 text-warning" />
               到期预警
             </CardTitle>
           </CardHeader>

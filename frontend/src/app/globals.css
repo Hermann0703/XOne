@@ -3,108 +3,138 @@
 @tailwind utilities;
 
 /* ========================================
-   XOne 主题系统 — CSS 变量
-   通过 [data-mode] 属性切换主题
+   XOne 主题系统 — ArcoDesign Design Tokens
+   v2.0 单一配色方案 + Arco 官方暗色方案
+   设计规范: 字节跳动 ArcoDesign
    ======================================== */
 
-/* 默认主题：个人模式 (暖色调) */
-:root,
-[data-mode='personal'] {
-  /* 主色 — 靛紫暖调 */
-  --color-primary: #6366F1;
-  --color-primary-light: #A5B4FC;
+/* ─── Light Mode (默认) ─── */
+:root {
+  /* 主色 — Arco Blue #165DFF */
+  --color-primary: #165DFF;
+  --color-primary-light: #BEDAFF;       /* Arco blue-2 (hover/focus 浅底) */
+  --color-primary-hover: #0E42D2;       /* Arco blue-7 (主按钮 hover) */
+  --color-primary-active: #072CA6;      /* Arco blue-8 (主按钮 active) */
 
-  /* 背景 */
-  --color-bg-page: #F9FAFB;
+  /* 背景 — Arco 中性色板 */
+  --color-bg-page: #F7F8FA;             /* Arco gray-1 */
   --color-bg-card: #FFFFFF;
   --color-bg-sidebar: #FFFFFF;
 
   /* 文字 */
-  --color-text-primary: #111827;
-  --color-text-secondary: #6B7280;
+  --color-text-primary: #1D2129;        /* Arco gray-10 */
+  --color-text-secondary: #86909C;      /* Arco gray-6 */
+  --color-text-tertiary: #A9AEB8;       /* Arco gray-5 */
+  --color-text-disabled: #C9CDD4;       /* Arco gray-4 */
 
   /* 边框 */
-  --color-border: #E5E7EB;
+  --color-border: #E5E6EB;              /* Arco gray-3 */
+  --color-border-light: #F2F3F5;        /* Arco gray-2 */
 
-  /* 语义色 */
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-  --color-info: #3B82F6;
+  /* 语义色 — Arco 功能色 */
+  --color-success: #00B42A;             /* Arco Green-6 */
+  --color-warning: #FF7D00;             /* Arco Orange-6 */
+  --color-danger: #F53F3F;              /* Arco Red-6 */
+  --color-info: #165DFF;                /* 同主色 */
 
-  /* 圆角 */
-  --radius-card: 12px;
-  --radius-panel: 8px;
-  --radius-btn: 8px;
-  --radius-input: 8px;
-  --radius-md: 6px;
-  --radius-tag: 20px;
+  /* 圆角 — Arco 规范 */
+  --radius-sm: 2px;                     /* 标签、状态点 */
+  --radius-md: 4px;                     /* 按钮、输入框、表格 */
+  --radius-lg: 8px;                     /* 卡片、面板、弹窗 */
+  --radius-tag: 2px;
 
-  /* ========================================
-     Shadcn/ui 兼容 CSS 变量
-     通过级联自动适配个人/工作模式
-     ======================================== */
+  /* 阴影 — 四级层级 */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.05);    /* 卡片/列表项 */
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.08);    /* hover 态 */
+  --shadow-3: 0 4px 16px rgba(0, 0, 0, 0.12);   /* 下拉/弹出层 */
+  --shadow-4: 0 8px 24px rgba(0, 0, 0, 0.16);   /* 模态框/抽屉 */
+
+  /* 遮罩 */
+  --color-overlay: rgba(29, 33, 41, 0.6);        /* Arco gray-10 @ 60% */
+
+  /* ─── Shadcn/ui 兼容变量 ─── */
   --background: var(--color-bg-page);
   --foreground: var(--color-text-primary);
-  --muted: #F3F4F6;
-  --muted-foreground: #6B7280;
-  --secondary: #F3F4F6;
-  --secondary-foreground: #111827;
+
+  --muted: #F2F3F5;                     /* Arco gray-2 */
+  --muted-foreground: var(--color-text-secondary);
+
+  --secondary: #F2F3F5;
+  --secondary-foreground: var(--color-text-primary);
+
   --destructive: var(--color-danger);
   --destructive-foreground: #FFFFFF;
+
   --ring: var(--color-primary);
 
-  /* 主色（shadcn 兼容） */
   --primary: var(--color-primary);
   --primary-foreground: #FFFFFF;
 
-  /* Card */
   --card: var(--color-bg-card);
   --card-foreground: var(--color-text-primary);
 
-  /* Popover */
   --popover: var(--color-bg-card);
   --popover-foreground: var(--color-text-primary);
 
-  /* Input & accent */
   --border: var(--color-border);
   --input: var(--color-border);
+
   --accent: var(--muted);
   --accent-foreground: var(--color-text-primary);
 }
 
-/* 工作模式 (冷色调) */
-[data-mode='work'] {
-  --color-primary: #3B82F6;
-  --color-primary-light: #93C5FD;
-
-  --color-bg-page: #F1F5F9;
-  --color-bg-card: #FFFFFF;
-
-  --color-text-primary: #1E293B;
-  --color-text-secondary: #64748B;
-
-  --color-border: #CBD5E1;
-
-  /* 工作模式下 background/foreground 通过 var() 级联自动适配 */
-}
-
-/* 深色主题 — 覆盖浅色变量 */
+/* ─── Dark Mode — ArcoDesign 官方暗色方案 ─── */
 [data-theme='dark'] {
-  --color-bg-page: #0F172A;
-  --color-bg-card: #1E293B;
-  --color-bg-sidebar: #0F172A;
+  /* 背景 — 暗色中性板 */
+  --color-bg-page: #0A0A0A;
+  --color-bg-card: #141414;
+  --color-bg-sidebar: #141414;
 
-  --color-text-primary: #F1F5F9;
-  --color-text-secondary: #94A3B8;
+  /* 文字 */
+  --color-text-primary: #E5E6EB;        /* Arco gray-3 (暗态反相) */
+  --color-text-secondary: #86909C;      /* Arco gray-6 */
+  --color-text-tertiary: #6B7785;       /* Arco gray-7 */
+  --color-text-disabled: #4E5969;       /* Arco gray-8 */
 
-  --color-border: #334155;
+  /* 边框 */
+  --color-border: #272E3B;              /* Arco gray-9 */
+  --color-border-light: #1D2129;        /* Arco gray-10 */
 
-  --muted: #1E293B;
-  --muted-foreground: #94A3B8;
-  --secondary: #1E293B;
-  --secondary-foreground: #F1F5F9;
-  --destructive-foreground: #F1F5F9;
+  /* 阴影 — 暗色下更深 */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.30);
+  --shadow-3: 0 4px 16px rgba(0, 0, 0, 0.40);
+  --shadow-4: 0 8px 24px rgba(0, 0, 0, 0.50);
+
+  /* 遮罩 */
+  --color-overlay: rgba(0, 0, 0, 0.6);
+
+  /* ─── Shadcn/ui 暗色 ─── */
+  --background: var(--color-bg-page);
+  --foreground: var(--color-text-primary);
+
+  --muted: #141414;
+  --muted-foreground: var(--color-text-secondary);
+
+  --secondary: #141414;
+  --secondary-foreground: var(--color-text-primary);
+
+  --destructive-foreground: var(--color-text-primary);
+
+  --primary: #4080FF;                  /* Arco blue-5 (暗态提亮主色) */
+  --primary-foreground: #FFFFFF;
+
+  --card: var(--color-bg-card);
+  --card-foreground: var(--color-text-primary);
+
+  --popover: var(--color-bg-card);
+  --popover-foreground: var(--color-text-primary);
+
+  --border: var(--color-border);
+  --input: var(--color-border);
+
+  --accent: var(--muted);
+  --accent-foreground: var(--color-text-primary);
 }
 
 /* ========================================
@@ -120,15 +150,17 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 14px; /* ArcoDesign 主字号 */
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+  font-family: 'Nunito', 'PingFang SC', 'Microsoft YaHei', '微软雅黑',
+    system-ui, sans-serif;
   background-color: var(--color-bg-page);
   color: var(--color-text-primary);
-  line-height: 1.6;
+  line-height: 1.4;  /* ArcoDesign 标准行高 */
 }
 
 /* 链接默认样式 */
@@ -136,7 +168,6 @@ a {
   color: var(--color-primary);
   text-decoration: none;
 }
-
 a:hover {
   text-decoration: underline;
 }
@@ -146,22 +177,19 @@ a:hover {
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 3px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary);
 }
 
 /* ========================================
-   无障碍 — 偏好减少动画
+   无障碍 — 减少动画偏好
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -174,7 +202,7 @@ a:hover {
 }
 
 /* ========================================
-   触摸设备 — 防止 hover 误触发
+   触摸设备 — 禁用 hover 误触发
    ======================================== */
 @media (hover: none) and (pointer: coarse) {
   .hover\:bg-muted:hover {

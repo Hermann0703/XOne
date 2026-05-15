@@ -256,8 +256,8 @@ export default function ClassificationList() {
                                 <span
                                   className={`size-1.5 rounded-full ${
                                     item.is_active
-                                      ? "bg-green-500"
-                                      : "bg-gray-500"
+                                      ? "bg-success"
+                                      : "bg-text-tertiary"
                                   }`}
                                 />
                                 {statusConfig.label}

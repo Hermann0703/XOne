@@ -271,7 +271,7 @@ export default function StorageManager() {
                               title="删除"
                               aria-label="删除档案柜"
                             >
-                              <Trash2 className="size-3 text-red-500" />
+                              <Trash2 className="size-3 text-destructive" />
                             </Button>
                           </div>
                         </div>
@@ -359,7 +359,7 @@ export default function StorageManager() {
                             title="删除"
                             aria-label="删除档案盒"
                           >
-                            <Trash2 className="size-3 text-red-500" />
+                            <Trash2 className="size-3 text-destructive" />
                           </Button>
                         </div>
                       </CardContent>
@@ -392,7 +392,7 @@ export default function StorageManager() {
           <DialogBody className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium">名称 <span className="text-red-500">*</span></label>
+                <label className="text-sm font-medium">名称 <span className="text-destructive">*</span></label>
                 <Input
                   value={cabinetForm.name}
                   onChange={(e) => setCabinetForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -402,7 +402,7 @@ export default function StorageManager() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">编号 <span className="text-red-500">*</span></label>
+                <label className="text-sm font-medium">编号 <span className="text-destructive">*</span></label>
                 <Input
                   value={cabinetForm.code}
                   onChange={(e) => setCabinetForm((prev) => ({ ...prev, code: e.target.value }))}
@@ -462,7 +462,7 @@ export default function StorageManager() {
           <DialogBody className="space-y-4">
             <div>
               <label className="text-sm font-medium">
-                盒编号 <span className="text-red-500">*</span>
+                盒编号 <span className="text-destructive">*</span>
               </label>
               <Input
                 value={boxForm.box_no}

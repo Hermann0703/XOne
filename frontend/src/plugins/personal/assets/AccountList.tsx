@@ -134,13 +134,13 @@ export default function AccountList() {
 
   function typeColor(typ: string) {
     const map: Record<string, string> = {
-      bank: "bg-blue-500",
-      cash: "bg-green-500",
-      credit: "bg-purple-500",
-      investment: "bg-orange-500",
-      other: "bg-gray-500",
+      bank: "bg-primary",
+      cash: "bg-success",
+      credit: "bg-info",
+      investment: "bg-warning",
+      other: "bg-text-tertiary",
     }
-    return map[typ] ?? "bg-gray-400"
+    return map[typ] ?? "bg-muted"
   }
 
   if (loading) {

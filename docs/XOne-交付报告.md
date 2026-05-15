@@ -59,7 +59,7 @@
 ## 功能模块清单
 
 ### 工作模式 (Work)
-- 📝 **合同管理**: CRUD + 全宗/分类/密级管理 + 里程碑 + 统计面板
+- 📝 **合同管理**: CRUD + 供应商管理 + 里程碑 + 付款计划 + 统计面板 | 2026-05-16 供应商 UI 美化
 - 📦 **档案管理**: 分类检索 + 借阅管理
 - 📊 **数据报送**: 数据源配置 + Celery 任务 + 日志监控
 - 📚 **知识库**: MarkItDown 文档解析 + Meilisearch 全文搜索 + Qdrant 向量 RAG 问答
@@ -129,9 +129,22 @@ cd backend && python -m uvicorn app.main:app --reload
 
 ---
 
-**交付日期**: 2026-05-15  
-**最新版本**: v2.1-port-fix  
-**总计新增代码**: ~14,500+ 行 (前端 ~8,000 + 后端 ~5,000 + 部署/测试 ~1,500)
+**交付日期**: 2026-05-16  
+**最新版本**: v2.2-supplier-ui  
+**总计新增代码**: ~15,000+ 行 (前端 ~8,500 + 后端 ~5,000 + 部署/测试 ~1,500)
+
+## 2026-05-16 供应商 UI 美化 + 合同筛选精简
+
+| 类别 | 变更 | 文件 |
+|------|------|------|
+| SupplierForm | 评级/状态合并进主卡片，统一 grid 间距，去碎片卡 | `SupplierForm.tsx` |
+| SupplierDetail | 新页面 — 统一网格 + 表格式联系人/银行 + 面包屑 | `SupplierDetail.tsx`（新建） |
+| SupplierList | 搜索栏内嵌表格卡，行悬停，状态圆点Badge，图标点缀 | `SupplierList.tsx` |
+| 合同表单 | 移除全宗/分类筛选下拉框及 state/fetch | `ContractForm.tsx` `ContractList.tsx` |
+| 后端 | `business_scope` 字段全层透传，Schema default="" 兼容 | `contracts.py` `supplier.py` |
+| 全局样式 | 卡片 `shadow-none`，去除 `hover:shadow-none hover:translate-y-0` | 全部卡片组件 |
+
+**验收结果**: TypeScript 零错误，Next.js build 通过，Docker 前端重建正常，浏览器复验三页面布局正确。
 
 ## P5 运维修复详情 (v2.1)
 

@@ -129,7 +129,7 @@ export default function ArchiveForm() {
             {/* 档号 + 题名 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="field-archive-no" className="text-sm font-medium">档号 <span className="text-red-500">*</span></label>
+                <label htmlFor="field-archive-no" className="text-sm font-medium">档号 <span className="text-destructive">*</span></label>
                 <Input
                   id="field-archive-no"
                   value={form.archive_no}
@@ -139,7 +139,7 @@ export default function ArchiveForm() {
                 />
               </div>
               <div>
-                <label htmlFor="field-archive-title" className="text-sm font-medium">题名 <span className="text-red-500">*</span></label>
+                <label htmlFor="field-archive-title" className="text-sm font-medium">题名 <span className="text-destructive">*</span></label>
                 <Input
                   id="field-archive-title"
                   value={form.title}

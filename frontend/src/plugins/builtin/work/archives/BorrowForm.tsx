@@ -86,7 +86,7 @@ export default function BorrowForm({ open, onOpenChange, onSuccess, preSelectedA
           {/* 选择档案 */}
           <div>
             <label className="text-sm font-medium">
-              选择档案 <span className="text-red-500">*</span>
+              选择档案 <span className="text-destructive">*</span>
             </label>
             {!preSelectedArchiveId && (
               <Input
@@ -114,7 +114,7 @@ export default function BorrowForm({ open, onOpenChange, onSuccess, preSelectedA
           {/* 借阅人 */}
           <div>
             <label className="text-sm font-medium">
-              借阅人 <span className="text-red-500">*</span>
+              借阅人 <span className="text-destructive">*</span>
             </label>
             <Input
               value={borrower}

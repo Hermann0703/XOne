@@ -36,22 +36,22 @@ function SummaryCards() {
     {
       label: "活跃数据源",
       value: monitoring.active_sources ?? "--",
-      icon: <Database className="size-5 text-blue-500" />,
+      icon: <Database className="size-5 text-primary" />,
     },
     {
       label: "活跃任务",
       value: monitoring.active_tasks ?? "--",
-      icon: <ListChecks className="size-5 text-green-500" />,
+      icon: <ListChecks className="size-5 text-success" />,
     },
     {
       label: "今日执行",
       value: monitoring.today_executions ?? "--",
-      icon: <Play className="size-5 text-orange-500" />,
+      icon: <Play className="size-5 text-warning" />,
     },
     {
       label: "成功率",
       value: monitoring.success_rate != null ? `${(monitoring.success_rate * 100).toFixed(1)}%` : "--",
-      icon: <Target className="size-5 text-emerald-500" />,
+      icon: <Target className="size-5 text-success" />,
     },
   ];
 

@@ -50,13 +50,13 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
 
 const TYPE_BADGE_CLASSES: Record<string, string> = {
   contract:
-    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary',
   archive:
-    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    'bg-success/10 text-success dark:bg-success/20 dark:text-success',
   knowledge:
-    'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+    'bg-info/10 text-info dark:bg-info/20 dark:text-info',
   dispatch:
-    'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+    'bg-warning/10 text-warning dark:bg-warning/20 dark:text-warning',
 }
 
 const TAB_OPTIONS = [

@@ -24,23 +24,23 @@ const STATUS_MAP: Record<
 > = {
   pending: {
     label: "待开始",
-    color: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600",
-    dotColor: "bg-gray-400 dark:bg-gray-500",
+    color: "bg-muted dark:bg-muted text-text-secondary dark:text-text-secondary border-border",
+    dotColor: "bg-text-tertiary",
   },
   in_progress: {
     label: "进行中",
-    color: "bg-blue-100 text-blue-600 border-blue-300",
-    dotColor: "bg-blue-500",
+    color: "bg-primary/10 text-primary border-primary/30 dark:bg-primary/20 dark:text-primary",
+    dotColor: "bg-primary",
   },
   completed: {
     label: "已完成",
-    color: "bg-green-100 text-green-600 border-green-300",
-    dotColor: "bg-green-500",
+    color: "bg-success/10 text-success border-success/30 dark:bg-success/20 dark:text-success",
+    dotColor: "bg-success",
   },
   delayed: {
     label: "已延期",
-    color: "bg-red-100 text-red-600 border-red-300",
-    dotColor: "bg-red-500",
+    color: "bg-destructive/10 text-destructive border-destructive/30 dark:bg-destructive/20 dark:text-destructive",
+    dotColor: "bg-destructive",
   },
 };
 
@@ -49,9 +49,9 @@ const STATUS_MAP: Record<
 function ProgressBar({ value }: { value: number }) {
   const pct = Math.min(100, Math.max(0, value));
   return (
-    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+    <div className="w-full bg-muted dark:bg-muted rounded-full h-1.5">
       <div
-        className="bg-blue-500 h-1.5 rounded-full transition-[width] duration-200"
+        className="bg-primary h-1.5 rounded-full transition-[width] duration-200"
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -192,7 +192,7 @@ export default function MilestoneList({ projectId }: MilestoneListProps) {
                           {/* 日期 */}
                           <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 mb-2">
                             <span>截止：</span>
-                            <span className={isPast && m.status !== "completed" ? "text-red-500 font-medium" : ""}>
+                            <span className={isPast && m.status !== "completed" ? "text-destructive font-medium" : ""}>
                               {due.toLocaleDateString("zh-CN")}
                             </span>
                             {isPast && m.status !== "completed" && (

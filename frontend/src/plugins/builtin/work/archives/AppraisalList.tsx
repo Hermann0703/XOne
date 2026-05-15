@@ -142,7 +142,7 @@ export default function AppraisalList() {
                           <Eye className="size-3" />
                         </Button>
                         <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(a.id, a.archive_title ?? `#${a.id}`)} title="删除" aria-label="删除鉴定记录">
-                          <Trash2 className="size-3 text-red-500" />
+                          <Trash2 className="size-3 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>
@@ -182,7 +182,7 @@ export default function AppraisalList() {
             {/* 选择档案 */}
             <div>
               <label className="text-sm font-medium">
-                选择档案 <span className="text-red-500">*</span>
+                选择档案 <span className="text-destructive">*</span>
               </label>
               <Input
                 value={archiveSearch}
@@ -208,7 +208,7 @@ export default function AppraisalList() {
             {/* 鉴定类型 */}
             <div>
               <label className="text-sm font-medium">
-                鉴定类型 <span className="text-red-500">*</span>
+                鉴定类型 <span className="text-destructive">*</span>
               </label>
               <Select
                 value={form.appraisal_type}
@@ -229,7 +229,7 @@ export default function AppraisalList() {
             {/* 鉴定结果 */}
             <div>
               <label className="text-sm font-medium">
-                鉴定结果 <span className="text-red-500">*</span>
+                鉴定结果 <span className="text-destructive">*</span>
               </label>
               <Input
                 value={form.result}

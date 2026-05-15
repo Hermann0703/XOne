@@ -19,9 +19,9 @@ import { useProjectStore, type Task, type Column } from "./store";
 // ─── 优先级映射 ──────────────────────────────────────
 
 const PRIORITY_MAP: Record<Task["priority"], { label: string; color: string }> = {
-  high: { label: "高", color: "bg-red-500" },
-  medium: { label: "中", color: "bg-yellow-500" },
-  low: { label: "低", color: "bg-green-500" },
+  high: { label: "高", color: "bg-destructive" },
+  medium: { label: "中", color: "bg-warning" },
+  low: { label: "低", color: "bg-success" },
 };
 
 // ─── 任务卡片组件 ─────────────────────────────────────

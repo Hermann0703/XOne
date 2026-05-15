@@ -24,10 +24,10 @@ const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const typeColors: Record<string, string> = {
-  info: 'text-blue-500 dark:text-blue-400',
-  success: 'text-green-500 dark:text-green-400',
-  warning: 'text-amber-500 dark:text-amber-400',
-  error: 'text-red-500 dark:text-red-400',
+  info: 'text-primary dark:text-primary',
+  success: 'text-success dark:text-success',
+  warning: 'text-warning dark:text-warning',
+  error: 'text-destructive dark:text-destructive',
 };
 
 // ─── 相对时间格式化 ─────────────────────────────────
@@ -105,7 +105,7 @@ function NotificationCard({
       {/* 未读圆点 */}
       {!item.is_read && (
         <div className="shrink-0 mt-2">
-          <div className="size-2 rounded-full bg-blue-500 dark:bg-blue-400" />
+          <div className="size-2 rounded-full bg-primary dark:bg-primary" />
         </div>
       )}
 
@@ -119,7 +119,7 @@ function NotificationCard({
           className="shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
           title="标记已读"
         >
-          <Check className="size-4 text-muted-foreground hover:text-green-500" />
+          <Check className="size-4 text-muted-foreground hover:text-success" />
         </button>
       )}
     </div>

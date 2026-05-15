@@ -407,8 +407,9 @@ watch_records (id, media_id, episode, watch_date, rating)
 **功能清单**:
 - 合同创建: 供应商/合同金额/起止日期/付款节点
 - 采购协同: 跨部门审批流（可配置流程）
-- 付款节点追踪: 里程碑付款计划，逾期提醒
-- 合同台账: 筛选/搜索/导出
+- 付款节点追踪: 里程碑付款计划，逾期提醒，PDF附件
+- 合同台账: 搜索/分页/导出
+- 供应商管理: 独立供应商 CRUD + 详情 + 多联系人/多银行账户
 - 生命周期视图: 时间轴展示合同从创建到归档全过程
 
 **状态机**:
@@ -629,7 +630,7 @@ POST   /api/v1/work/contracts/:id/approve # 审批合同
 | 资产 | `/api/v1/personal/assets` | CRUD 账户/资产/交易 |
 | 阅读 | `/api/v1/personal/reading` | CRUD 书籍/笔记 |
 | 观影 | `/api/v1/personal/media` | CRUD 影视/观看记录 |
-| 合同 | `/api/v1/work/contracts` | CRUD 合同/里程碑/审批 |
+| 合同 | `/api/v1/work/contracts` | CRUD 合同/里程碑/审批 + 供应商 CRUD |
 | 档案 | `/api/v1/work/archives` | CRUD 档案/借阅/鉴定 |
 | 数据报送 | `/api/v1/work/reports` | CRUD 任务/日志 |
 | 知识库 | `/api/v1/work/knowledge` | 文档/搜索/问答 |
@@ -801,8 +802,8 @@ Week 9  ████████  P4 集成与打磨
 
 ---
 
-> **文档状态**: 正式版 v2.1  
-> **下一步**: P5 阶段持续优化与 Bug 修复  
+> **文档状态**: 正式版 v2.2  
+> **下一步**: 持续优化 — 按需推进新功能与 Bug 修复  
 > **负责人**: Hesse (CIO/全栈架构师)  
 > **执行方式**: superpowers-zh → subagent-driven-development
 
@@ -814,3 +815,4 @@ Week 9  ████████  P4 集成与打磨
 | v1.0 | 2026-05-09 | 完成 P0-P4 全阶段开发交付 |
 | v2.0 | 2026-05-11 | 移除合同生命周期管理模块，聚焦核心功能 |
 | v2.1 | 2026-05-15 | Docker 端口统一为 3456；Next.js API 代理修复 (localhost→backend:8000)；前后端容器健康检查全面通过 |
+| v2.2 | 2026-05-16 | 供应商管理 UI 美化（合并卡片/统一间距/列表主题点缀）；合同表单移除全宗/分类筛选；Supplier 新增 business_scope 字段 |

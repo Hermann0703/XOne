@@ -97,21 +97,21 @@ export default function BorrowList() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-text-secondary">借出总数</CardTitle>
-            <BookOpen className="size-5 text-blue-500" />
+            <BookOpen className="size-5 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalBorrows}</div>
             <p className="text-xs text-text-secondary">条借阅记录</p>
           </CardContent>
         </Card>
-        <Card className="border-red-200 dark:border-red-800">
+        <Card className="border-destructive/30 dark:border-destructive/40">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-red-600 dark:text-red-400">逾期未还</CardTitle>
-            <AlertTriangle className="size-5 text-red-500" />
+            <CardTitle className="text-sm font-medium text-destructive dark:text-destructive">逾期未还</CardTitle>
+            <AlertTriangle className="size-5 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{overdueCount}</div>
-            <p className="text-xs text-red-500">条逾期记录</p>
+            <div className="text-2xl font-bold text-destructive">{overdueCount}</div>
+            <p className="text-xs text-destructive">条逾期记录</p>
           </CardContent>
         </Card>
       </div>

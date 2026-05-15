@@ -209,10 +209,10 @@ export default function SupplierList() {
                               <span
                                 className={`size-1.5 rounded-full ${
                                   s.status === "active"
-                                    ? "bg-green-500"
+                                    ? "bg-success"
                                     : s.status === "blacklisted"
-                                    ? "bg-red-500"
-                                    : "bg-gray-400"
+                                    ? "bg-destructive"
+                                    : "bg-text-tertiary"
                                 }`}
                               />
                               {statusConfig.label}

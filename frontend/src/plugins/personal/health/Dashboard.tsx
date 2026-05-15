@@ -60,9 +60,9 @@ export default function HealthDashboard() {
 
         if (kpiData.data) {
           setKpis([
-            { label: t("health.kpi.caloriesIn"), value: String(kpiData.data.calories_in ?? 0), unit: t("health.unit.kcal"), icon: <Utensils className="size-5 text-orange-500" /> },
-            { label: t("health.kpi.caloriesOut"), value: String(kpiData.data.calories_out ?? 0), unit: t("health.unit.kcal"), icon: <Flame className="size-5 text-red-500" /> },
-            { label: t("health.kpi.exerciseMinutes"), value: String(kpiData.data.exercise_minutes ?? 0), unit: t("health.unit.minutes"), icon: <Clock className="size-5 text-blue-500" /> },
+            { label: t("health.kpi.caloriesIn"), value: String(kpiData.data.calories_in ?? 0), unit: t("health.unit.kcal"), icon: <Utensils className="size-5 text-warning" /> },
+            { label: t("health.kpi.caloriesOut"), value: String(kpiData.data.calories_out ?? 0), unit: t("health.unit.kcal"), icon: <Flame className="size-5 text-destructive" /> },
+            { label: t("health.kpi.exerciseMinutes"), value: String(kpiData.data.exercise_minutes ?? 0), unit: t("health.unit.minutes"), icon: <Clock className="size-5 text-primary" /> },
           ])
         }
         setWeightTrend(weightData.data ?? [])
@@ -77,9 +77,9 @@ export default function HealthDashboard() {
         // 后端未就绪时显示空态
         setIsEmpty(true)
         setKpis([
-          { label: t("health.kpi.caloriesIn"), value: "--", unit: t("health.unit.kcal"), icon: <Utensils className="size-5 text-orange-500" /> },
-          { label: t("health.kpi.caloriesOut"), value: "--", unit: t("health.unit.kcal"), icon: <Flame className="size-5 text-red-500" /> },
-          { label: t("health.kpi.exerciseMinutes"), value: "--", unit: t("health.unit.minutes"), icon: <Clock className="size-5 text-blue-500" /> },
+          { label: t("health.kpi.caloriesIn"), value: "--", unit: t("health.unit.kcal"), icon: <Utensils className="size-5 text-warning" /> },
+          { label: t("health.kpi.caloriesOut"), value: "--", unit: t("health.unit.kcal"), icon: <Flame className="size-5 text-destructive" /> },
+          { label: t("health.kpi.exerciseMinutes"), value: "--", unit: t("health.unit.minutes"), icon: <Clock className="size-5 text-primary" /> },
         ])
       } finally {
         setLoading(false)

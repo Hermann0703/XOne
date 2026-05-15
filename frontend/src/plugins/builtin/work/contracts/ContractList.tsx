@@ -42,18 +42,18 @@ import { apiGet } from "@/lib/api/client";
 // ─── 状态映射 ────────────────────────────────────────
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
-  draft:        { label: "草稿",   className: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" },
-  signed:       { label: "已签署", className: "bg-blue-100 text-blue-700 border-blue-300" },
-  in_progress:  { label: "履行中", className: "bg-green-100 text-green-700 border-green-300" },
-  completed:    { label: "已完成", className: "bg-emerald-100 text-emerald-700 border-emerald-300" },
-  terminated:   { label: "已终止", className: "bg-red-100 text-red-700 border-red-300" },
+  draft:        { label: "草稿",   className: "bg-muted dark:bg-muted text-text-secondary dark:text-text-secondary border-border" },
+  signed:       { label: "已签署", className: "bg-primary/10 text-primary border-primary/30 dark:bg-primary/20 dark:text-primary" },
+  in_progress:  { label: "履行中", className: "bg-success/10 text-success border-success/30 dark:bg-success/20 dark:text-success" },
+  completed:    { label: "已完成", className: "bg-success/10 text-success border-success/30 dark:bg-success/20 dark:text-success" },
+  terminated:   { label: "已终止", className: "bg-destructive/10 text-destructive border-destructive/30 dark:bg-destructive/20 dark:text-destructive" },
 };
 
 function StatusBadge({ status }: { status: string }) {
   const config = STATUS_MAP[status] || STATUS_MAP.draft;
   return (
     <Badge variant="outline" className={`inline-flex items-center gap-1 ${config.className}`}>
-      <span className={`size-1.5 rounded-full ${status === "draft" ? "bg-gray-500" : status === "signed" ? "bg-blue-500" : status === "in_progress" ? "bg-green-500" : status === "completed" ? "bg-emerald-500" : "bg-red-500"}`} />
+      <span className={`size-1.5 rounded-full ${status === "draft" ? "bg-text-tertiary" : status === "signed" ? "bg-primary" : status === "in_progress" ? "bg-success" : status === "completed" ? "bg-success" : "bg-destructive"}`} />
       {config.label}
     </Badge>
   );
@@ -70,10 +70,10 @@ function DashboardCards() {
   }, [fetchDashboard]);
 
   const cards = [
-    { label: "合同总数", value: dashboard?.summary?.total_contracts ?? "--", icon: <FileText className="size-5 text-blue-500" /> },
-    { label: "生效中",   value: dashboard?.summary?.active_count ?? "--", icon: <TrendingUp className="size-5 text-green-500" /> },
-    { label: "已完成",   value: dashboard?.summary?.completed_count ?? "--", icon: <Clock className="size-5 text-orange-500" /> },
-    { label: "即将到期", value: dashboard?.expiring_soon?.length ?? "--", icon: <AlertTriangle className="size-5 text-red-500" /> },
+    { label: "合同总数", value: dashboard?.summary?.total_contracts ?? "--", icon: <FileText className="size-5 text-primary" /> },
+    { label: "生效中",   value: dashboard?.summary?.active_count ?? "--", icon: <TrendingUp className="size-5 text-success" /> },
+    { label: "已完成",   value: dashboard?.summary?.completed_count ?? "--", icon: <Clock className="size-5 text-warning" /> },
+    { label: "即将到期", value: dashboard?.expiring_soon?.length ?? "--", icon: <AlertTriangle className="size-5 text-destructive" /> },
   ];
 
   return (

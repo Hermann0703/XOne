@@ -127,7 +127,7 @@ export default function ArchiveList() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-text-secondary">档案总数</CardTitle>
-              <ArchiveIcon className="size-5 text-blue-500" />
+              <ArchiveIcon className="size-5 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboard?.total ?? '--'}</div>
@@ -137,7 +137,7 @@ export default function ArchiveList() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-text-secondary">已归档</CardTitle>
-              <BookCheck className="size-5 text-green-500" />
+              <BookCheck className="size-5 text-success" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboard?.archived ?? '--'}</div>
@@ -147,7 +147,7 @@ export default function ArchiveList() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-text-secondary">已借出</CardTitle>
-              <BookOpen className="size-5 text-yellow-500" />
+              <BookOpen className="size-5 text-warning" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboard?.borrowed ?? '--'}</div>
@@ -157,7 +157,7 @@ export default function ArchiveList() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-text-secondary">已销毁</CardTitle>
-              <Trash className="size-5 text-red-500" />
+<BookOpen className="size-5 text-info" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboard?.destroyed ?? '--'}</div>
@@ -258,7 +258,7 @@ export default function ArchiveList() {
                           <Pencil className="size-3" />
                         </Button>
                         <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(a.id, a.title)} title="删除" aria-label="删除档案">
-                          <Trash2 className="size-3 text-red-500" />
+                          <Trash2 className="size-4 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>

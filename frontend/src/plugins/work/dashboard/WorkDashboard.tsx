@@ -208,9 +208,9 @@ function ProjectOverview({ data }: { data: ProjectItem[] }) {
                     <div
                       className={`h-full rounded-full transition-all ${
                         project.progress === 100
-                          ? 'bg-green-500'
+                          ? 'bg-success'
                           : project.status === '已延期'
-                            ? 'bg-red-400'
+                            ? 'bg-destructive'
                             : 'bg-primary'
                       }`}
                       style={{ width: `${project.progress}%` }}
@@ -430,8 +430,8 @@ export default function WorkDashboard() {
       unit: '份',
       change: stats?.expiring_contracts ?? undefined,
       icon: FileText,
-      iconColor: 'text-indigo-600',
-      iconBg: 'bg-indigo-50',
+      iconColor: 'text-primary',
+      iconBg: 'bg-primary/10',
     },
     {
       title: t('dashboard.statCards.documents'),
@@ -448,8 +448,8 @@ export default function WorkDashboard() {
       unit: '篇',
       change: stats?.pending_dispatch ?? undefined,
       icon: BookOpen,
-      iconColor: 'text-cyan-600',
-      iconBg: 'bg-cyan-50',
+      iconColor: 'text-info',
+      iconBg: 'bg-info/10',
     },
     {
       title: t('dashboard.statCards.thisMonth'),

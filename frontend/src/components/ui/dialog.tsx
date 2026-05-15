@@ -156,7 +156,7 @@ function Dialog({ open, onOpenChange, children, titleId, descriptionId }: Dialog
           ref={contentRef}
           tabIndex={-1}
           className={cn(
-            "w-full max-w-lg rounded-card bg-bg-card shadow-xl border border-border",
+            "w-full max-w-lg rounded-card bg-bg-card shadow-4 border border-border",
             "transition-[transform,opacity] duration-200 ease-out",
             animating
               ? "scale-100 opacity-100"

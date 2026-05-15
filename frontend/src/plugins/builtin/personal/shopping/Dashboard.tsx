@@ -32,22 +32,22 @@ export default function Dashboard() {
       icon: ShoppingCart,
       label: "全部",
       value: dashboard.total_items,
-      colorClass: "text-blue-500",
-      bgClass: "bg-blue-50 dark:bg-blue-900/20",
+      colorClass: "text-primary",
+      bgClass: "bg-primary/10 dark:bg-primary/20",
     },
     {
       icon: CheckCircle2,
       label: "已购",
       value: dashboard.total_purchased,
-      colorClass: "text-green-500",
-      bgClass: "bg-green-50 dark:bg-green-900/20",
+      colorClass: "text-success",
+      bgClass: "bg-success/10 dark:bg-success/20",
     },
     {
       icon: Clock,
       label: "待购",
       value: dashboard.total_pending,
-      colorClass: "text-yellow-500",
-      bgClass: "bg-yellow-50 dark:bg-yellow-900/20",
+      colorClass: "text-warning",
+      bgClass: "bg-warning/10 dark:bg-warning/20",
     },
     {
       icon: XCircle,
@@ -99,7 +99,7 @@ export default function Dashboard() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center justify-between">
                     <span>{b.name}</span>
-                    <span className={`text-xs flex items-center gap-1 ${b.isOver ? "text-red-500" : "text-green-500"}`}>
+                    <span className={`text-xs flex items-center gap-1 ${b.isOver ? "text-destructive" : "text-success"}`}>
                       {b.isOver ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                       {b.percentage.toFixed(0)}%
                     </span>
@@ -113,12 +113,12 @@ export default function Dashboard() {
                   <div className="h-2 bg-bg-secondary rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-[width] duration-300 ${
-                        b.isOver ? "bg-red-500" : "bg-green-500"
+                        b.isOver ? "bg-destructive" : "bg-success"
                       }`}
                       style={{ width: `${Math.min(b.percentage, 100)}%` }}
                     />
                   </div>
-                  <p className={`text-xs ${b.isOver ? "text-red-500" : "text-green-600"}`}>
+                  <p className={`text-xs ${b.isOver ? "text-destructive" : "text-success"}`}>
                     {b.isOver
                       ? `超支 ¥${(b.spent - b.amount).toFixed(2)}`
                       : `剩余 ¥${b.remaining.toFixed(2)}`}
@@ -133,8 +133,8 @@ export default function Dashboard() {
       {/* Total Spent */}
       <Card>
         <CardContent className="p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20">
-            <DollarSign className="size-5 text-purple-500" />
+          <div className="p-2 rounded-lg bg-info/10 dark:bg-info/20">
+            <DollarSign className="size-5 text-info" />
           </div>
           <div>
             <p className="text-xs text-text-secondary">总花费</p>

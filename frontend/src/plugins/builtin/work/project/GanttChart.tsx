@@ -7,9 +7,9 @@ import { useProjectStore, type Task, type Project } from "./store";
 // ─── 优先级颜色 ──────────────────────────────────────
 
 const PRIORITY_COLORS: Record<Task["priority"], string> = {
-  high: "bg-red-500",
-  medium: "bg-yellow-500",
-  low: "bg-green-500",
+  high: "bg-destructive",
+  medium: "bg-warning",
+  low: "bg-success",
 };
 
 // ─── 日期工具函数 ────────────────────────────────────
@@ -274,17 +274,17 @@ export default function GanttChart({ projectId }: GanttChartProps) {
       {tasks.length > 0 && (
         <div className="flex items-center gap-4 px-4 py-2 border-t bg-muted text-xs text-text-secondary">
           <span className="flex items-center gap-1">
-            <span className="size-3 rounded bg-red-500 inline-block" /> 高优先级
+            <span className="size-3 rounded bg-destructive inline-block" /> 高优先级
           </span>
           <span className="flex items-center gap-1">
-            <span className="size-3 rounded bg-yellow-500 inline-block" /> 中优先级
+            <span className="size-3 rounded bg-warning inline-block" /> 中优先级
           </span>
           <span className="flex items-center gap-1">
-            <span className="size-3 rounded bg-green-500 inline-block" /> 低优先级
+            <span className="size-3 rounded bg-success inline-block" /> 低优先级
           </span>
           <span className="flex-1" />
           <span className="flex items-center gap-1">
-            <span className="size-3 border-l-2 border-red-400 inline-block" /> 今天
+            <span className="size-3 border-l-2 border-destructive inline-block" /> 今天
           </span>
         </div>
       )}

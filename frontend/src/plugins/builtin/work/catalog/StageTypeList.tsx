@@ -286,13 +286,13 @@ export default function StageTypeList() {
                             variant="outline"
                             className={`inline-flex items-center gap-1 transition-colors ${
                               st.is_active
-                                ? "bg-green-100 text-green-700 border-green-300"
-                                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                                ? "bg-success/10 text-success border-success/30 dark:bg-success/20 dark:text-success"
+                                : "bg-muted dark:bg-muted text-text-secondary dark:text-text-secondary border-border"
                             }`}
                           >
                             <span
                               className={`size-1.5 rounded-full ${
-                                st.is_active ? "bg-green-500" : "bg-gray-500"
+                                st.is_active ? "bg-success" : "bg-text-tertiary"
                               }`}
                             />
                             {st.is_active

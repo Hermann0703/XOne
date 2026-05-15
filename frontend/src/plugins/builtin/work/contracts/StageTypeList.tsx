@@ -286,8 +286,8 @@ export default function StageTypeList() {
                                 <span
                                   className={`size-1.5 rounded-full ${
                                     st.is_active
-                                      ? "bg-green-500"
-                                      : "bg-gray-500"
+                                      ? "bg-success"
+                                      : "bg-text-tertiary"
                                   }`}
                                 />
                                 {statusConfig.label}

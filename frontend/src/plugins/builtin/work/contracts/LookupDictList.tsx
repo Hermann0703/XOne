@@ -318,9 +318,9 @@ export default function LookupDictList() {
                               >
                                 <span
                                   className={`size-1.5 rounded-full ${
-                                    item.is_active
-                                      ? "bg-green-500"
-                                      : "bg-gray-500"
+item.is_active
+                                      ? "bg-success"
+                                      : "bg-text-tertiary"
                                   }`}
                                 />
                                 {statusConfig.label}

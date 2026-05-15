@@ -75,11 +75,11 @@ export default function BodyMetricsDashboard() {
   }
 
   const statCards = [
-    { label: t("health.metrics.weight"), value: latest?.weight ?? "--", unit: "kg", icon: <Weight className="size-5 text-blue-500" /> },
-    { label: t("health.metrics.height"), value: latest?.height ?? "--", unit: "cm", icon: <Ruler className="size-5 text-green-500" /> },
-    { label: "BMI", value: latest?.bmi?.toFixed(1) ?? "--", unit: "", icon: <TrendingUp className="size-5 text-purple-500" /> },
-    { label: t("health.metrics.bodyFat"), value: latest?.body_fat ?? "--", unit: "%", icon: <Percent className="size-5 text-orange-500" /> },
-    { label: t("health.metrics.waist"), value: latest?.waist ?? "--", unit: "cm", icon: <Activity className="size-5 text-red-500" /> },
+    { label: t("health.metrics.weight"), value: latest?.weight ?? "--", unit: "kg", icon: <Weight className="size-5 text-primary" /> },
+    { label: t("health.metrics.height"), value: latest?.height ?? "--", unit: "cm", icon: <Ruler className="size-5 text-success" /> },
+    { label: "BMI", value: latest?.bmi?.toFixed(1) ?? "--", unit: "", icon: <TrendingUp className="size-5 text-info" /> },
+    { label: t("health.metrics.bodyFat"), value: latest?.body_fat ?? "--", unit: "%", icon: <Percent className="size-5 text-warning" /> },
+    { label: t("health.metrics.waist"), value: latest?.waist ?? "--", unit: "cm", icon: <Activity className="size-5 text-destructive" /> },
   ]
 
   if (loading) {

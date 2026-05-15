@@ -88,13 +88,13 @@ export default function AssetsDashboard() {
 
   function typeColor(typ: string) {
     const map: Record<string, string> = {
-      bank: "bg-blue-500",
-      cash: "bg-green-500",
-      credit: "bg-purple-500",
-      investment: "bg-orange-500",
-      other: "bg-gray-500",
+      bank: "bg-primary",
+      cash: "bg-success",
+      credit: "bg-info",
+      investment: "bg-warning",
+      other: "bg-text-tertiary",
     }
-    return map[typ] ?? "bg-gray-400"
+    return map[typ] ?? "bg-muted"
   }
 
   function txTypeBadge(typ: string) {
@@ -135,7 +135,7 @@ export default function AssetsDashboard() {
             <CardTitle className="text-sm font-medium text-text-secondary">
               {t("assets.kpi.netWorth")}
             </CardTitle>
-            <DollarSign className="size-5 text-blue-500" />
+            <DollarSign className="size-5 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -150,7 +150,7 @@ export default function AssetsDashboard() {
             <CardTitle className="text-sm font-medium text-text-secondary">
               {t("assets.kpi.monthlyIncome")}
             </CardTitle>
-            <ArrowUpCircle className="size-5 text-green-500" />
+            <ArrowUpCircle className="size-5 text-success" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
@@ -165,7 +165,7 @@ export default function AssetsDashboard() {
             <CardTitle className="text-sm font-medium text-text-secondary">
               {t("assets.kpi.monthlyExpense")}
             </CardTitle>
-            <ArrowDownCircle className="size-5 text-red-500" />
+            <ArrowDownCircle className="size-5 text-destructive" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
@@ -180,7 +180,7 @@ export default function AssetsDashboard() {
             <CardTitle className="text-sm font-medium text-text-secondary">
               {t("assets.kpi.monthlyBalance")}
             </CardTitle>
-            <TrendingUp className="size-5 text-purple-500" />
+            <TrendingUp className="size-5 text-info" />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${data && data.monthly_balance >= 0 ? "text-green-600" : "text-red-600"}`}>

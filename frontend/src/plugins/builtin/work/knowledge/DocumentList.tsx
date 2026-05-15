@@ -45,15 +45,15 @@ import { useKnowledgeStore, type KnowledgeDocument } from "./store";
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   processing: {
     label: "处理中",
-    className: "bg-yellow-100 text-yellow-700 border-yellow-300",
+    className: "bg-warning/10 text-warning border-warning/30 dark:bg-warning/20 dark:text-warning",
   },
   ready: {
     label: "就绪",
-    className: "bg-green-100 text-green-700 border-green-300",
+    className: "bg-success/10 text-success border-success/30 dark:bg-success/20 dark:text-success",
   },
   error: {
     label: "错误",
-    className: "bg-red-100 text-red-700 border-red-300",
+    className: "bg-destructive/10 text-destructive border-destructive/30 dark:bg-destructive/20 dark:text-destructive",
   },
 };
 
@@ -67,10 +67,10 @@ function StatusBadge({ status }: { status: string }) {
       <span
         className={`size-1.5 rounded-full ${
           status === "processing"
-            ? "bg-yellow-500"
+            ? "bg-warning"
             : status === "ready"
-            ? "bg-green-500"
-            : "bg-red-500"
+            ? "bg-success"
+            : "bg-destructive"
         }`}
       />
       {config.label}
@@ -81,26 +81,26 @@ function StatusBadge({ status }: { status: string }) {
 // ─── 文件类型映射 ────────────────────────────────────
 
 const FILE_TYPE_MAP: Record<string, { label: string; className: string }> = {
-  pdf: { label: "PDF", className: "bg-blue-100 text-blue-700 border-blue-300" },
+  pdf: { label: "PDF", className: "bg-primary/10 text-primary border-primary/30 dark:bg-primary/20 dark:text-primary" },
   docx: {
     label: "DOCX",
-    className: "bg-blue-100 text-blue-700 border-blue-300",
+    className: "bg-primary/10 text-primary border-primary/30 dark:bg-primary/20 dark:text-primary",
   },
   txt: { label: "TXT", className: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" },
   md: {
     label: "MD",
-    className: "bg-purple-100 text-purple-700 border-purple-300",
+    className: "bg-info/10 text-info border-info/30 dark:bg-info/20 dark:text-info",
   },
   webpage: {
     label: "网页",
-    className: "bg-cyan-100 text-cyan-700 border-cyan-300",
+    className: "bg-info/10 text-info border-info/30 dark:bg-info/20 dark:text-info",
   },
 };
 
 function FileTypeBadge({ fileType }: { fileType: string }) {
   const config = FILE_TYPE_MAP[fileType] || {
     label: fileType.toUpperCase(),
-    className: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600",
+    className: "bg-muted dark:bg-muted text-text-secondary dark:text-text-secondary border-border",
   };
   return (
     <Badge
@@ -149,22 +149,22 @@ function StatsCards() {
     {
       label: "文档总数",
       value: stats?.total_documents ?? "--",
-      icon: <FileText className="size-5 text-blue-500" />,
+      icon: <FileText className="size-5 text-primary" />,
     },
     {
       label: "分块总数",
       value: stats?.total_chunks ?? "--",
-      icon: <Layers className="size-5 text-purple-500" />,
+      icon: <Layers className="size-5 text-primary" />,
     },
     {
       label: "存储总量",
       value: formatSize(stats?.total_size),
-      icon: <HardDrive className="size-5 text-green-500" />,
+      icon: <HardDrive className="size-5 text-success" />,
     },
     {
       label: "知识库",
       value: "向量检索",
-      icon: <Database className="size-5 text-orange-500" />,
+      icon: <Database className="size-5 text-warning" />,
     },
   ];
 
@@ -579,7 +579,7 @@ export default function DocumentList() {
                           aria-label="删除文档"
                           onClick={() => setDeleteOneId(doc.id)}
                         >
-                          <Trash2 className="size-4 text-red-500" />
+                          <Trash2 className="size-4 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>

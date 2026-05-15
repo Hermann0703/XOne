@@ -42,14 +42,14 @@ function formatValue(value: number | string): string {
 function renderTrend(change: number | undefined, changeLabel?: string) {
   if (change === undefined || change === null) {
     return (
-      <span className="inline-flex items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+      <span className="inline-flex items-center gap-0.5 rounded-sm bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
         <Minus className="h-3 w-3" />—
       </span>
     );
   }
   if (change > 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-400">
+      <span className="inline-flex items-center gap-0.5 rounded-sm bg-success/10 px-2 py-0.5 text-xs font-medium text-success dark:bg-success/20 dark:text-success">
         <TrendingUp className="h-3 w-3" />+{change}
         {changeLabel && <span className="ml-0.5 opacity-60">{changeLabel}</span>}
       </span>
@@ -57,7 +57,7 @@ function renderTrend(change: number | undefined, changeLabel?: string) {
   }
   if (change < 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-950 dark:text-red-400">
+      <span className="inline-flex items-center gap-0.5 rounded-sm bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive dark:bg-destructive/20 dark:text-destructive">
         <TrendingDown className="h-3 w-3" />
         {change}
         {changeLabel && <span className="ml-0.5 opacity-60">{changeLabel}</span>}
@@ -65,7 +65,7 @@ function renderTrend(change: number | undefined, changeLabel?: string) {
     );
   }
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+    <span className="inline-flex items-center gap-0.5 rounded-sm bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
       <Minus className="h-3 w-3" />持平
       {changeLabel && <span className="ml-0.5 opacity-60">{changeLabel}</span>}
     </span>
@@ -86,8 +86,8 @@ export function StatCard({
   change,
   changeLabel,
   icon: Icon,
-  iconColor = 'text-blue-600',
-  iconBg = 'bg-blue-50',
+  iconColor = 'text-primary',
+  iconBg = 'bg-primary/10',
   className,
   onClick,
 }: StatCardProps) {
@@ -103,7 +103,7 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        'transition-all duration-300 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-card',
+        'transition-all duration-300 hover:shadow-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-card',
         onClick && 'cursor-pointer',
         className,
       )}
@@ -115,7 +115,7 @@ export function StatCard({
       <CardContent className="p-5">
         {/* 图标 + 趋势 */}
         <div className="mb-3 flex items-center justify-between">
-          <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', iconBg)}>
+          <div className={cn('flex h-10 w-10 items-center justify-center rounded-md', iconBg)}>
             <Icon className={cn('h-5 w-5', iconColor)} />
           </div>
           {renderTrend(change, changeLabel)}

@@ -7,9 +7,14 @@ const config: Config = {
   darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {
+      /* ─── ArcoDesign Color Tokens ─── */
       colors: {
-        primary: 'var(--color-primary)',
-        'primary-light': 'var(--color-primary-light)',
+        primary: {
+          DEFAULT: 'var(--color-primary)',
+          light: 'var(--color-primary-light)',
+          hover: 'var(--color-primary-hover)',
+          active: 'var(--color-primary-active)',
+        },
         bg: {
           page: 'var(--color-bg-page)',
           card: 'var(--color-bg-card)',
@@ -18,13 +23,20 @@ const config: Config = {
         text: {
           primary: 'var(--color-text-primary)',
           secondary: 'var(--color-text-secondary)',
+          tertiary: 'var(--color-text-tertiary)',
+          disabled: 'var(--color-text-disabled)',
         },
-        border: 'var(--color-border)',
+        border: {
+          DEFAULT: 'var(--color-border)',
+          light: 'var(--color-border-light)',
+        },
         success: 'var(--color-success)',
         warning: 'var(--color-warning)',
         danger: 'var(--color-danger)',
         info: 'var(--color-info)',
-        /* Shadcn/ui 兼容的颜色映射 */
+        overlay: 'var(--color-overlay)',
+
+        /* ─── Shadcn/ui 兼容 ─── */
         background: 'var(--background)',
         foreground: 'var(--foreground)',
         muted: {
@@ -40,7 +52,6 @@ const config: Config = {
           foreground: 'var(--destructive-foreground)',
         },
         ring: 'var(--ring)',
-        /* Shadcn/ui v4 compatibility tokens */
         card: {
           DEFAULT: 'var(--card)',
           foreground: 'var(--card-foreground)',
@@ -55,15 +66,49 @@ const config: Config = {
         },
         input: 'var(--input)',
       },
+
+      /* ─── ArcoDesign Radius Tokens ─── */
       borderRadius: {
-        card: 'var(--radius-card, 12px)',
-        panel: 'var(--radius-panel, 8px)',
-        btn: 'var(--radius-btn, 8px)',
-        input: 'var(--radius-input, 8px)',
-        tag: 'var(--radius-tag, 20px)',
+        sm: 'var(--radius-sm, 2px)',
+        md: 'var(--radius-md, 4px)',
+        lg: 'var(--radius-lg, 8px)',
+        card: 'var(--radius-lg, 8px)',     /* 兼容旧引用 */
+        panel: 'var(--radius-lg, 8px)',
+        btn: 'var(--radius-md, 4px)',
+        input: 'var(--radius-md, 4px)',
+        tag: 'var(--radius-tag, 2px)',
       },
+
+      /* ─── ArcoDesign Shadow Tokens ─── */
+      boxShadow: {
+        '1': 'var(--shadow-1)',
+        '2': 'var(--shadow-2)',
+        '3': 'var(--shadow-3)',
+        '4': 'var(--shadow-4)',
+      },
+
+      /* ─── ArcoDesign Font ─── */
       fontFamily: {
-        sans: ['Inter', '"Noto Sans SC"', 'system-ui', 'sans-serif'],
+        sans: [
+          'Nunito',
+          'PingFang SC',
+          'Microsoft YaHei',
+          '微软雅黑',
+          'system-ui',
+          'sans-serif',
+        ],
+      },
+      fontSize: {
+        '2xs': ['10px', '1.4'],
+        xs: ['12px', '1.4'],
+        sm: ['14px', '1.4'],
+        base: ['14px', '1.4'],   /* 主字号 14px */
+        lg: ['16px', '1.4'],
+        xl: ['18px', '1.4'],
+        '2xl': ['20px', '1.4'],
+        '3xl': ['24px', '1.3'],
+        '4xl': ['28px', '1.3'],
+        '5xl': ['36px', '1.2'],
       },
     },
   },

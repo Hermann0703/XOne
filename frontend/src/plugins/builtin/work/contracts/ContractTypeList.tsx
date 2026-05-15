@@ -262,9 +262,9 @@ export default function ContractTypeList() {
                               >
                                 <span
                                   className={`size-1.5 rounded-full ${
-                                    ct.is_active
-                                      ? "bg-green-500"
-                                      : "bg-gray-500"
+ct.is_active
+                                      ? "bg-success"
+                                      : "bg-text-tertiary"
                                   }`}
                                 />
                                 {statusConfig.label}

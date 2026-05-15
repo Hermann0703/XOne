@@ -101,7 +101,7 @@ export default function ExerciseCalendar() {
                   {day && (
                     <>
                       <span>{day}</span>
-                      {hasExercise && <CheckCircle2 className="size-3 text-green-500 mt-0.5" />}
+                      {hasExercise && <CheckCircle2 className="size-3 text-success mt-0.5" />}
                     </>
                   )}
                 </div>
