@@ -79,15 +79,16 @@ services:
         NEXT_PUBLIC_API_URL: /api
     container_name: xone-frontend
     expose:
-      - "3000"
+      - "3456"
     environment:
       <<: *common-env
       NEXT_PUBLIC_API_URL: /api
+      PORT: "3456"
     networks:
       - xone
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3456"]
       interval: 30s
       timeout: 10s
       retries: 3

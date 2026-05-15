@@ -1,24 +1,21 @@
 "use client";
 
-// Dynamic Timeline component with template dropdown, dynamic node rendering,
-// and custom node support via "+" button.
+// Timeline component — template-based milestone visualization with
+// dropdown selector and status-driven node rendering.
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import {
-  Plus, Check, Circle, FileText, GitBranch, ClipboardCheck,
-  FileCheck, ShoppingCart, RefreshCw, DollarSign, X,
+  Check, Circle, FileText, GitBranch, ClipboardCheck,
+  FileCheck, ShoppingCart, RefreshCw, DollarSign,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { apiGet, apiPost } from "@/lib/api/client";
+import { apiGet } from "@/lib/api/client";
 import type {
   Contract,
   TimelineTemplate,
   TimelineNode,
-  ContractTimelineCustomNode,
 } from "./store";
 
 // ─── Props ────────────────────────────────────────────
@@ -37,7 +34,6 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "shopping-cart": ShoppingCart,
   "refresh-cw": RefreshCw,
   "dollar-sign": DollarSign,
-  plus: Plus,
   circle: Circle,
   // PascalCase (backward compat)
   FileText,
@@ -47,7 +43,6 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   ShoppingCart,
   RefreshCw,
   DollarSign,
-  Plus,
   Circle,
 };
 
@@ -92,17 +87,7 @@ function getTemplateNodeStatus(
   return "pending";
 }
 
-/**
- * Custom nodes are always "current" unless they have a past date_value.
- */
-function getCustomNodeStatus(node: ContractTimelineCustomNode): NodeStatus {
-  if (!node.date_value) return "current";
-  const d = new Date(node.date_value);
-  d.setHours(23, 59, 59, 999); // end of day
-  return d < new Date() ? "completed" : "current";
-}
-
-// ─── Sub-component: single timeline item ───────────────
+// ─── Main component
 
 function TimelineItem({
   icon,
@@ -177,17 +162,6 @@ export default function Timeline({ contract }: Props) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [templateNodes, setTemplateNodes] = useState<TimelineNode[]>([]);
 
-  // custom nodes
-  const [customNodes, setCustomNodes] = useState<ContractTimelineCustomNode[]>(
-    [],
-  );
-
-  // add-form state
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newLabel, setNewLabel] = useState("");
-  const [newDate, setNewDate] = useState("");
-  const [addingNode, setAddingNode] = useState(false);
-
   // ─── Fetch templates ────────────────────────────
 
   const fetchTemplates = useCallback(async () => {
@@ -207,22 +181,11 @@ export default function Timeline({ contract }: Props) {
     fetchTemplates();
   }, [fetchTemplates]);
 
-  // ─── Fetch custom nodes ─────────────────────────
-
-  const fetchCustomNodes = useCallback(async () => {
-    try {
-      const res = await apiGet<ContractTimelineCustomNode[]>(
-        `/work/contracts/${contract.id}/timeline-custom-nodes`,
-      );
-      if (res.code === 0) setCustomNodes(res.data || []);
-    } catch {
-      // silent
-    }
-  }, [contract.id]);
-
+  // ─── Auto-select contract's bound template ──────
   useEffect(() => {
-    fetchCustomNodes();
-  }, [fetchCustomNodes]);
+    if (!contract.timeline_template_id) return;
+    setSelectedTemplateId(String(contract.timeline_template_id));
+  }, [contract.timeline_template_id]);
 
   // ─── Fetch template nodes on selection change ────
 
@@ -251,44 +214,9 @@ export default function Timeline({ contract }: Props) {
     };
   }, [selectedTemplateId]);
 
-  // ─── Add custom node ────────────────────────────
-
-  const handleAddNode = async () => {
-    if (!newLabel.trim()) return;
-    setAddingNode(true);
-    try {
-      const sortOrder =
-        customNodes.length > 0
-          ? Math.max(...customNodes.map((n) => n.sort_order)) + 1
-          : 1;
-      const res = await apiPost<ContractTimelineCustomNode>(
-        `/work/contracts/${contract.id}/timeline-custom-nodes`,
-        {
-          label: newLabel.trim(),
-          date_value: newDate || undefined,
-          sort_order: sortOrder,
-          icon_type: "plus",
-        },
-      );
-      if (res.code === 0 && res.data) {
-        setCustomNodes((prev) =>
-          [...prev, res.data].sort((a, b) => a.sort_order - b.sort_order),
-        );
-        setNewLabel("");
-        setNewDate("");
-        setShowAddForm(false);
-      }
-    } catch {
-      // silent
-    } finally {
-      setAddingNode(false);
-    }
-  };
-
   // ─── Compute statuses ───────────────────────────
 
   const sortedTemplateNodes = templateNodes;
-  const sortedCustomNodes = customNodes;
 
   // Find the index of the "current" template node — the last one
   // whose active_statuses includes contract.status.
@@ -302,8 +230,7 @@ export default function Timeline({ contract }: Props) {
     return lastIdx;
   })();
 
-  const hasAnyNodes =
-    sortedTemplateNodes.length > 0 || sortedCustomNodes.length > 0;
+  const hasAnyNodes = sortedTemplateNodes.length > 0;
 
   // ─── Render ─────────────────────────────────────
 
@@ -345,74 +272,12 @@ export default function Timeline({ contract }: Props) {
                   status={getTemplateNodeStatus(idx, currentTemplateIdx)}
                 />
               ))}
-
-              {sortedCustomNodes.map((node) => (
-                <TimelineItem
-                  key={`custom-${node.id}`}
-                  icon={resolveIcon(node.icon_type)}
-                  label={node.label}
-                  date={node.date_value}
-                  status={getCustomNodeStatus(node)}
-                />
-              ))}
             </div>
           </div>
         ) : (
           <p className="text-sm text-text-secondary text-center py-6">
             {t("contracts.timeline.noTemplate")}
           </p>
-        )}
-
-        {/* Add custom node section */}
-        {showAddForm ? (
-          <div className="mt-4 border border-border rounded-lg p-3 space-y-2">
-            <Input
-              placeholder={t("contracts.timeline.nodeLabel")}
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAddNode();
-              }}
-            />
-            <Input
-              type="date"
-              value={newDate}
-              onChange={(e) => setNewDate(e.target.value)}
-            />
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setShowAddForm(false);
-                  setNewLabel("");
-                  setNewDate("");
-                }}
-              >
-                <X className="size-3 mr-1" />
-                {t("contracts.timeline.cancel")}
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleAddNode}
-                disabled={addingNode || !newLabel.trim()}
-              >
-                {t("contracts.timeline.confirm")}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => setShowAddForm(true)}
-            >
-              <Plus className="size-4 mr-1" />
-              {t("contracts.timeline.addNode")}
-            </Button>
-          </div>
         )}
       </CardContent>
     </Card>

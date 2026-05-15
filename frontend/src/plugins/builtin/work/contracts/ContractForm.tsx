@@ -36,6 +36,7 @@ const INITIAL_FORM: Partial<Contract> = {
   status: "draft",
   auto_renewal: false,
   renewal_remind_days: 7,
+  timeline_template_id: undefined as number | undefined,
 };
 
 export default function ContractForm() {
@@ -66,6 +67,7 @@ export default function ContractForm() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [contractTypes, setContractTypes] = useState<{ id: number; code: string; name: string }[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
+  const [timelineTemplates, setTimelineTemplates] = useState<{ id: number; name: string }[]>([]);
 
   // 加载合同类型
   useEffect(() => {
@@ -76,6 +78,16 @@ export default function ContractForm() {
         }
       })
       .finally(() => setLoadingTypes(false));
+  }, []);
+
+  // 加载时间轴模板
+  useEffect(() => {
+    apiGet<any>("/work/contracts/timeline-templates")
+      .then((res) => {
+        if (res.code === 0 && res.data) {
+          setTimelineTemplates(res.data.map((t: any) => ({ id: t.id, name: t.name })));
+        }
+      });
   }, []);
 
   // 加载基础数据
@@ -113,6 +125,7 @@ export default function ContractForm() {
             keywords: c.keywords || [],
             auto_renewal: c.auto_renewal ?? false,
             renewal_remind_days: c.renewal_remind_days ?? 7,
+            timeline_template_id: c.timeline_template_id || undefined,
             status: c.status,
           });
         }
@@ -327,6 +340,16 @@ export default function ContractForm() {
               onChange={(e) => setField("contract_type_id", e.target.value ? Number(e.target.value) : undefined)}
               placeholder="选择类型"
               disabled={loadingTypes}
+            />
+          </div>
+          <div>
+            <label htmlFor="field-timeline-template" className="text-sm font-medium text-text-secondary block mb-1">时间轴模板</label>
+            <Select
+              id="field-timeline-template"
+              options={[{ value: "", label: "-- 不使用模板 --" }, ...timelineTemplates.map((t: any) => ({ value: String(t.id), label: t.name }))]}
+              value={form.timeline_template_id ? String(form.timeline_template_id) : ""}
+              onChange={(e) => setField("timeline_template_id", e.target.value ? Number(e.target.value) : undefined)}
+              placeholder="选择时间轴模板"
             />
           </div>
         </CardContent>

@@ -130,6 +130,7 @@ export default function ContractDetail() {
                 <InfoItem label="分类" value={c.category_name} />
                 <InfoItem label="密级" value={c.classification_name} />
                 <InfoItem label="合同类型" value={c.contract_type_name || c.contract_type || "-"} />
+                <InfoItem label="时间轴模板" value={c.timeline_template_name || "-"} />
                 <InfoItem label="状态" value={statusConfig.label} />
               </div>
             </CardContent>
@@ -186,12 +187,6 @@ export default function ContractDetail() {
             </Card>
           )}
 
-          {/* 时间轴 */}
-          <Card>
-            <CardContent className="pt-6">
-              <Timeline contract={c} />
-            </CardContent>
-          </Card>
         </div>
 
         {/* 右侧：时间轴 */}

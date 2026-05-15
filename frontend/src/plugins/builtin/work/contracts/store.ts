@@ -35,6 +35,8 @@ export interface Contract {
   subject_name?: string;     // 标的名称
   auto_renewal?: boolean;        // 是否启用自动续约
   renewal_remind_days?: number;  // 续约提醒天数
+  timeline_template_id?: number;    // 时间轴模板ID
+  timeline_template_name?: string;  // 时间轴模板名称（后端返回）
   created_at?: string;
   updated_at?: string;
 }

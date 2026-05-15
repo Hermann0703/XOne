@@ -278,6 +278,7 @@ async def list_contracts(
             selectinload(Contract.classification),
             selectinload(Contract.supplier_rel),
             selectinload(Contract.contract_type_rel),
+            selectinload(Contract.timeline_template),
         )
         .order_by(Contract.updated_at.desc())
         .offset((page - 1) * page_size)
@@ -301,6 +302,7 @@ async def get_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> Opt
             selectinload(Contract.supplier_rel),
             selectinload(Contract.milestones),
             selectinload(Contract.contract_type_rel),
+            selectinload(Contract.timeline_template),
         )
     )
     result = await db.execute(stmt)
@@ -333,6 +335,7 @@ async def create_contract(db: AsyncSession, user_id: UUID, data: dict) -> Contra
         subject_name=data.get("subject_name"),
         auto_renewal=data.get("auto_renewal", False),
         renewal_remind_days=data.get("renewal_remind_days", 7),
+        timeline_template_id=data.get("timeline_template_id"),
     )
     db.add(contract)
     await db.flush()
@@ -385,6 +388,7 @@ async def update_contract(
             selectinload(Contract.supplier_rel),
             selectinload(Contract.contract_type_rel),
             selectinload(Contract.milestones),
+            selectinload(Contract.timeline_template),
         )
     )
     result = await db.execute(stmt)

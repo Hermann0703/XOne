@@ -60,10 +60,14 @@ const nextConfig = {
     return config;
   },
   async rewrites() {
+    // Docker 环境使用服务名，本地开发使用 localhost
+    const apiUrl = process.env.NODE_ENV === 'production' 
+      ? 'http://backend:8000' 
+      : 'http://localhost:8000';
     return [
       {
         source: '/api/v1/:path*',
-        destination: 'http://localhost:8000/api/v1/:path*',
+        destination: `${apiUrl}/api/v1/:path*`,
       },
     ];
   },
