@@ -22,6 +22,7 @@ import type {
 
 interface Props {
   contract: Contract;
+  readonly?: boolean;
 }
 
 // ─── Icon mapping ─────────────────────────────────────
@@ -151,7 +152,7 @@ function TimelineItem({
 
 // ─── Main component ────────────────────────────────────
 
-export default function Timeline({ contract }: Props) {
+export default function Timeline({ contract, readonly }: Props) {
   const t = useTranslations();
 
   // templates list
@@ -252,7 +253,7 @@ export default function Timeline({ contract }: Props) {
             }))}
             value={selectedTemplateId}
             onChange={(e) => setSelectedTemplateId(e.target.value)}
-            disabled={loadingTemplates}
+            disabled={loadingTemplates || readonly}
           />
         </div>
 

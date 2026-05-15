@@ -1,6 +1,6 @@
 from app.models.user import User
 from app.models.project import Project, ProjectColumn, ProjectTask, ProjectMilestone
-from app.models.contract import Fonds, Category, Classification, Contract, Milestone, ContractType, StageType, TimelineTemplate, TimelineNode, ContractTimelineCustomNode
+from app.models.contract import Fonds, Category, Classification, Contract, Milestone, ContractType, StageType, TimelineTemplate, TimelineNode, ContractTimelineCustomNode, ContractPayment, ContractPaymentAttachment
 from app.models.lookup import LookupDict
 from app.models.supplier import Supplier
 from app.models.archive import Archive, BorrowRecord, AppraisalRecord, ArchiveFile
@@ -12,11 +12,12 @@ from app.models.reading import Book
 from app.models.media import Movie
 from app.models.health import FoodRecord, ExerciseRecord, BodyMetrics
 from app.models.assets import Account, Transaction
+from app.models.department import Department
 
 __all__ = [
     "User",
     "Project", "ProjectColumn", "ProjectTask", "ProjectMilestone",
-    "Fonds", "Category", "Classification", "Contract", "Milestone", "ContractType", "StageType",
+    "Fonds", "Category", "Classification", "Contract", "Milestone", "ContractType", "ContractPayment", "ContractPaymentAttachment", "StageType",
     "LookupDict",
     "Supplier",
     "Archive", "BorrowRecord", "AppraisalRecord", "ArchiveFile",
@@ -28,4 +29,5 @@ __all__ = [
     "Movie",
     "FoodRecord", "ExerciseRecord", "BodyMetrics",
     "Account", "Transaction",
+    "Department",
 ]

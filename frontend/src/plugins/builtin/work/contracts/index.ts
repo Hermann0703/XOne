@@ -49,6 +49,7 @@ export { default as ContractDetail } from './ContractDetail';
 export { default as ContractOverview } from './ContractOverview';
 export { default as SupplierList } from './SupplierList';
 export { default as SupplierForm } from './SupplierForm';
+export { default as SupplierDetail } from './SupplierDetail';
 export { default as FondsManager } from './FondsManager';
 export { default as CategoryManager } from './CategoryManager';
 export { default as ClassificationManager } from './ClassificationManager';

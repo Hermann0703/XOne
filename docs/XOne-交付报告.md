@@ -15,6 +15,7 @@
 | P2 | 工作模式核心 | ✅ | 合同/档案 | 前端 2 插件 + 后端 2 模块 |
 | P3 | 集群模式 | ✅ | 数据报送/知识库+RAG/项目管理 | 8 后端 + 13 前端 |
 | P4 | 完整交付 | ✅ | 认证/搜索/通知/部署/测试/文档 | 8 后端 + 10 前端 + 7 部署文件 |
+| P5 | 运维修复 | ✅ | Docker端口统一 + API代理修复 + 健康检查 | 6 部署文件 + 1 前端配置 |
 
 ---
 
@@ -46,7 +47,7 @@
 │                    (生产环境反向代理)                       │
 ├────────────┬──────────┬──────────┬──────────┬────────────┤
 │  frontend  │  backend │postgres  │ mongodb  │  qdrant    │
-│  :3000     │  :8000   │  :5432   │  :27017  │  :6333     │
+│  :3456     │  :8000   │  :5432   │  :27017  │  :6333     │
 ├────────────┼──────────┼──────────┼──────────┼────────────┤
 │ meilisearch│  redis   │  celery  │  flower  │ celery_beat│
 │  :7700     │  :6379   │  worker  │  :5555   │            │
@@ -109,7 +110,7 @@ cd backend && python -m uvicorn app.main:app --reload
 ./scripts/deploy.sh                       # 一键部署
 
 # 5. 访问
-# 前端: http://localhost:3000
+# 前端: http://localhost:3456
 # API 文档: http://localhost:8000/docs
 # Flower 任务监控: http://localhost:5555
 ```
@@ -128,5 +129,35 @@ cd backend && python -m uvicorn app.main:app --reload
 
 ---
 
-**交付日期**: 2026-05-09  
-**总计新增代码**: ~14,000+ 行 (前端 ~8,000 + 后端 ~5,000 + 部署/测试 ~1,000)
+**交付日期**: 2026-05-15  
+**最新版本**: v2.1-port-fix  
+**总计新增代码**: ~14,500+ 行 (前端 ~8,000 + 后端 ~5,000 + 部署/测试 ~1,500)
+
+## P5 运维修复详情 (v2.1)
+
+| 修复项 | 文件 | 变更说明 |
+|--------|------|----------|
+| Docker 端口 | `Dockerfile.frontend` `docker-compose.yml` `docker-compose.prod.yml` | 前端端口从 3000 统一为 3456 (与 package.json 一致) |
+| Nginx 代理 | `nginx.conf` `nginx/default.conf` | 代理目标 `frontend:3000` → `frontend:3456` |
+| API 代理 | `next.config.mjs` | rewrites 目标从 `localhost:8000` 改为基于 NODE_ENV 条件选择 (Docker 内 `backend:8000`，本地 `localhost:8000`) |
+| 健康检查 | `docker-compose.yml` `docker-compose.prod.yml` | 健康检查端口改为 3456，添加 PORT 环境变量 |
+| 后端路径 | `contract_service.py` | 合同 API 路径对齐 `/api/v1/work/contracts` |
+| 合同详情 | `ContractDetail.tsx` `ContractForm.tsx` `store.ts` `Timeline.tsx` | 合同子模块优化修复 |
+
+**验收结果**: 10 个 Docker 服务全部 healthy，前端 `http://localhost:3456` 可访问，API 代理正常转发至后端。
+
+## 2026-05-15 合同付款计划增强
+
+本次在合同详情页新增付款计划能力，完整记录见：`docs/plans/2026-05-15-contract-payments-and-detail-fix.md`。
+
+| 能力 | 说明 |
+|------|------|
+| 付款模板 | 支持两期（首付款/尾款）与三期（首付款/进度款/尾款）快速生成 |
+| 付款维护 | 支持付款期次新增、编辑、删除、标记已付款 |
+| 金额提醒 | 合同金额、计划合计、已付款、未付款、差额展示；差额弱提醒不阻断 |
+| PDF 附件 | 支持付款相关 PDF 上传、在线预览、删除 |
+| 安全控制 | 付款与附件接口通过所属合同校验权限；上传校验 PDF 魔数、大小、路径与文件名 |
+| 详情页修复 | Timeline 查看模式改为只读；修复 keywords 历史字符串数据导致详情页崩溃 |
+
+验证结果：TypeScript 编译通过、Next.js build 通过、Docker frontend 重建通过，合同详情页 `/zh/work/contracts/92` 浏览器复验正常。
+

@@ -5,13 +5,14 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Tag, Layers, Shield, BookOpen, Clock } from "lucide-react";
+import { Tag, Layers, Shield, BookOpen, Clock, Building2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ContractTypeList from "@/plugins/builtin/work/contracts/ContractTypeList";
 import StageTypeList from "@/plugins/builtin/work/contracts/StageTypeList";
 import ClassificationList from "@/plugins/builtin/work/contracts/ClassificationList";
 import LookupDictList from "@/plugins/builtin/work/contracts/LookupDictList";
 import TimelineTemplateList from "@/plugins/builtin/work/contracts/TimelineTemplateList";
+import DepartmentList from "@/plugins/builtin/work/catalog/DepartmentList";
 
 const TABS = [
   { value: "contract-types", label: "合同类型", icon: Tag },
@@ -19,6 +20,7 @@ const TABS = [
   { value: "classifications", label: "密级管理", icon: Shield },
   { value: "lookup-dicts", label: "通用字典", icon: BookOpen },
   { value: "timeline-templates", label: "时间轴模板", icon: Clock },
+  { value: "departments", label: "组织架构", icon: Building2 },
 ] as const;
 
 export default function CatalogHub() {
@@ -58,6 +60,10 @@ export default function CatalogHub() {
 
         <TabsContent value="timeline-templates">
           <TimelineTemplateList />
+        </TabsContent>
+
+        <TabsContent value="departments">
+          <DepartmentList />
         </TabsContent>
       </Tabs>
     </div>

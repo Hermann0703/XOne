@@ -15,13 +15,9 @@ const Timeline = dynamic(() => import("./Timeline"), {
   ssr: false,
 });
 
-const STATUS_MAP: Record<string, { label: string; className: string }> = {
-  draft:      { label: "草稿",   className: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" },
-  signed:     { label: "已签署", className: "bg-blue-100 text-blue-700 border-blue-300" },
-  in_progress: { label: "履行中", className: "bg-green-100 text-green-700 border-green-300" },
-  completed:  { label: "已完成", className: "bg-emerald-100 text-emerald-700 border-emerald-300" },
-  terminated: { label: "已终止", className: "bg-red-100 text-red-700 border-red-300" },
-};
+const PaymentTable = dynamic(() => import("./PaymentTable"), {
+  ssr: false,
+});
 
 export default function ContractDetail() {
   const router = useRouter();
@@ -70,8 +66,6 @@ export default function ContractDetail() {
     );
   }
 
-  const statusConfig = STATUS_MAP[c.status] || STATUS_MAP.draft;
-
   const handleDelete = async () => {
     if (!confirm(`确定要删除合同「${c.contract_name}」吗？此操作不可撤销。`)) return;
     const ok = await deleteContract(c.id);
@@ -99,7 +93,6 @@ export default function ContractDetail() {
             <ArrowLeft className="size-4" />
           </Button>
           <h1 className="text-2xl font-bold text-text-primary">{c.contract_name}</h1>
-          <Badge variant="outline" className={statusConfig.className}>{statusConfig.label}</Badge>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => router.push(`/work/contracts/${c.id}/edit`)}>
@@ -126,40 +119,29 @@ export default function ContractDetail() {
                 <InfoItem label="标的编号" value={c.subject_no} />
                 <InfoItem label="标的名称" value={c.subject_name} />
                 <InfoItem label="采购记录编号" value={c.procurement_no} />
-                <InfoItem label="全宗" value={c.fonds_name} />
-                <InfoItem label="分类" value={c.category_name} />
                 <InfoItem label="密级" value={c.classification_name} />
                 <InfoItem label="合同类型" value={c.contract_type_name || c.contract_type || "-"} />
                 <InfoItem label="时间轴模板" value={c.timeline_template_name || "-"} />
-                <InfoItem label="状态" value={statusConfig.label} />
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">签约方与金额</CardTitle>
+              <CardTitle className="text-base">签约信息</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <InfoItem label="供应商" value={c.supplier} />
                 <InfoItem label="采购金额" value={c.amount != null ? `${c.currency || "CNY"} ${c.amount.toLocaleString()}` : "-"} />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">日期信息</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <InfoItem label="签署日期" value={c.sign_date} />
                 <InfoItem label="服务开始日期" value={c.start_date} />
                 <InfoItem label="服务结束日期" value={c.end_date} />
               </div>
             </CardContent>
           </Card>
+
+          <PaymentTable contractId={c.id} contractAmount={c.amount} currency={c.currency} />
 
           {c.description && (
             <Card>
@@ -172,14 +154,14 @@ export default function ContractDetail() {
             </Card>
           )}
 
-          {c.keywords && c.keywords.length > 0 && (
+          {normalizeKeywords(c.keywords).length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">关键词</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-1.5">
-                  {c.keywords.map((kw) => (
+                  {normalizeKeywords(c.keywords).map((kw) => (
                     <Badge key={kw} variant="secondary">{kw}</Badge>
                   ))}
                 </div>
@@ -191,7 +173,7 @@ export default function ContractDetail() {
 
         {/* 右侧：时间轴 */}
         <div className="lg:col-span-1">
-          <Timeline contract={c} />
+          <Timeline contract={c} readonly />
         </div>
       </div>
     </div>
@@ -205,4 +187,19 @@ function InfoItem({ label, value }: { label: string; value?: string | number | n
       <p className="text-sm font-medium">{value || "-"}</p>
     </div>
   );
+}
+
+function normalizeKeywords(keywords: unknown): string[] {
+  if (Array.isArray(keywords)) {
+    return keywords
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+  }
+  if (typeof keywords === "string") {
+    return keywords
+      .split(/[,，、\s]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
 }

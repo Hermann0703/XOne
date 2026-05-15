@@ -1,10 +1,11 @@
-# XOne 项目说明书 v1.0
+# XOne 项目说明书 v2.1
 
 > **项目代号**: XOne  
 > **项目定位**: 个人生活/工作管理一体化平台  
 > **核心愿景**: 一个界面，两种模式，N个插件 — 让生活与工作在统一入口中有序流转  
-> **版本**: v1.0  
-> **编制日期**: 2026-05-08  
+> **版本**: v2.1  
+> **编制日期**: 2026-05-15  
+> **上一版本**: v2.0 (v2-no-lifecycle)  
 
 ---
 
@@ -643,7 +644,7 @@ POST   /api/v1/work/contracts/:id/approve # 审批合同
 ```yaml
 services:
   nginx:        # 反向代理 + SSL
-  frontend:     # Next.js (port 3000)
+  frontend:     # Next.js (port 3456)
   backend:      # FastAPI (port 8000)
   celery:       # 异步任务
   celery-beat:  # 定时任务调度
@@ -663,7 +664,7 @@ cd XOne
 cp .env.example .env
 # 编辑 .env 配置必要参数
 docker compose up -d
-# 访问 http://localhost
+# 访问 http://localhost:3456 (前端) 或 http://localhost:8000/docs (API文档)
 ```
 
 ---
@@ -800,7 +801,16 @@ Week 9  ████████  P4 集成与打磨
 
 ---
 
-> **文档状态**: 初稿 v1.0  
-> **下一步**: 进入 P0 阶段开发，先搭建 Docker 环境和空壳 UI。  
+> **文档状态**: 正式版 v2.1  
+> **下一步**: P5 阶段持续优化与 Bug 修复  
 > **负责人**: Hesse (CIO/全栈架构师)  
 > **执行方式**: superpowers-zh → subagent-driven-development
+
+## 10. 版本历史
+
+| 版本 | 日期 | 变更说明 |
+|------|------|----------|
+| v0.1 | 2026-05-08 | 初稿，完整设计规划 |
+| v1.0 | 2026-05-09 | 完成 P0-P4 全阶段开发交付 |
+| v2.0 | 2026-05-11 | 移除合同生命周期管理模块，聚焦核心功能 |
+| v2.1 | 2026-05-15 | Docker 端口统一为 3456；Next.js API 代理修复 (localhost→backend:8000)；前后端容器健康检查全面通过 |
