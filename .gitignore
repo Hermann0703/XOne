@@ -55,3 +55,9 @@ docker/ssl/
 
 # Misc
 *.tsbuildinfo
+
+# Backups (local data snapshots)
+backups/
+
+# Hermes Agent
+.hermes/
