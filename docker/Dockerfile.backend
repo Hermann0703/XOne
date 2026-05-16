@@ -46,7 +46,8 @@ WORKDIR /app
 # 从 builder 复制 installed packages
 COPY --from=builder /install /usr/local
 
-# 复制源码
+# 复制源码 (ARG to bust cache)
+ARG CACHE_BUST=0
 COPY backend/ ./
 
 # 复制入口脚本 (必须在 USER xone 之前，否则无法 chmod)

@@ -1,7 +1,7 @@
 """add_stage_types_and_lookup_dicts
 
 Revision ID: 08a753c4bd91
-Revises: 5b36a0c4119f
+Revises: c9d2e4f6a8b1
 Create Date: 2026-05-12 14:18:42.137176
 
 """
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = '08a753c4bd91'
-down_revision: Union[str, None] = '5b36a0c4119f'
+down_revision: Union[str, None] = 'c9d2e4f6a8b1'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

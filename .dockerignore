@@ -1,48 +1,6 @@
-# Git
-.git
-.gitignore
-.gitattributes
-
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.eggs/
-dist/
-*.egg
-backend/venv/
-backend/.venv/
-backend/venv*/
-backend/.pytest_cache/
-backend/.mypy_cache/
-*.log
-
-# Node
-node_modules/
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-.npm/
-.pnpm/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Docker
-docker-compose*.yml
-Dockerfile*
-.dockerignore
-
-# Docs / misc
-docs/
-*.md
-LICENSE
-.gitmodules
+# Compiled Python cache (prevents stale .pyc from breaking Alembic migrations)
+backend/**/__pycache__/
+*.pyc
+*.pyo
+# Also exclude backup files
+*.bak

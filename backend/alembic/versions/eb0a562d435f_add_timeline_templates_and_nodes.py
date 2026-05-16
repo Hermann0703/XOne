@@ -72,7 +72,7 @@ def upgrade() -> None:
                existing_comment='合同类型ID (FK → contract_types.id)',
                existing_nullable=True)
     op.create_index(op.f('ix_contracts_timeline_template_id'), 'contracts', ['timeline_template_id'], unique=False)
-    op.drop_constraint('contracts_supplier_id_fkey', 'contracts', type_='foreignkey')
+    op.execute('ALTER TABLE contracts DROP CONSTRAINT IF EXISTS contracts_supplier_id_fkey')
     op.create_foreign_key(None, 'contracts', 'suppliers', ['supplier_id'], ['id'], ondelete='SET NULL')
     op.create_foreign_key(None, 'contracts', 'timeline_templates', ['timeline_template_id'], ['id'], ondelete='SET NULL')
     op.alter_column('suppliers', 'id',

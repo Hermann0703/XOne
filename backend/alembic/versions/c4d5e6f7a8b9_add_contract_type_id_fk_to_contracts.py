@@ -1,7 +1,7 @@
 """add contract_type_id FK to contracts
 
 Revision ID: c4d5e6f7a8b9
-Revises: edc54ec647a3
+Revises: 5b36a0c4119f
 Create Date: 2026-05-13 14:00:00.000000
 
 """
@@ -13,9 +13,9 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'c4d5e6f7a8b9'
-down_revision: Union[str, None] = 'edc54ec647a3'
+down_revision: Union[str, None] = '5b36a0c4119f'
 branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = "5b36a0c4119f"
 
 
 def upgrade() -> None:
