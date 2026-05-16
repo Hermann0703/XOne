@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { apiPost, apiGet } from '@/lib/api/client';
+import { setToken, getToken, removeToken } from '@/lib/tokenStore';
 
 // ─── 类型定义 ─────────────────────────────────────
 
@@ -44,7 +45,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       access_token: string;
     };
     const { user, access_token } = res;
-    localStorage.setItem('xone-token', access_token);
+    setToken(access_token);
     set({ user, token: access_token, isAuthenticated: true });
   },
 
@@ -62,13 +63,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       display_name: display_name || username,
     })) as unknown as { user: UserInfo; access_token: string };
     const { user, access_token } = res;
-    localStorage.setItem('xone-token', access_token);
+    setToken(access_token);
     set({ user, token: access_token, isAuthenticated: true });
   },
 
   // ── 登出 ──
   logout: () => {
-    localStorage.removeItem('xone-token');
+    removeToken();
     set({ user: null, token: null, isAuthenticated: false });
   },
 
@@ -85,7 +86,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   // ── 初始化 ──
   init: async () => {
-    const token = localStorage.getItem('xone-token');
+    const token = getToken();
     if (token) {
       set({ token });
       await get().fetchMe();

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuthStore } from '@/stores/authStore';
+import { getToken } from '@/lib/tokenStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -320,7 +321,7 @@ export default function WorkDashboard() {
         setLoading(true);
         setError(null);
 
-        const token = typeof window !== 'undefined' ? localStorage.getItem('xone-token') : null;
+        const token = typeof window !== 'undefined' ? getToken() : null;
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;

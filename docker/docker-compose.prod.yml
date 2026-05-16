@@ -80,6 +80,8 @@ services:
     container_name: xone-frontend
     expose:
       - "3456"
+    ports:
+      - "3456:3456"
     environment:
       <<: *common-env
       NEXT_PUBLIC_API_URL: /api

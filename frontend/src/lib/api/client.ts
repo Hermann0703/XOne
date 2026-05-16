@@ -2,6 +2,7 @@
 // 响应格式: {code, message, data, paging:{total,total_pages,page,page_size}}
 
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import { getToken, removeToken } from '../tokenStore';
 
 const BASE_URL = typeof window !== 'undefined'
   ? '/api/v1'
@@ -16,7 +17,7 @@ export const axiosClient: AxiosInstance = axios.create({
 // 请求拦截器 — 附加 token
 axiosClient.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('xone-token');
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,7 +35,7 @@ axiosClient.interceptors.response.use(
 
     // 401 未认证 → 清除 token 并跳转登录
     if (status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('xone-token');
+      removeToken();
       // 避免重复跳转
       if (!window.location.pathname.startsWith('/login')) {
         window.location.href = '/login';

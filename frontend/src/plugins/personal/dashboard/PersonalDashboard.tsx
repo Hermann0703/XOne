@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/authStore';
+import { getToken } from '@/lib/tokenStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ShoppingCart,
@@ -230,7 +231,7 @@ export default function PersonalDashboard() {
 
     const fetchDashboard = async () => {
       try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('xone-token') : null;
+        const token = typeof window !== 'undefined' ? getToken() : null;
         const res = await fetch('/api/v1/personal/dashboard', {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });

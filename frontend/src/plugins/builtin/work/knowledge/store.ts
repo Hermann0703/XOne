@@ -3,6 +3,7 @@
 
 import { create } from 'zustand';
 import { apiGet, apiPost, apiDelete } from '@/lib/api/client';
+import { getToken } from '@/lib/tokenStore';
 
 // ─── 类型定义 ───────────────────────────────────────
 
@@ -135,7 +136,7 @@ export const useKnowledgeStore = create<KnowledgeStore>((set, get) => ({
   uploadDocument: async (formData) => {
     try {
       // 文件上传使用 fetch 原生（需要 multipart/form-data）
-      const token = typeof window !== 'undefined' ? localStorage.getItem('xone-token') : null;
+      const token = typeof window !== 'undefined' ? getToken() : null;
       const res = await fetch(`/api/v1${BASE}/documents`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
