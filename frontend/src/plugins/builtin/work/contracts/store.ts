@@ -296,7 +296,16 @@ export const useContractStore = create<ContractStore>((set, get) => ({
     try {
       const res = await apiGet<Contract[]>('/work/contracts', params);
       if (res.code === 0) {
-        set({ contracts: res.data, paging: res.paging || null });
+        const contracts = (res.data || []).map((c: Contract) => {
+          const raw = c.keywords as unknown as string | string[] | undefined;
+          return {
+            ...c,
+            keywords: Array.isArray(raw)
+              ? raw
+              : (raw ? String(raw).split(',').filter(Boolean) : []),
+          };
+        });
+        set({ contracts, paging: res.paging || null });
       }
     } catch {
       // 静默处理
@@ -309,8 +318,14 @@ export const useContractStore = create<ContractStore>((set, get) => ({
     try {
       const res = await apiGet<Contract>(`/work/contracts/${id}`);
       if (res.code === 0) {
-        set({ selectedContract: res.data });
-        return res.data;
+        const contract = res.data;
+        // 归一化: API 返回 keywords 为逗号分隔字符串，前端期望数组
+        const rawKw = contract.keywords as unknown as string | string[] | undefined;
+        contract.keywords = Array.isArray(rawKw)
+          ? rawKw
+          : (rawKw ? String(rawKw).split(',').filter(Boolean) : []);
+        set({ selectedContract: contract });
+        return contract;
       }
     } catch {
       // 静默处理
