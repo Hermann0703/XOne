@@ -19,6 +19,10 @@ const PaymentTable = dynamic(() => import("./PaymentTable"), {
   ssr: false,
 });
 
+const CostAllocationCard = dynamic(() => import("./CostAllocationCard"), {
+  ssr: false,
+});
+
 export default function ContractDetail() {
   const router = useRouter();
   const params = useParams();
@@ -142,6 +146,8 @@ export default function ContractDetail() {
           </Card>
 
           <PaymentTable contractId={c.id} contractAmount={c.amount} currency={c.currency} />
+
+          <CostAllocationCard contractId={c.id} contractAmount={c.amount} currency={c.currency} />
 
           {c.description && (
             <Card>

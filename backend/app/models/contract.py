@@ -128,6 +128,9 @@ class Contract(TimestampMixin, Base):
         Integer, ForeignKey("timeline_templates.id", ondelete="SET NULL"),
         nullable=True, index=True, comment="时间轴模板ID"
     )
+    payment_template: Mapped[Optional[str]] = mapped_column(
+        String(8), nullable=True, comment="付款计划模板: two=两期 | three=三期"
+    )
 
     # ORM 关联
     fonds: Mapped["Fonds"] = relationship("Fonds", foreign_keys=[fonds_id])
@@ -140,6 +143,9 @@ class Contract(TimestampMixin, Base):
     )
     payments: Mapped[list["ContractPayment"]] = relationship(
         "ContractPayment", back_populates="contract", lazy="selectin", cascade="all, delete-orphan", order_by="ContractPayment.sort_order"
+    )
+    cost_allocations: Mapped[list["CostAllocation"]] = relationship(
+        "CostAllocation", back_populates="contract", lazy="selectin", cascade="all, delete-orphan"
     )
 
     timeline_template: Mapped[Optional["TimelineTemplate"]] = relationship("TimelineTemplate", foreign_keys=[timeline_template_id])

@@ -12,7 +12,7 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useContractStore, type Contract } from "./store";
-import { apiGet } from "@/lib/api/client";
+import { apiGet, apiPost } from "@/lib/api/client";
 
 const INITIAL_FORM: Partial<Contract> = {
   contract_no: "",
@@ -67,6 +67,10 @@ export default function ContractForm() {
   const [contractTypes, setContractTypes] = useState<{ id: number; code: string; name: string }[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [timelineTemplates, setTimelineTemplates] = useState<{ id: number; name: string }[]>([]);
+  const [departments, setDepartments] = useState<{ id: string; name: string; code: string; parent_id?: string; level: number }[]>([]);
+  const [selectedDeptIds, setSelectedDeptIds] = useState<string[]>([]);
+  const [originalDeptIds, setOriginalDeptIds] = useState<string[]>([]);
+  const [loadingDepts, setLoadingDepts] = useState(true);
 
   // 加载合同类型
   useEffect(() => {
@@ -87,6 +91,17 @@ export default function ContractForm() {
           setTimelineTemplates(res.data.map((t: any) => ({ id: t.id, name: t.name })));
         }
       });
+  }, []);
+
+  // 加载部门列表
+  useEffect(() => {
+    apiGet<any[]>("/work/contracts/departments")
+      .then((res) => {
+        if (res.code === 0 && res.data) {
+          setDepartments(res.data);
+        }
+      })
+      .finally(() => setLoadingDepts(false));
   }, []);
 
   // 加载基础数据
@@ -123,11 +138,28 @@ export default function ContractForm() {
             timeline_template_id: c.timeline_template_id || undefined,
             status: c.status,
           });
+          // 从合同记录的 payment_template 回显模板选择
+          const pt = c.payment_template || "";
+          setPaymentTemplate(pt as "" | "two" | "three");
+          setOriginalPaymentTemplate(pt as "" | "two" | "three");
         }
         setLoadingContract(false);
       });
     }
   }, [isEdit, id, fetchContract]);
+
+  // 编辑模式下加载已有费用分摊
+  useEffect(() => {
+    if (!isEdit || !id) return;
+    apiGet<{ department_id: string; amount: number }[]>(`/work/contracts/${id}/allocations`)
+      .then((res) => {
+        if (res.code === 0 && res.data && res.data.length > 0) {
+          const ids = res.data.map((a: any) => a.department_id);
+          setSelectedDeptIds(ids);
+          setOriginalDeptIds(ids);
+        }
+      });
+  }, [isEdit, id]);
 
   const inferPaymentTemplate = useCallback((items: typeof payments): "" | "two" | "three" => {
     const names = items
@@ -146,12 +178,18 @@ export default function ContractForm() {
     fetchPayments(Number(id)).finally(() => setPaymentsLoaded(true));
   }, [isEdit, id, fetchPayments]);
 
+  // 编辑模式下回显付款计划模板：优先使用合同中存储的 payment_template；
+  // 若历史合同无此字段，则尝试从已有付款条目名称推断（兼容历史数据）。
   useEffect(() => {
     if (!isEdit || !paymentsLoaded) return;
+    // 如果模板已从合同记录中获取，不再覆盖（防止推断值冲掉用户明确选择的模板）
+    if (paymentTemplate) return;
     const inferred = inferPaymentTemplate(payments);
-    setPaymentTemplate(inferred);
-    setOriginalPaymentTemplate(inferred);
-  }, [isEdit, paymentsLoaded, payments, inferPaymentTemplate]);
+    if (inferred) {
+      setPaymentTemplate(inferred);
+      setOriginalPaymentTemplate(inferred);
+    }
+  }, [isEdit, paymentsLoaded, payments, inferPaymentTemplate, paymentTemplate]);
 
   const setField = (field: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -207,10 +245,13 @@ export default function ContractForm() {
         ...form,
         keywords: form.keywords?.length ? form.keywords.join(",") : undefined,
       };
-      // 剥离空字符串 → undefined，避免后端 Pydantic 对 Optional[date]/pattern 字段报 422
+      // 剥离空字符串，并附加付款计划模板
       const data: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(raw)) {
         data[k] = v === "" ? undefined : v;
+      }
+      if (paymentTemplate) {
+        data["payment_template"] = paymentTemplate;
       }
       let result: Contract | null;
       if (isEdit && id) {
@@ -218,8 +259,9 @@ export default function ContractForm() {
       } else {
         result = await createContract(data as Partial<Contract>);
       }
+      // 付款计划模板变更时，重新生成付款条目
+      const shouldGeneratePayments = paymentTemplate && (!isEdit || paymentTemplate !== originalPaymentTemplate);
       if (result) {
-        const shouldGeneratePayments = paymentTemplate && (!isEdit || paymentTemplate !== originalPaymentTemplate);
         if (shouldGeneratePayments) {
           try {
             const payments = await bulkCreatePayments(result.id, paymentTemplate);
@@ -228,6 +270,24 @@ export default function ContractForm() {
             }
           } catch {
             toast("合同已保存，但付款计划模板生成失败");
+          }
+        }
+        // 费用分摊：部门选择变更时保存
+        if (selectedDeptIds.length > 0) {
+          const deptsChanged = !isEdit ||
+            selectedDeptIds.length !== originalDeptIds.length ||
+            !selectedDeptIds.every(id => originalDeptIds.includes(id));
+          if (deptsChanged) {
+            try {
+              const equalShare = result.amount && selectedDeptIds.length > 0
+                ? parseFloat((result.amount / selectedDeptIds.length).toFixed(2))
+                : 0;
+              await apiPost(`/work/contracts/${result.id}/allocations`, {
+                allocations: selectedDeptIds.map(id => ({ department_id: id, amount: equalShare }))
+              });
+            } catch {
+              toast("合同已保存，但费用分摊保存失败");
+            }
           }
         }
         router.push(`/work/contracts/${result.id}`);
@@ -470,6 +530,67 @@ export default function ContractForm() {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* 费用分摊 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">费用分摊</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-text-secondary block mb-1">选择部门</label>
+            {loadingDepts ? (
+              <Skeleton className="h-24 w-full rounded-card" />
+            ) : (
+              <div className="border border-border rounded-input max-h-48 overflow-y-auto p-2 space-y-1">
+                {departments.map((dept) => (
+                  <label key={dept.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-bg-muted px-1 py-0.5 rounded">
+                    <input
+                      type="checkbox"
+                      checked={selectedDeptIds.includes(dept.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedDeptIds(prev => [...prev, dept.id]);
+                        } else {
+                          setSelectedDeptIds(prev => prev.filter(id => id !== dept.id));
+                        }
+                      }}
+                      className="size-4 accent-primary"
+                    />
+                    <span>{dept.name}</span>
+                    <span className="text-text-muted text-xs">({dept.code})</span>
+                  </label>
+                ))}
+                {departments.length === 0 && (
+                  <p className="text-sm text-text-muted py-2 text-center">暂无部门数据</p>
+                )}
+              </div>
+            )}
+          </div>
+          {selectedDeptIds.length > 0 && (
+            <div>
+              <label className="text-sm font-medium text-text-secondary block mb-1">已选部门</label>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedDeptIds.map((deptId) => {
+                  const dept = departments.find(d => d.id === deptId);
+                  return dept ? (
+                    <Badge key={deptId} variant="secondary" className="gap-1 pr-1">
+                      {dept.name}
+                      <button
+                        onClick={() => setSelectedDeptIds(prev => prev.filter(id => id !== deptId))}
+                        className="inline-flex hover:text-destructive"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-text-muted">选择参与费用分摊的部门，分摊金额将在合同详情中编辑</p>
         </CardContent>
       </Card>
         </>

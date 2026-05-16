@@ -176,16 +176,28 @@ services:
   redis:
     image: redis:7-alpine
     container_name: xone-redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     expose:
       - "6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    command: >
+      sh -c 'if [ -n "$${REDIS_PASSWORD}" ]; then
+        redis-server --requirepass "$${REDIS_PASSWORD}" --appendonly yes;
+      else
+        redis-server --appendonly yes;
+      fi'
     volumes:
       - redisdata:/data
     networks:
       - xone
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: >
+        sh -c 'if [ -n "$${REDIS_PASSWORD}" ]; then
+          redis-cli -a "$${REDIS_PASSWORD}" ping;
+        else
+          redis-cli ping;
+        fi'
       interval: 10s
       timeout: 5s
       retries: 5

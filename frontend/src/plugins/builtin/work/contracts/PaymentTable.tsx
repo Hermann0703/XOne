@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Eye, FileText, Paperclip, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { Eye, FileText, Paperclip, Pencil, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,9 +81,7 @@ export default function PaymentTable({ contractId, contractAmount, currency = "C
   const {
     payments,
     fetchPayments,
-    createPayment,
     updatePayment,
-    deletePayment,
     uploadPaymentAttachment,
     deletePaymentAttachment,
     previewPaymentAttachment,
@@ -120,13 +118,6 @@ export default function PaymentTable({ contractId, contractAmount, currency = "C
   const formatMoney = (amount?: number | null, c = currency || "CNY") => {
     if (amount == null) return "-";
     return `${c} ${Number(amount).toLocaleString()}`;
-  };
-
-  const openCreateDialog = () => {
-    setEditing({ ...INITIAL_PAYMENT, currency: currency || "CNY", sort_order: payments.length + 1 });
-    setAmountInput("");
-    setRatioInput("");
-    setDialogOpen(true);
   };
 
   const openEditDialog = (payment: ContractPayment) => {
@@ -169,13 +160,16 @@ export default function PaymentTable({ contractId, contractAmount, currency = "C
       return;
     }
     const amount = ratio !== undefined ? amountFromRatio(contractAmount, ratio) : manualAmount;
-    const isEdit = typeof editing.id === "number";
+    if (typeof editing.id !== "number") {
+      toast("编辑失败：无效的付款条目ID");
+      return;
+    }
     setSubmitting(true);
     const payload = cleanPayload({ ...editing, amount });
     try {
-      const result = isEdit ? await updatePayment(editing.id as number, payload) : await createPayment(contractId, payload);
+      const result = await updatePayment(editing.id, payload);
       if (result) {
-        toast(isEdit ? "付款期次已更新" : "付款期次已创建");
+        toast("付款期次已更新");
         setDialogOpen(false);
         fetchPayments(contractId);
       } else {
@@ -185,13 +179,7 @@ export default function PaymentTable({ contractId, contractAmount, currency = "C
       setSubmitting(false);
     }
   };
-
-  const handleDelete = async (payment: ContractPayment) => {
-    if (!confirm(`确定要删除付款期次「${payment.name}」吗？其附件记录也会被删除。`)) return;
-    const ok = await deletePayment(payment.id);
-    toast(ok ? "付款期次已删除" : "删除失败");
-  };
-
+  // ▸▸▸ 编辑/上传/预览 ▸▸▸
   const getPaymentRatio = (amount?: number | null) => {
     const baseAmount = Number(contractAmount || 0);
     if (!amount || baseAmount <= 0) return "";
@@ -241,11 +229,7 @@ export default function PaymentTable({ contractId, contractAmount, currency = "C
       <CardHeader>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <CardTitle className="text-base">付款计划</CardTitle>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="default" size="sm" onClick={openCreateDialog}>
-              <Plus className="size-3.5 mr-1" />新增付款
-            </Button>
-          </div>
+          {/* 付款计划通过合同编辑页面的模板进行管理，不在此处新增/删除条目 */}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -281,7 +265,7 @@ export default function PaymentTable({ contractId, contractAmount, currency = "C
               {payments.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center text-text-secondary py-8">
-                    暂无付款计划，请点击“新增付款”手工新增。
+                    暂无付款计划，请前往合同编辑页面选择付款模板生成付款计划。
                   </TableCell>
                 </TableRow>
               ) : payments.map((payment) => {
@@ -326,7 +310,6 @@ export default function PaymentTable({ contractId, contractAmount, currency = "C
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon-xs" title="编辑" aria-label="编辑付款" onClick={() => openEditDialog(payment)}><Pencil className="size-3.5" /></Button>
-                        <Button variant="ghost" size="icon-xs" title="删除" aria-label="删除付款" onClick={() => handleDelete(payment)}><Trash2 className="size-3.5 text-destructive" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -339,7 +322,7 @@ export default function PaymentTable({ contractId, contractAmount, currency = "C
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent onClose={() => setDialogOpen(false)}>
-          <DialogTitle>{typeof editing.id === "number" ? "编辑付款期次" : "新增付款期次"}</DialogTitle>
+          <DialogTitle>编辑付款期次</DialogTitle>
         </DialogContent>
         <DialogBody className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

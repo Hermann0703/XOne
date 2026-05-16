@@ -157,6 +157,9 @@ class ContractCreate(BaseModel):
     keywords: Optional[str] = Field(default=None, max_length=512, description="关键词")
     auto_renewal: bool = Field(default=False, description="是否启用自动续约")
     renewal_remind_days: int = Field(default=7, ge=1, le=90, description="续约提醒天数(到期前N天触发)")
+    payment_template: Optional[str] = Field(
+        default=None, pattern="^(two|three)$", description="付款计划模板: two=两期(首付款/尾款), three=三期(首付款/进度款/尾款)"
+    )
 
     @field_validator('keywords', mode='before')
     @classmethod
@@ -213,6 +216,9 @@ class ContractUpdate(BaseModel):
     auto_renewal: Optional[bool] = Field(default=None, description="是否启用自动续约")
     renewal_remind_days: Optional[int] = Field(default=None, ge=1, le=90, description="续约提醒天数(到期前N天触发)")
     timeline_template_id: Optional[int] = Field(default=None, gt=0, description="时间轴模板ID")
+    payment_template: Optional[str] = Field(
+        default=None, pattern="^(two|three)$", description="付款计划模板: two=两期(首付款/尾款), three=三期(首付款/进度款/尾款)"
+    )
 
     @field_validator('keywords', mode='before')
     @classmethod
@@ -462,6 +468,7 @@ def _contract_to_dict(ct) -> dict:
         "classification": _classification_to_dict(ct.classification) if hasattr(ct, "classification") and ct.classification else None,
         "timeline_template_id": ct.timeline_template_id,
         "timeline_template_name": ct.timeline_template.name if ct.timeline_template else None,
+        "payment_template": ct.payment_template,
         "auto_renewal": ct.auto_renewal,
         "renewal_remind_days": ct.renewal_remind_days,
     }
@@ -2072,6 +2079,9 @@ async def get_contract(
     data["milestones"] = [
         _milestone_to_dict(m) for m in contract.milestones
     ] if hasattr(contract, "milestones") and contract.milestones else []
+    data["cost_allocations"] = [
+        _allocation_to_dict(a) for a in contract.cost_allocations
+    ] if hasattr(contract, "cost_allocations") and contract.cost_allocations else []
     return {
         "code": 0,
         "message": "查询成功",
@@ -2197,3 +2207,184 @@ async def delete_milestone(
     }
 
 
+# ═══════════════════════════════════════════════════════════════════════
+#  费用分摊 CRUD
+# ═══════════════════════════════════════════════════════════════════════
+
+from decimal import Decimal
+
+from sqlalchemy import and_, delete
+
+from app.models.cost_allocation import CostAllocation
+
+
+class CostAllocationCreate(BaseModel):
+    """单个分摊条目"""
+    department_id: str = Field(..., description="部门ID")
+    amount: Optional[Decimal] = Field(default=None, description="分摊金额")
+
+
+class CostAllocationBulkSave(BaseModel):
+    """批量保存分摊"""
+    allocations: List[CostAllocationCreate] = Field(..., min_length=1, description="分摊列表")
+
+
+def _allocation_to_dict(alloc: CostAllocation) -> dict:
+    """将 CostAllocation ORM 对象转为字典（含部门信息）"""
+    dept = alloc.department
+    return {
+        "id": alloc.id,
+        "contract_id": alloc.contract_id,
+        "department_id": alloc.department_id,
+        "department_name": dept.name if dept else None,
+        "department_leader": dept.leader if dept else None,
+        "amount": float(alloc.amount) if alloc.amount else 0.0,
+    }
+
+
+@router.get("/{contract_id}/allocations", summary="获取合同费用分摊列表")
+async def get_cost_allocations(
+    contract_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取合同的所有费用分摊记录（含部门信息）"""
+    # 验证合同存在（用户隔离）
+    result = await db.execute(
+        select(Contract).where(Contract.id == contract_id, Contract.user_id == user.id)
+    )
+    contract = result.scalar_one_or_none()
+    if not contract:
+        raise HTTPException(status_code=404, detail="合同不存在")
+
+    result = await db.execute(
+        select(CostAllocation)
+        .where(CostAllocation.contract_id == contract_id)
+        .order_by(CostAllocation.id)
+    )
+    allocations = result.scalars().all()
+
+    return {
+        "code": 0,
+        "data": [_allocation_to_dict(a) for a in allocations],
+        "contract_amount": float(contract.amount) if contract.amount else 0.0,
+    }
+
+
+@router.post("/{contract_id}/allocations", summary="批量保存费用分摊")
+async def save_cost_allocations(
+    contract_id: int,
+    body: CostAllocationBulkSave,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """批量保存分摊（替换旧数据）。分摊总额必须等于合同金额。"""
+    # 验证合同存在（用户隔离）
+    result = await db.execute(
+        select(Contract).where(Contract.id == contract_id, Contract.user_id == user.id)
+    )
+    contract = result.scalar_one_or_none()
+    if not contract:
+        raise HTTPException(status_code=404, detail="合同不存在")
+
+    # 验证：分摊总额必须等于合同金额（四舍五入到2位小数）
+    total = sum(
+        float(a.amount) if a.amount is not None else 0.0
+        for a in body.allocations
+    )
+    contract_amount = float(contract.amount) if contract.amount else 0.0
+    if round(total, 2) != round(contract_amount, 2):
+        raise HTTPException(
+            status_code=400,
+            detail=f"分摊总额（{round(total, 2):.2f}）与合同金额（{round(contract_amount, 2):.2f}）不相等"
+        )
+
+    # 验证所有部门ID存在
+    dept_ids = list({a.department_id for a in body.allocations})
+    dept_result = await db.execute(
+        select(DepartmentModel).where(DepartmentModel.id.in_(dept_ids))
+    )
+    existing_dept_ids = {d.id for d in dept_result.scalars().all()}
+    missing = [did for did in dept_ids if did not in existing_dept_ids]
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"部门ID不存在: {', '.join(missing)}"
+        )
+
+    # 删除旧分摊记录
+    await db.execute(
+        delete(CostAllocation).where(CostAllocation.contract_id == contract_id)
+    )
+
+    # 插入新分摊记录
+    for item in body.allocations:
+        alloc = CostAllocation(
+            contract_id=contract_id,
+            department_id=item.department_id,
+            amount=float(item.amount) if item.amount is not None else 0.0,
+        )
+        db.add(alloc)
+
+    await db.commit()
+
+    # 重新查询返回（含部门信息）
+    result = await db.execute(
+        select(CostAllocation)
+        .where(CostAllocation.contract_id == contract_id)
+        .order_by(CostAllocation.id)
+    )
+    saved = result.scalars().all()
+
+    return {
+        "code": 0,
+        "message": "费用分摊保存成功",
+        "data": [_allocation_to_dict(a) for a in saved],
+    }
+
+
+@router.get("/{contract_id}/allocations/summary", summary="获取费用分摊汇总")
+async def get_cost_allocation_summary(
+    contract_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取费用分摊汇总（面向饼图）。返回各部门金额、占比及是否平衡。"""
+    # 验证合同存在（用户隔离）
+    result = await db.execute(
+        select(Contract).where(Contract.id == contract_id, Contract.user_id == user.id)
+    )
+    contract = result.scalar_one_or_none()
+    if not contract:
+        raise HTTPException(status_code=404, detail="合同不存在")
+
+    result = await db.execute(
+        select(CostAllocation)
+        .where(CostAllocation.contract_id == contract_id)
+        .order_by(CostAllocation.id)
+    )
+    allocations = result.scalars().all()
+
+    contract_amount = float(contract.amount) if contract.amount else 0.0
+    total_amount = sum(float(a.amount) if a.amount else 0.0 for a in allocations)
+
+    items = []
+    for a in allocations:
+        dept = a.department
+        amt = float(a.amount) if a.amount else 0.0
+        ratio = round(amt / contract_amount * 100, 2) if contract_amount > 0 else 0.0
+        items.append({
+            "department_id": a.department_id,
+            "department_name": dept.name if dept else None,
+            "amount": amt,
+            "ratio": ratio,
+        })
+
+    is_balanced = abs(total_amount - contract_amount) < 0.01
+
+    return {
+        "code": 0,
+        "data": items,
+        "total_amount": total_amount,
+        "is_balanced": is_balanced,
+    }

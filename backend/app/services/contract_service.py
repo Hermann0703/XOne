@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.contract import Fonds, Category, Classification, Contract, Milestone, ContractPayment, ContractPaymentAttachment, TimelineTemplate, TimelineNode, ContractTimelineCustomNode
+from app.models.cost_allocation import CostAllocation
 from app.models.supplier import Supplier
 
 
@@ -303,6 +304,7 @@ async def get_contract(db: AsyncSession, contract_id: int, user_id: UUID) -> Opt
             selectinload(Contract.milestones),
             selectinload(Contract.contract_type_rel),
             selectinload(Contract.timeline_template),
+            selectinload(Contract.cost_allocations).selectinload(CostAllocation.department),
         )
     )
     result = await db.execute(stmt)
@@ -346,6 +348,7 @@ async def create_contract(db: AsyncSession, user_id: UUID, data: dict) -> Contra
         auto_renewal=data.get("auto_renewal", False),
         renewal_remind_days=data.get("renewal_remind_days", 7),
         timeline_template_id=data.get("timeline_template_id"),
+        payment_template=data.get("payment_template"),
     )
     db.add(contract)
     await db.flush()
@@ -379,7 +382,7 @@ async def update_contract(
         "supplier_id", "amount", "currency", "sign_date", "start_date",
         "end_date", "status", "contract_type", "contract_type_id", "description", "keywords",
         "requirement_no", "subject_no", "procurement_no", "subject_name",
-        "auto_renewal", "renewal_remind_days", "timeline_template_id",
+        "auto_renewal", "renewal_remind_days", "timeline_template_id", "payment_template",
     )
     for field in updatable:
         if field in data:
@@ -525,28 +528,21 @@ async def delete_contract_payment(db: AsyncSession, payment_id: int, user_id: UU
 
 
 async def bulk_create_contract_payments(db: AsyncSession, contract_id: int, user_id: UUID, template: str) -> Optional[list[ContractPayment]]:
-    """按两期/三期模板快速生成付款计划（仅生成名称与排序，不分配金额）。
+    """按两期/三期模板重新生成付款计划（先清空该合同全部旧付款条目，再按模板新建）。
 
-    该接口用于合同表单选择模板后的快捷生成。为避免编辑页保存时重复点击
-    或前端重复提交导致合同详情页追加重复步骤，同一合同内已存在同名付款
-    期次时不再重复创建；只补齐模板中缺失的期次。
+    每次调用时先删除 contract_id 对应的全部 contract_payments 记录，
+    再按模板名称依次创建，保证付款计划与所选模板完全一致。
     """
     contract_check = await _get_accessible_contract(db, contract_id, user_id)
     if not contract_check:
         return None
 
-    names = ["首付款", "尾款"] if template == "two" else ["首付款", "进度款", "尾款"]
-    existing_result = await db.execute(
-        select(ContractPayment)
-        .where(ContractPayment.contract_id == contract_id, ContractPayment.name.in_(names))
-    )
-    existing_by_name = {payment.name: payment for payment in existing_result.scalars().all()}
+    # 先清空该合同下所有旧付款条目
+    from sqlalchemy import delete as sa_delete
+    await db.execute(sa_delete(ContractPayment).where(ContractPayment.contract_id == contract_id))
 
+    names = ["首付款", "尾款"] if template == "two" else ["首付款", "进度款", "尾款"]
     for idx, name in enumerate(names, start=1):
-        existing_payment = existing_by_name.get(name)
-        if existing_payment:
-            existing_payment.sort_order = idx
-            continue
         db.add(ContractPayment(
             contract_id=contract_id,
             name=name,

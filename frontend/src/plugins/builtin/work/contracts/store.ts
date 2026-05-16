@@ -37,6 +37,7 @@ export interface Contract {
   renewal_remind_days?: number;  // 续约提醒天数
   timeline_template_id?: number;    // 时间轴模板ID
   timeline_template_name?: string;  // 时间轴模板名称（后端返回）
+  payment_template?: string | null;   // 付款计划模板（two/three/null）
   created_at?: string;
   updated_at?: string;
 }
